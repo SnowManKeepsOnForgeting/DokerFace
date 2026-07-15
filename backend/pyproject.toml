@@ -41,6 +41,7 @@ packages = ["app"]
 addopts = "-q"
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = ["integration: tests requiring a PostgreSQL container"]
 
 [tool.ruff]
 line-length = 100

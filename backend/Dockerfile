@@ -12,6 +12,8 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY README.md ./
+COPY alembic.ini ./
+COPY migrations ./migrations
 COPY app ./app
 RUN uv sync --frozen --no-dev
 
@@ -23,4 +25,3 @@ USER dokerface
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
-
