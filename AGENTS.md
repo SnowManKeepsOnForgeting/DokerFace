@@ -172,13 +172,14 @@ pytest: 53 passed
 Alembic head: 0003_profile_avatars
 PostgreSQL integration test including avatar migration: passed
 Pillow: removed from project dependencies and uv.lock
-Compose database migration: previously applied at 0002_create_admin_audit_logs; 0003 pending deployment
+Compose database migration: applied at 0003_profile_avatars (head)
 Administrator bootstrap: created and verified in the Compose database
 HTTP login, current user, and logout through Caddy: passed
 HTTP administrator create, disable, password reset, and restore through Caddy: passed
-HTTP public player list and self profile update through Caddy: passed
+HTTP public player list, text/emoji avatar update, normalization, and invalid color rejection through
+Caddy: passed
 Compose configuration: parsed successfully
-API image rebuild with migration files: passed
+API image rebuild with migration files and no Pillow: passed
 PostgreSQL container: healthy
 API container: healthy
 Caddy container: running
@@ -187,15 +188,14 @@ GET /api/v1/health/ready: 200
 git diff --check: passed
 ```
 
-Docker image construction and runtime health checks were verified from the user's WSL terminal with
-Docker Desktop on 2026-07-15 using:
+Docker image construction, migration, and runtime health checks were verified from the user's WSL
+terminal with Docker Desktop on 2026-07-16 using:
 
 ```bash
-cp deploy/.env.example deploy/.env
-docker compose --env-file deploy/.env -f deploy/compose.yml config
-docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
+docker compose --env-file deploy/.env -f deploy/compose.yml up -d postgres
+docker compose --env-file deploy/.env -f deploy/compose.yml run --build --rm api alembic upgrade head
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d api caddy
 docker compose --env-file deploy/.env -f deploy/compose.yml ps
-docker compose --env-file deploy/.env -f deploy/compose.yml exec -T api alembic upgrade head
 docker compose --env-file deploy/.env -f deploy/compose.yml exec -T api alembic current
 curl -f http://localhost:8080/api/v1/health/live
 curl -f http://localhost:8080/api/v1/health/ready
