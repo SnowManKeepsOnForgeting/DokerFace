@@ -44,6 +44,9 @@ Completed and committed:
 - Administrator account management HTTP API for create, status/role updates, and password reset.
 - Async profile loading regression fixed for newly created account responses.
 - Authenticated public player list/detail endpoints and self profile updates.
+- Text/emoji avatar profiles with centered client rendering data, validated six-digit hex
+  background colors, default values, and the `0003_profile_avatars` migration. User-uploaded images
+  and Pillow processing are not supported.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -136,6 +139,12 @@ Public profile API commit:
 5845b0b Add public player profile API
 ```
 
+Avatar profile implementation commit:
+
+```text
+3266bd4 Implement text and emoji avatar profiles
+```
+
 Deployment commit:
 
 ```text
@@ -158,11 +167,12 @@ Last successful checks:
 
 ```text
 Ruff: passed
-Pyright strict mode: passed for the account and authentication foundation changes
-pytest: 47 passed
-Alembic head: 0002_create_admin_audit_logs
-PostgreSQL integration test: passed
-Compose database migration: applied at 0002_create_admin_audit_logs (head)
+Pyright strict mode: passed
+pytest: 53 passed
+Alembic head: 0003_profile_avatars
+PostgreSQL integration test including avatar migration: passed
+Pillow: removed from project dependencies and uv.lock
+Compose database migration: previously applied at 0002_create_admin_audit_logs; 0003 pending deployment
 Administrator bootstrap: created and verified in the Compose database
 HTTP login, current user, and logout through Caddy: passed
 HTTP administrator create, disable, password reset, and restore through Caddy: passed
@@ -303,8 +313,8 @@ The user explicitly requires fine-grained, reversible Git history.
   update APIs.
 - Implement public player list/detail APIs and self profile updates.
 - Allow duplicate display names and distinguish players by `account_id`.
-- Implement text/emoji avatar rendering and background color validation; user-uploaded images are not
-  supported.
+- Text/emoji avatar persistence and background color validation are implemented; client rendering
+  remains responsible for centering and wrapping, and user-uploaded images are not supported.
 - Record all administrator mutations in audit logs.
 
 ### 5. Room domain and real-time transport
