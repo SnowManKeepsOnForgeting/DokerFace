@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
+from app.admin.api import router as admin_router
 from app.api.health import router as health_router
 from app.auth.api import router as auth_router
 from app.auth.bootstrap import ensure_bootstrap_admin
@@ -47,6 +48,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.include_router(health_router, prefix="/api/v1")
     app.include_router(auth_router)
+    app.include_router(admin_router)
     return app
 
 
