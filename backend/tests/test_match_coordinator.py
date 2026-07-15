@@ -8,6 +8,7 @@ from app.rooms.config import MatchEndMode, RoomRules
 def rules(
     end_mode: MatchEndMode = MatchEndMode.WINNER_TAKES_ALL,
     fixed_hand_count: int = 5,
+    winner_may_show_hand: bool = True,
 ) -> RoomRules:
     return RoomRules.model_validate(
         {
@@ -21,7 +22,7 @@ def rules(
             "decision_timeout_seconds": None,
             "blind_increase_every_hands": 2,
             "show_remaining_board": False,
-            "winner_may_show_hand": True,
+            "winner_may_show_hand": winner_may_show_hand,
             "spectators_allowed": False,
             "auto_start": False,
             "counted_in_stats": True,
@@ -41,19 +42,21 @@ def test_blinds_double_from_the_next_frequency_boundary() -> None:
 
 
 def test_winner_takes_all_completes_after_one_player_is_busted() -> None:
-    coordinator = MatchCoordinator((1, 2), rules())
+    coordinator = MatchCoordinator((1, 2), rules(winner_may_show_hand=False))
 
     for _ in range(20):
         coordinator.start_hand()
-        snapshot = coordinator.public_snapshot()
-        if snapshot.complete:
-            coordinator.settle_hand()
-            if coordinator.status is MatchStatus.COMPLETE:
-                break
-            continue
-        actor_account_id = snapshot.actor_account_id
-        assert actor_account_id is not None
-        coordinator.apply_action(ActionCommand(actor_account_id, ActionType.FOLD))
+        while not coordinator.hand.is_complete():
+            snapshot = coordinator.public_snapshot()
+            actor_account_id = snapshot.actor_account_id
+            assert actor_account_id is not None
+            legal_actions = coordinator.hand.legal_actions(actor_account_id)
+            action = (
+                ActionType.FOLD
+                if any(legal.action is ActionType.FOLD for legal in legal_actions)
+                else ActionType.MUCK
+            )
+            coordinator.apply_action(ActionCommand(actor_account_id, action))
         coordinator.settle_hand()
         if coordinator.status is MatchStatus.COMPLETE:
             break

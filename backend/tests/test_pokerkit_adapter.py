@@ -109,11 +109,14 @@ def check_until_dealing(adapter: PokerKitAdapter) -> None:
         actor_account_id = adapter.public_snapshot().actor_account_id
         if actor_account_id is None:
             return
-        call_action = next(
+        call_actions = [
             action
             for action in adapter.legal_actions(actor_account_id)
             if action.action is ActionType.CHECK_OR_CALL
-        )
+        ]
+        if not call_actions:
+            return
+        call_action = call_actions[0]
         adapter.apply_action(
             ActionCommand(
                 account_id=actor_account_id,
@@ -206,3 +209,37 @@ def test_odd_split_pot_chip_is_awarded_to_one_tied_winner() -> None:
 
     settlement = adapter.settlement()
     assert sorted(settlement.final_stacks) == [899, 1050, 1051]
+
+
+def test_showdown_choice_exposes_only_explicitly_shown_cards() -> None:
+    adapter = PokerKitAdapter.create_hand(
+        HandConfig(ante=0, small_blind=50, big_blind=100, allow_showdown_choice=True),
+        account_ids=(101, 202),
+        starting_stacks=(1000, 1000),
+        button_account_id=101,
+        fixed_deck="2c3d4c5dAsKdQcJhTs9c8d7h6s5c4d3h",
+    )
+    adapter.deal_hole("2c3d")
+    adapter.deal_hole("4c5d")
+    check_until_dealing(adapter)
+    deal_street(adapter, "9c", "AsKdQc")
+    check_until_dealing(adapter)
+    deal_street(adapter, "8d", "Jh")
+    check_until_dealing(adapter)
+    deal_street(adapter, "7h", "Ts")
+    check_until_dealing(adapter)
+
+    first_showdown_account = adapter.public_snapshot().actor_account_id
+    assert first_showdown_account is not None
+    assert {action.action for action in adapter.legal_actions(first_showdown_account)} == {
+        ActionType.SHOW,
+        ActionType.MUCK,
+    }
+    adapter.apply_action(ActionCommand(first_showdown_account, ActionType.SHOW))
+    second_showdown_account = adapter.public_snapshot().actor_account_id
+    assert second_showdown_account is not None
+    adapter.apply_action(ActionCommand(second_showdown_account, ActionType.MUCK))
+
+    assert adapter.is_complete()
+    assert adapter.private_snapshot(first_showdown_account).hole_cards == ("2c", "3d")
+    assert not hasattr(adapter.public_snapshot(), "hole_cards")

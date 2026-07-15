@@ -136,6 +136,7 @@ class MatchCoordinator:
             ante=self._rules.ante,
             small_blind=amounts.small_blind,
             big_blind=amounts.big_blind,
+            allow_showdown_choice=self._rules.winner_may_show_hand,
         )
 
     def _next_active_button(self, active_ids: tuple[int, ...]) -> int:

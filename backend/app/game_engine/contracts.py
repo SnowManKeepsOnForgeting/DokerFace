@@ -9,6 +9,8 @@ class ActionType(StrEnum):
     FOLD = "fold"
     CHECK_OR_CALL = "check_or_call"
     BET_OR_RAISE = "bet_or_raise"
+    SHOW = "show"
+    MUCK = "muck"
 
 
 @dataclass(frozen=True)
@@ -16,6 +18,7 @@ class HandConfig:
     ante: int
     small_blind: int
     big_blind: int
+    allow_showdown_choice: bool = False
 
     def __post_init__(self) -> None:
         if self.ante < 0:

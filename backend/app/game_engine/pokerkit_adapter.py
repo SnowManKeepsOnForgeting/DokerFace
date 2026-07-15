@@ -100,6 +100,12 @@ class PokerKitAdapter:
             config.big_blind,
         )
         automations = _MANUAL_DEALING_AUTOMATIONS if fixed_deck is not None else _AUTOMATIONS
+        if config.allow_showdown_choice:
+            automations = tuple(
+                automation
+                for automation in automations
+                if automation is not Automation.HOLE_CARDS_SHOWING_OR_MUCKING
+            )
         state = NoLimitTexasHoldem.create_state(
             automations,
             False,
@@ -133,6 +139,8 @@ class PokerKitAdapter:
 
     def legal_actions(self, account_id: int) -> tuple[LegalAction, ...]:
         player_index = self._player_index(account_id)
+        if self._state.showdown_index == player_index:
+            return (LegalAction(ActionType.SHOW), LegalAction(ActionType.MUCK))
         self._require_current_actor(player_index)
         actions: list[LegalAction] = []
         with warnings.catch_warnings():
@@ -170,6 +178,14 @@ class PokerKitAdapter:
 
     def apply_action(self, command: ActionCommand) -> AppliedAction:
         player_index = self._player_index(command.account_id)
+        if command.action in {ActionType.SHOW, ActionType.MUCK}:
+            if player_index != self._state.showdown_index or command.amount is not None:
+                raise InvalidActionError("Show or muck is not legal for this account")
+            status = command.action is ActionType.SHOW
+            if not self._state.can_show_or_muck_hole_cards(status):
+                raise InvalidActionError("Show or muck is not legal in the current state")
+            self._state.show_or_muck_hole_cards(status)
+            return AppliedAction(command.account_id, command.action, None)
         self._require_current_actor(player_index)
         if command.action is ActionType.FOLD:
             if command.amount is not None:
@@ -196,12 +212,12 @@ class PokerKitAdapter:
         raise InvalidActionError(f"Unsupported action {command.action}")
 
     def public_snapshot(self) -> PublicHandSnapshot:
-        actor_index = cast(int | None, self._state.actor_index)
+        actor_index = cast(int | None, self._state.turn_index)
         actor_account_id = self._account_ids[actor_index] if actor_index is not None else None
         return PublicHandSnapshot(
             stacks=tuple(self._state.stacks),
             bets=tuple(self._state.bets),
-            board=tuple(str(card) for card in self._state.get_board_cards(0)),
+            board=tuple(self._card_code(card) for card in self._state.get_board_cards(0)),
             folded=tuple(not status for status in self._state.statuses),
             actor_account_id=actor_account_id,
             complete=not self._state.status,
@@ -212,7 +228,9 @@ class PokerKitAdapter:
         return PrivateHandSnapshot(
             public=self.public_snapshot(),
             account_id=account_id,
-            hole_cards=tuple(str(card) for card in self._state.hole_cards[player_index]),
+            hole_cards=tuple(
+                self._card_code(card) for card in self._state.hole_cards[player_index]
+            ),
         )
 
     def is_complete(self) -> bool:
@@ -231,6 +249,11 @@ class PokerKitAdapter:
             return self._account_to_index[account_id]
         except KeyError as error:
             raise UnknownPlayerError("Account is not seated") from error
+
+    @staticmethod
+    def _card_code(card: Any) -> str:
+        card_text = str(card)
+        return card_text.rsplit("(", 1)[-1].removesuffix(")")
 
     def _require_current_actor(self, player_index: int) -> None:
         if self._state.actor_index != player_index:
