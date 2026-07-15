@@ -25,14 +25,21 @@ Completed and committed:
 - Database readiness endpoint: `GET /api/v1/health/ready`.
 - Ruff, Pyright, pytest, pytest-asyncio, Hypothesis, and testcontainers tooling.
 - Two health endpoint tests.
+- Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
-Current implementation commit:
+Backend implementation commit:
 
 ```text
 419c07e Bootstrap backend service
 ```
 
-Docker deployment files added in the next commit:
+Deployment commit:
+
+```text
+63506fa Add Docker deployment roadmap
+```
+
+Deployment files:
 
 - `backend/Dockerfile`: production image using Python 3.12, uv, locked production dependencies,
   a non-root user, and one Uvicorn worker.
@@ -44,27 +51,32 @@ Docker deployment files added in the next commit:
 
 ## Verification Status
 
-Last successful local checks:
+Last successful checks:
 
 ```text
 Ruff: passed
 Pyright strict mode: passed for the committed backend skeleton
 pytest: 2 passed
-Compose YAML structure: parsed successfully
+Compose configuration: parsed successfully
+API image build: passed
+PostgreSQL container: healthy
+API container: healthy
+Caddy container: running
+GET /api/v1/health/live: 200
+GET /api/v1/health/ready: 200
 git diff --check: passed
 ```
 
-Docker Desktop is installed and works from the user's WSL terminal (`docker ps` and `docker info`
-both succeed). The Codex execution sandbox cannot access Docker Desktop's Unix socket and its Docker
-CLI currently exits with a permission error or SIGBUS. Therefore image builds and container health
-checks have not yet been executed by the agent. Do not claim runtime Docker verification until these
-commands pass in an environment with daemon access:
+Docker image construction and runtime health checks were verified from the user's WSL terminal with
+Docker Desktop on 2026-07-15 using:
 
 ```bash
 cp deploy/.env.example deploy/.env
 docker compose --env-file deploy/.env -f deploy/compose.yml config
-docker compose --env-file deploy/.env -f deploy/compose.yml up --build
-curl http://localhost:8080/api/v1/health/ready
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
+docker compose --env-file deploy/.env -f deploy/compose.yml ps
+curl -f http://localhost:8080/api/v1/health/live
+curl -f http://localhost:8080/api/v1/health/ready
 ```
 
 ## Technology Decisions
@@ -255,4 +267,3 @@ behavior materially:
 
 Implement surrounding work first when possible. Before finalizing one of these behaviors, obtain a
 user decision and update `Feature.md` together with the implementation.
-
