@@ -13,6 +13,7 @@ from app.config import Settings, get_settings
 from app.db.session import Database
 from app.logging import configure_logging
 from app.players.api import router as players_router
+from app.rooms.api import router as rooms_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -51,6 +52,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(admin_router)
     app.include_router(players_router)
+    app.include_router(rooms_router)
     return app
 
 
