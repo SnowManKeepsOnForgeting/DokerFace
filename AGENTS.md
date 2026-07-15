@@ -47,6 +47,13 @@ Completed and committed:
 - Text/emoji avatar profiles with centered client rendering data, validated six-digit hex
   background colors, default values, and the `0003_profile_avatars` migration. User-uploaded images
   and Pillow processing are not supported.
+- Room rule validation for all explicit `Feature.md` numeric limits, including winner-takes-all and
+  fixed-hand modes.
+- Persistent room configurations with visibility/status enums, rule JSONB, host foreign key, and
+  the `0004_create_rooms` migration.
+- Authenticated room create/list/detail HTTP endpoints with hashed password-room secrets.
+- Socket.IO Origin/Cookie session authentication, one-active-SID-per-account replacement, and
+  versioned waiting-room join/ready/leave events backed by an in-memory membership registry.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -145,6 +152,36 @@ Avatar profile implementation commit:
 3266bd4 Implement text and emoji avatar profiles
 ```
 
+Room rules commit:
+
+```text
+c11dedc Add room rules validation
+```
+
+Room persistence commit:
+
+```text
+3f0fd88 Add room persistence models and migration
+```
+
+Room HTTP API commit:
+
+```text
+967fe22 Add room configuration HTTP API
+```
+
+Socket.IO authentication commit:
+
+```text
+006640a Wire authenticated Socket.IO connections
+```
+
+Waiting-room events commit:
+
+```text
+43009ab Add waiting room Socket.IO events
+```
+
 Deployment commit:
 
 ```text
@@ -168,16 +205,18 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed
-pytest: 53 passed
-Alembic head: 0003_profile_avatars
-PostgreSQL integration test including avatar migration: passed
+pytest: 90 passed
+Alembic head: 0004_create_rooms
+PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
-Compose database migration: applied at 0003_profile_avatars (head)
+Compose database migration: applied at 0003_profile_avatars (head); 0004 pending deployment
 Administrator bootstrap: created and verified in the Compose database
 HTTP login, current user, and logout through Caddy: passed
 HTTP administrator create, disable, password reset, and restore through Caddy: passed
 HTTP public player list, text/emoji avatar update, normalization, and invalid color rejection through
 Caddy: passed
+Room rules, persistence, HTTP, Socket.IO authentication, membership, and waiting-room event tests:
+passed
 Compose configuration: parsed successfully
 API image rebuild with migration files and no Pillow: passed
 PostgreSQL container: healthy
@@ -223,6 +262,8 @@ backend/
 ├── app/
 │   ├── api/
 │   ├── accounts/
+│   ├── realtime/
+│   ├── rooms/
 │   ├── db/
 │   ├── config.py
 │   ├── logging.py
@@ -319,10 +360,13 @@ The user explicitly requires fine-grained, reversible Git history.
 
 ### 5. Room domain and real-time transport
 
-- Add room configuration persistence and validation for all `Feature.md` limits.
-- Integrate python-socketio with cookie authentication and Origin checks.
-- Implement lobby updates, room create/join/leave, seats, readiness, host controls, and invitations.
-- Enforce one active game connection per account.
+- Room configuration persistence and validation for all explicit `Feature.md` limits are implemented.
+- python-socketio Cookie/Origin authentication and one-active-connection replacement are implemented.
+- Room create/list/detail REST endpoints and waiting-room `room:join`, `room:ready`, and `room:leave`
+  events are implemented.
+- Implement remaining lobby updates, seats, host controls, and invitations after the corresponding
+  runtime policies are finalized.
+- One active Socket.IO connection per account is enforced in memory.
 - Implement public room chat, quick messages, custom quick messages, and emote events.
 
 ### 6. PokerKit contract and match engine

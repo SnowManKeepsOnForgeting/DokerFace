@@ -19,9 +19,7 @@ def test_room_event_defaults_to_schema_version_one() -> None:
 
 def test_room_join_event_rejects_unknown_fields() -> None:
     with pytest.raises(ValidationError):
-        RoomJoinEvent.model_validate(
-            {"room_id": uuid4(), "invitation_code": "unexpected"}
-        )
+        RoomJoinEvent.model_validate({"room_id": uuid4(), "invitation_code": "unexpected"})
 
 
 def test_room_snapshot_serializes_uuid_and_version() -> None:
