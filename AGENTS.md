@@ -38,6 +38,7 @@ Completed and committed:
 - Application startup bootstrap that creates the first administrator after migrations are applied.
 - Cookie-authenticated login, logout, current-user, and administrator permission dependencies.
 - Administrator audit log persistence with before/after JSON summaries.
+- Administrator account creation service with Argon2 hashing and audit records.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -100,6 +101,12 @@ Audit log persistence commit:
 691b7a5 Add administrator audit log persistence
 ```
 
+Account creation service commit:
+
+```text
+49dc760 Add administrator account creation service
+```
+
 Deployment commit:
 
 ```text
@@ -123,7 +130,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed for the account and authentication foundation changes
-pytest: 27 passed
+pytest: 30 passed
 Alembic head: 0002_create_admin_audit_logs
 PostgreSQL integration test: passed
 Compose database migration: applied at 0002_create_admin_audit_logs (head)
