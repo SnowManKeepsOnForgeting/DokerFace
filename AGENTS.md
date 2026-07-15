@@ -215,6 +215,12 @@ Showdown action commit:
 e59cf2c Add explicit showdown actions
 ```
 
+Poker seating property commit:
+
+```text
+f80a39f Add poker seating property coverage
+```
+
 Odd-chip contract commit:
 
 ```text
@@ -244,7 +250,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed
-pytest: 105 passed
+pytest: 106 passed
 Alembic head: 0004_create_rooms
 PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
@@ -421,8 +427,8 @@ The user explicitly requires fine-grained, reversible Git history.
   automatic all-in runout, fixed-hand completion, odd-chip assignment, explicit show/muck actions,
   and chip conservation.
 - `MatchCoordinator` for winner-takes-all and fixed-hand-count modes is implemented.
-- Expand the contract matrix to eight-player randomized seating and property tests before exposing
-  match start through Socket.IO.
+- Expand deterministic action/side-pot scenarios for four to eight players before exposing match
+  start through Socket.IO.
 - Use one asyncio queue/task per running match so player and timeout commands are serialized.
 - Do not continue to networking/UI work if PokerKit contract tests expose unresolved rule gaps.
 
