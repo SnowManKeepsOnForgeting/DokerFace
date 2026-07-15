@@ -209,6 +209,12 @@ Deterministic settlement contract commit:
 fc12f07 Add deterministic poker settlement contracts
 ```
 
+Showdown action commit:
+
+```text
+e59cf2c Add explicit showdown actions
+```
+
 Odd-chip contract commit:
 
 ```text
@@ -238,7 +244,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed
-pytest: 104 passed
+pytest: 105 passed
 Alembic head: 0004_create_rooms
 PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
@@ -410,13 +416,13 @@ The user explicitly requires fine-grained, reversible Git history.
 ### 6. PokerKit contract and match engine
 
 - PokerKit is pinned and the project-owned adapter described in `Architecture.md` is implemented.
-- Initial deterministic tests cover heads-up/three-player order, action authority, minimum raises,
-  fold wins, short-stack side-pot flow, fixed public-board split pots, blind doubling, button
-  movement, automatic all-in runout, fixed-hand completion, odd-chip assignment, and chip
-  conservation.
+- Deterministic tests cover heads-up/three-player order, action authority, minimum raises, fold
+  wins, short-stack side-pot flow, fixed public-board split pots, blind doubling, button movement,
+  automatic all-in runout, fixed-hand completion, odd-chip assignment, explicit show/muck actions,
+  and chip conservation.
 - `MatchCoordinator` for winner-takes-all and fixed-hand-count modes is implemented.
-- Remaining contract tests must cover minimum raises, short all-ins, multiple side pots, split pots,
-  odd chips, board-only hands, and show/muck behavior before networking starts a match.
+- Expand the contract matrix to eight-player randomized seating and property tests before exposing
+  match start through Socket.IO.
 - Use one asyncio queue/task per running match so player and timeout commands are serialized.
 - Do not continue to networking/UI work if PokerKit contract tests expose unresolved rule gaps.
 
