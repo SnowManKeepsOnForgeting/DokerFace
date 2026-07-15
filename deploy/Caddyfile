@@ -1,0 +1,16 @@
+:80 {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	handle /socket.io/* {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		respond "DokerFace backend is running" 200
+	}
+}
+

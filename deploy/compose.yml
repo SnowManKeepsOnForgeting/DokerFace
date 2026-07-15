@@ -1,0 +1,70 @@
+name: dokerface
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dokerface}
+      POSTGRES_USER: ${POSTGRES_USER:-dokerface}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DOKERFACE_ENVIRONMENT: ${DOKERFACE_ENVIRONMENT:-development}
+      DOKERFACE_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-dokerface}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dokerface}
+      DOKERFACE_CORS_ORIGINS: ${DOKERFACE_CORS_ORIGINS:-["http://localhost:5173","http://localhost:8080"]}
+      DOKERFACE_SESSION_COOKIE_NAME: ${DOKERFACE_SESSION_COOKIE_NAME:-dokerface_session}
+      DOKERFACE_SESSION_TTL_HOURS: ${DOKERFACE_SESSION_TTL_HOURS:-720}
+      DOKERFACE_BOOTSTRAP_ADMIN_LOGIN: ${DOKERFACE_BOOTSTRAP_ADMIN_LOGIN:-}
+      DOKERFACE_BOOTSTRAP_ADMIN_PASSWORD: ${DOKERFACE_BOOTSTRAP_ADMIN_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/ready')",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+
