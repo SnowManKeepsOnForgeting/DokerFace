@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
 from app.api.health import router as health_router
+from app.auth.bootstrap import ensure_bootstrap_admin
 from app.config import Settings, get_settings
 from app.db.session import Database
 from app.logging import configure_logging
@@ -17,9 +18,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-        app.state.database = Database(app_settings)
-        yield
-        await app.state.database.close()
+        database = Database(app_settings)
+        app.state.database = database
+        try:
+            async with database.session_factory() as session:
+                await ensure_bootstrap_admin(
+                    session,
+                    login_name=app_settings.bootstrap_admin_login,
+                    password=app_settings.bootstrap_admin_password,
+                )
+            yield
+        finally:
+            await database.close()
 
     app = FastAPI(
         title="DokerFace API",

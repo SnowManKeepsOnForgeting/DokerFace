@@ -1,11 +1,16 @@
 # Docker deployment
 
-Create a local environment file and start the stack:
+Create a local environment file, start PostgreSQL, apply migrations, and start the stack:
 
 ```bash
 cp deploy/.env.example deploy/.env
-docker compose --env-file deploy/.env -f deploy/compose.yml up --build
+docker compose --env-file deploy/.env -f deploy/compose.yml up -d postgres
+docker compose --env-file deploy/.env -f deploy/compose.yml run --build --rm api alembic upgrade head
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d api caddy
 ```
+
+Run `alembic upgrade head` again after pulling a commit that adds a database migration, before
+starting the API with the new image.
 
 The reverse proxy listens on <http://localhost:8080>. PostgreSQL is bound to
 `127.0.0.1:5432` for local development and is not exposed on external network interfaces.
@@ -17,4 +22,3 @@ docker compose --env-file deploy/.env -f deploy/compose.yml down
 ```
 
 Do not use `down -v` unless the PostgreSQL data volume should be deleted.
-
