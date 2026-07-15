@@ -54,6 +54,9 @@ Completed and committed:
 - Authenticated room create/list/detail HTTP endpoints with hashed password-room secrets.
 - Socket.IO Origin/Cookie session authentication, one-active-SID-per-account replacement, and
   versioned waiting-room join/ready/leave events backed by an in-memory membership registry.
+- Project-owned PokerKit adapter and pure multi-hand `MatchCoordinator` with heads-up action
+  mapping, blind doubling, button rotation, winner-takes-all/fixed-hand lifecycle, and chip
+  conservation tests.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -182,6 +185,18 @@ Waiting-room events commit:
 43009ab Add waiting room Socket.IO events
 ```
 
+PokerKit adapter commit:
+
+```text
+30001ff Add PokerKit adapter contract
+```
+
+Match coordinator commit:
+
+```text
+d89063e Add multi-hand match coordinator
+```
+
 Deployment commit:
 
 ```text
@@ -205,7 +220,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed
-pytest: 90 passed
+pytest: 98 passed
 Alembic head: 0004_create_rooms
 PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
@@ -217,6 +232,7 @@ HTTP public player list, text/emoji avatar update, normalization, and invalid co
 Caddy: passed
 Room rules, persistence, HTTP, Socket.IO authentication, membership, and waiting-room event tests:
 passed
+PokerKit adapter and MatchCoordinator contract tests: passed
 Room create/list/detail through Caddy: passed
 Engine.IO polling handshake through Caddy: valid Origin accepted and invalid Origin rejected
 with HTTP 400; Python AsyncClient smoke test not run because optional `aiohttp` is not installed
@@ -265,6 +281,7 @@ backend/
 ├── app/
 │   ├── api/
 │   ├── accounts/
+│   ├── game_engine/
 │   ├── realtime/
 │   ├── rooms/
 │   ├── db/
@@ -374,11 +391,12 @@ The user explicitly requires fine-grained, reversible Git history.
 
 ### 6. PokerKit contract and match engine
 
-- Pin PokerKit and implement the adapter described in `Architecture.md`.
-- Add deterministic contract tests for heads-up order, minimum raises, short all-ins, multiple side
-  pots, split pots, odd chips, fold wins, board-only hands, and show/muck behavior.
-- Implement `MatchCoordinator` for winner-takes-all and fixed-hand-count modes.
-- Implement blind doubling, button movement, elimination, and match completion.
+- PokerKit is pinned and the project-owned adapter described in `Architecture.md` is implemented.
+- Initial deterministic tests cover heads-up order, action authority, fold wins, blind doubling,
+  button movement, automatic all-in runout, fixed-hand completion, and chip conservation.
+- `MatchCoordinator` for winner-takes-all and fixed-hand-count modes is implemented.
+- Remaining contract tests must cover minimum raises, short all-ins, multiple side pots, split pots,
+  odd chips, board-only hands, and show/muck behavior before networking starts a match.
 - Use one asyncio queue/task per running match so player and timeout commands are serialized.
 - Do not continue to networking/UI work if PokerKit contract tests expose unresolved rule gaps.
 
