@@ -29,6 +29,8 @@ Completed and committed:
   enums.
 - Alembic configuration and the first accounts/profiles/sessions migration.
 - PostgreSQL integration coverage for migration execution, identity IDs, uniqueness, and relations.
+- Argon2 password hashing service backed by `pwdlib`.
+- Administrator bootstrap service that requires environment credentials only for a fresh database.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -41,6 +43,18 @@ Account persistence commit:
 
 ```text
 a03f269 Add account persistence models and migrations
+```
+
+Password service commit:
+
+```text
+0e06e33 Add Argon2 password service
+```
+
+Administrator bootstrap commit:
+
+```text
+00f5f55 Add administrator bootstrap service
 ```
 
 Deployment commit:
@@ -65,8 +79,8 @@ Last successful checks:
 
 ```text
 Ruff: passed
-Pyright strict mode: passed for the account persistence changes
-pytest: 3 passed
+Pyright strict mode: passed for the account and authentication foundation changes
+pytest: 9 passed
 Alembic head: 0001_create_accounts
 PostgreSQL integration test: passed
 Compose database migration: applied at 0001_create_accounts (head)
