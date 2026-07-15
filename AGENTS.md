@@ -43,6 +43,7 @@ Completed and committed:
   password resets.
 - Administrator account management HTTP API for create, status/role updates, and password reset.
 - Async profile loading regression fixed for newly created account responses.
+- Authenticated public player list/detail endpoints and self profile updates.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -129,6 +130,12 @@ Account response fix commit:
 023fd67 Preserve account profile after creation
 ```
 
+Public profile API commit:
+
+```text
+5845b0b Add public player profile API
+```
+
 Deployment commit:
 
 ```text
@@ -152,7 +159,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed for the account and authentication foundation changes
-pytest: 42 passed
+pytest: 47 passed
 Alembic head: 0002_create_admin_audit_logs
 PostgreSQL integration test: passed
 Compose database migration: applied at 0002_create_admin_audit_logs (head)
