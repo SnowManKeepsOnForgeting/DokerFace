@@ -197,6 +197,12 @@ Match coordinator commit:
 d89063e Add multi-hand match coordinator
 ```
 
+PokerKit side-pot contract commit:
+
+```text
+0d7450a Expand PokerKit side pot contracts
+```
+
 Deployment commit:
 
 ```text
@@ -220,7 +226,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed
-pytest: 98 passed
+pytest: 101 passed
 Alembic head: 0004_create_rooms
 PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
@@ -392,8 +398,9 @@ The user explicitly requires fine-grained, reversible Git history.
 ### 6. PokerKit contract and match engine
 
 - PokerKit is pinned and the project-owned adapter described in `Architecture.md` is implemented.
-- Initial deterministic tests cover heads-up order, action authority, fold wins, blind doubling,
-  button movement, automatic all-in runout, fixed-hand completion, and chip conservation.
+- Initial deterministic tests cover heads-up/three-player order, action authority, minimum raises,
+  fold wins, short-stack side-pot flow, blind doubling, button movement, automatic all-in runout,
+  fixed-hand completion, and chip conservation.
 - `MatchCoordinator` for winner-takes-all and fixed-hand-count modes is implemented.
 - Remaining contract tests must cover minimum raises, short all-ins, multiple side pots, split pots,
   odd chips, board-only hands, and show/muck behavior before networking starts a match.
