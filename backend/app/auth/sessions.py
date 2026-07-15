@@ -1,8 +1,10 @@
 """Database-backed session lifecycle operations."""
 
 from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -88,3 +90,21 @@ class SessionService:
         account_session.revoked_at = now or datetime.now(UTC)
         await db_session.commit()
         return True
+
+    async def revoke_all_for_account(
+        self,
+        db_session: AsyncSession,
+        account_id: int,
+        now: datetime | None = None,
+    ) -> int:
+        result = await db_session.execute(
+            update(AccountSession)
+            .where(
+                AccountSession.account_id == account_id,
+                AccountSession.revoked_at.is_(None),
+            )
+            .values(revoked_at=now or datetime.now(UTC))
+        )
+        await db_session.commit()
+        cursor_result = cast(CursorResult[Any], result)
+        return cursor_result.rowcount or 0

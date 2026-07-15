@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -121,4 +122,16 @@ async def test_session_service_revokes_session_once() -> None:
 
     assert revoked
     assert account_session.revoked_at == NOW
+    db_session.commit.assert_awaited_once()
+
+
+async def test_session_service_revokes_all_active_account_sessions() -> None:
+    db_session = AsyncMock(spec=AsyncSession)
+    db_session.execute.return_value = SimpleNamespace(rowcount=2)
+    service = SessionService(session_ttl_hours=2)
+
+    revoked_count = await service.revoke_all_for_account(db_session, account_id=7, now=NOW)
+
+    assert revoked_count == 2
+    db_session.execute.assert_awaited_once()
     db_session.commit.assert_awaited_once()
