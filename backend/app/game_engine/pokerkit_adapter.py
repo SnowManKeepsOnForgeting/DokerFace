@@ -2,9 +2,11 @@
 
 """PokerKit implementation behind the project-owned engine contract."""
 
+import warnings
+from collections import deque
 from typing import Any, cast
 
-from pokerkit import Automation, Mode, NoLimitTexasHoldem
+from pokerkit import Automation, Card, Mode, NoLimitTexasHoldem
 
 from app.game_engine.contracts import (
     ActionCommand,
@@ -43,6 +45,16 @@ _AUTOMATIONS = (
     Automation.CHIPS_PUSHING,
     Automation.CHIPS_PULLING,
 )
+_MANUAL_DEALING_AUTOMATIONS = tuple(
+    automation
+    for automation in _AUTOMATIONS
+    if automation
+    not in {
+        Automation.CARD_BURNING,
+        Automation.HOLE_DEALING,
+        Automation.BOARD_DEALING,
+    }
+)
 
 
 class PokerKitAdapter:
@@ -51,11 +63,13 @@ class PokerKitAdapter:
         state: Any,
         account_ids: tuple[int, ...],
         starting_stacks: tuple[int, ...],
+        manual_dealing: bool,
     ) -> None:
         self._state = state
         self._account_ids = account_ids
         self._account_to_index = {account_id: index for index, account_id in enumerate(account_ids)}
         self._starting_stacks = starting_stacks
+        self._manual_dealing = manual_dealing
 
     @classmethod
     def create_hand(
@@ -64,6 +78,7 @@ class PokerKitAdapter:
         account_ids: tuple[int, ...],
         starting_stacks: tuple[int, ...],
         button_account_id: int,
+        fixed_deck: str | None = None,
     ) -> "PokerKitAdapter":
         if len(account_ids) < 2 or len(account_ids) > 8:
             raise ValueError("A hand requires between 2 and 8 players")
@@ -84,8 +99,9 @@ class PokerKitAdapter:
             config.small_blind,
             config.big_blind,
         )
+        automations = _MANUAL_DEALING_AUTOMATIONS if fixed_deck is not None else _AUTOMATIONS
         state = NoLimitTexasHoldem.create_state(
-            _AUTOMATIONS,
+            automations,
             False,
             config.ante,
             raw_blinds,
@@ -94,7 +110,9 @@ class PokerKitAdapter:
             len(account_ids),
             mode=Mode.CASH_GAME,
         )
-        return cls(state, account_ids, starting_stacks)
+        if fixed_deck is not None:
+            state.deck_cards = deque(Card.parse(fixed_deck))
+        return cls(state, account_ids, starting_stacks, fixed_deck is not None)
 
     @staticmethod
     def _raw_blinds(
@@ -117,7 +135,10 @@ class PokerKitAdapter:
         player_index = self._player_index(account_id)
         self._require_current_actor(player_index)
         actions: list[LegalAction] = []
-        if self._state.can_fold():
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            can_fold = self._state.can_fold()
+        if can_fold:
             actions.append(LegalAction(ActionType.FOLD))
         if self._state.can_check_or_call():
             amount = self._state.checking_or_calling_amount
@@ -131,6 +152,21 @@ class PokerKitAdapter:
                 )
             )
         return tuple(actions)
+
+    def deal_hole(self, cards: str) -> None:
+        if not self._manual_dealing:
+            raise InvalidActionError("Manual dealing is only available for fixed-deck tests")
+        self._state.deal_hole(cards)
+
+    def burn_card(self, card: str) -> None:
+        if not self._manual_dealing:
+            raise InvalidActionError("Manual dealing is only available for fixed-deck tests")
+        self._state.burn_card(card)
+
+    def deal_board(self, cards: str) -> None:
+        if not self._manual_dealing:
+            raise InvalidActionError("Manual dealing is only available for fixed-deck tests")
+        self._state.deal_board(cards)
 
     def apply_action(self, command: ActionCommand) -> AppliedAction:
         player_index = self._player_index(command.account_id)
