@@ -53,7 +53,7 @@ class SessionService:
     ) -> Account | None:
         account_session = await db_session.scalar(
             select(AccountSession)
-            .options(selectinload(AccountSession.account))
+            .options(selectinload(AccountSession.account).selectinload(Account.profile))
             .where(AccountSession.token_hash == self._token_service.hash_token(token))
         )
         if account_session is None:

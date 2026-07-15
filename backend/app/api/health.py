@@ -1,13 +1,12 @@
-from collections.abc import AsyncIterator
-from typing import Annotated, cast
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import __version__
-from app.db.session import Database
+from app.db.dependencies import get_db_session
 
 router = APIRouter(prefix="/health", tags=["health"])
 
@@ -15,12 +14,6 @@ router = APIRouter(prefix="/health", tags=["health"])
 class HealthResponse(BaseModel):
     status: str
     version: str
-
-
-async def get_db_session(request: Request) -> AsyncIterator[AsyncSession]:
-    database = cast(Database, request.app.state.database)
-    async with database.session_factory() as session:
-        yield session
 
 
 @router.get("/live", response_model=HealthResponse)
