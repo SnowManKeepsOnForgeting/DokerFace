@@ -303,7 +303,8 @@ The user explicitly requires fine-grained, reversible Git history.
   update APIs.
 - Implement public player list/detail APIs and self profile updates.
 - Allow duplicate display names and distinguish players by `account_id`.
-- Add avatar validation and normalized thumbnails using Pillow.
+- Implement text/emoji avatar rendering and background color validation; user-uploaded images are not
+  supported.
 - Record all administrator mutations in audit logs.
 
 ### 5. Room domain and real-time transport
