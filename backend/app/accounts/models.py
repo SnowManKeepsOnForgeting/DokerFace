@@ -79,7 +79,7 @@ class Account(Base):
     )
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    profile: Mapped[Profile] = relationship(
+    profile: Mapped[Profile | None] = relationship(
         back_populates="account",
         cascade="all, delete-orphan",
         uselist=False,

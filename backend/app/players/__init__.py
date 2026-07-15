@@ -1,0 +1,1 @@
+"""Public player profile domain."""
