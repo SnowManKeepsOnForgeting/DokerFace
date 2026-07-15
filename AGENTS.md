@@ -31,6 +31,7 @@ Completed and committed:
 - PostgreSQL integration coverage for migration execution, identity IDs, uniqueness, and relations.
 - Argon2 password hashing service backed by `pwdlib`.
 - Administrator bootstrap service that requires environment credentials only for a fresh database.
+- Opaque session token generation with SHA-256 token hashes.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -57,6 +58,12 @@ Administrator bootstrap commit:
 00f5f55 Add administrator bootstrap service
 ```
 
+Session token commit:
+
+```text
+2f613fd Add opaque session token service
+```
+
 Deployment commit:
 
 ```text
@@ -80,7 +87,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed for the account and authentication foundation changes
-pytest: 9 passed
+pytest: 10 passed
 Alembic head: 0001_create_accounts
 PostgreSQL integration test: passed
 Compose database migration: applied at 0001_create_accounts (head)
