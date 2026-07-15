@@ -1,9 +1,10 @@
 """HTTP endpoints for public player profiles."""
 
+import re
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -18,7 +19,8 @@ router = APIRouter(prefix="/api/v1", tags=["players"])
 class PublicPlayerResponse(BaseModel):
     account_id: int
     display_name: str
-    avatar_path: str | None
+    avatar_text: str
+    avatar_background_color: str
     rank_badge_theme: str
 
 
@@ -31,7 +33,23 @@ class PlayerListResponse(BaseModel):
 
 class ProfileUpdateRequest(BaseModel):
     display_name: str | None = Field(default=None, min_length=1)
+    avatar_text: str | None = Field(default=None, min_length=1)
+    avatar_background_color: str | None = Field(default=None)
     rank_badge_theme: str | None = Field(default=None, min_length=1)
+
+    @field_validator("avatar_text")
+    @classmethod
+    def validate_avatar_text(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("Avatar text must not be blank")
+        return value
+
+    @field_validator("avatar_background_color")
+    @classmethod
+    def normalize_avatar_background_color(cls, value: str | None) -> str | None:
+        if value is not None and re.fullmatch(r"#[0-9a-fA-F]{6}", value) is None:
+            raise ValueError("Avatar background color must be a six-digit hex color")
+        return value.upper() if value is not None else None
 
 
 def to_public_player(account: Account) -> PublicPlayerResponse:
@@ -43,7 +61,8 @@ def to_public_player(account: Account) -> PublicPlayerResponse:
     return PublicPlayerResponse(
         account_id=account.account_id,
         display_name=account.profile.display_name,
-        avatar_path=account.profile.avatar_path,
+        avatar_text=account.profile.avatar_text,
+        avatar_background_color=account.profile.avatar_background_color,
         rank_badge_theme=account.profile.rank_badge_theme,
     )
 
@@ -109,7 +128,12 @@ async def update_my_profile(
     account: Annotated[Account, Depends(get_current_account)],
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> PublicPlayerResponse:
-    if payload.display_name is None and payload.rank_badge_theme is None:
+    if (
+        payload.display_name is None
+        and payload.avatar_text is None
+        and payload.avatar_background_color is None
+        and payload.rank_badge_theme is None
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="At least one profile field is required",
@@ -122,6 +146,10 @@ async def update_my_profile(
 
     if payload.display_name is not None:
         account.profile.display_name = payload.display_name
+    if payload.avatar_text is not None:
+        account.profile.avatar_text = payload.avatar_text
+    if payload.avatar_background_color is not None:
+        account.profile.avatar_background_color = payload.avatar_background_color
     if payload.rank_badge_theme is not None:
         account.profile.rank_badge_theme = payload.rank_badge_theme
     await db_session.commit()

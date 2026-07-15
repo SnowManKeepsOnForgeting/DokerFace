@@ -6,7 +6,14 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.accounts.models import Account, AccountRole, AccountSession, AccountStatus, Profile
+from app.accounts.models import (
+    DEFAULT_AVATAR_BACKGROUND_COLOR,
+    Account,
+    AccountRole,
+    AccountSession,
+    AccountStatus,
+    Profile,
+)
 from app.admin.models import AdminAuditLog
 from app.auth.passwords import PasswordService
 
@@ -141,7 +148,11 @@ class AccountAdminService:
             login_name=login_name,
             password_hash=self._password_service.hash(password),
             role=role,
-            profile=Profile(display_name=display_name or login_name),
+            profile=Profile(
+                display_name=display_name or login_name,
+                avatar_text=display_name or login_name,
+                avatar_background_color=DEFAULT_AVATAR_BACKGROUND_COLOR,
+            ),
         )
         db_session.add(account)
         await db_session.flush()

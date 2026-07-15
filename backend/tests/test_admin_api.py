@@ -27,7 +27,7 @@ def make_account(
         password_hash="stored-hash",
         role=role,
         status=status,
-        profile=Profile(display_name=login_name.title()),
+        profile=Profile(display_name=login_name.title(), avatar_text=login_name.title()),
     )
 
 

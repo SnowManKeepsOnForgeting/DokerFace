@@ -40,7 +40,7 @@ def make_account(
         password_hash=PasswordService().hash("correct password"),
         role=AccountRole.PLAYER,
         status=status,
-        profile=Profile(display_name="Alice"),
+        profile=Profile(display_name="Alice", avatar_text="Alice"),
     )
 
 

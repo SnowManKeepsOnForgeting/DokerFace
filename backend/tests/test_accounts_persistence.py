@@ -58,14 +58,14 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             player = Account(
                 login_name="alice",
                 password_hash="argon2-hash",
-                profile=Profile(display_name="Alice"),
+                profile=Profile(display_name="Alice", avatar_text="Alice"),
             )
             administrator = Account(
                 login_name="admin",
                 password_hash="another-argon2-hash",
                 role=AccountRole.ADMINISTRATOR,
                 status=AccountStatus.DISABLED,
-                profile=Profile(display_name="Administrator"),
+                profile=Profile(display_name="Administrator", avatar_text="Administrator"),
             )
             session.add_all([player, administrator])
             await session.commit()
@@ -89,6 +89,8 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             assert loaded_player is not None
             assert loaded_player.profile is not None
             assert loaded_player.profile.display_name == "Alice"
+            assert loaded_player.profile.avatar_text == "Alice"
+            assert loaded_player.profile.avatar_background_color == "#64748B"
             assert loaded_player.sessions[0].token_hash == "a" * 64
 
             audit_log = AdminAuditLog(
@@ -110,7 +112,7 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             duplicate = Account(
                 login_name="alice",
                 password_hash="duplicate-hash",
-                profile=Profile(display_name="Duplicate"),
+                profile=Profile(display_name="Duplicate", avatar_text="Duplicate"),
             )
             session.add(duplicate)
             with pytest.raises(IntegrityError):

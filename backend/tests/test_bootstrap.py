@@ -30,6 +30,8 @@ async def test_bootstrap_creates_administrator_with_hashed_password() -> None:
     assert account.role is AccountRole.ADMINISTRATOR
     assert account.profile is not None
     assert account.profile.display_name == "admin"
+    assert account.profile.avatar_text == "admin"
+    assert account.profile.avatar_background_color == "#64748B"
     assert account.password_hash != "initial password"
     assert password_service.verify("initial password", account.password_hash)
 

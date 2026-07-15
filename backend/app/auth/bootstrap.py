@@ -3,7 +3,12 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.accounts.models import Account, AccountRole, Profile
+from app.accounts.models import (
+    DEFAULT_AVATAR_BACKGROUND_COLOR,
+    Account,
+    AccountRole,
+    Profile,
+)
 from app.auth.passwords import PasswordService
 
 
@@ -33,7 +38,11 @@ async def ensure_bootstrap_admin(
         login_name=login_name,
         password_hash=hasher.hash(password),
         role=AccountRole.ADMINISTRATOR,
-        profile=Profile(display_name=login_name),
+        profile=Profile(
+            display_name=login_name,
+            avatar_text=login_name,
+            avatar_background_color=DEFAULT_AVATAR_BACKGROUND_COLOR,
+        ),
     )
     session.add(account)
     await session.commit()

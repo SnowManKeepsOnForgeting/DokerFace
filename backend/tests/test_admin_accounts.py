@@ -42,7 +42,7 @@ def make_target(
         password_hash=PasswordService().hash("old password"),
         role=role,
         status=status,
-        profile=Profile(display_name="Alice"),
+        profile=Profile(display_name="Alice", avatar_text="Alice"),
     )
 
 
@@ -72,6 +72,8 @@ async def test_account_admin_service_creates_account_and_audit_log() -> None:
     assert account.login_name == "alice"
     assert account.profile is not None
     assert account.profile.display_name == "Alice"
+    assert account.profile.avatar_text == "Alice"
+    assert account.profile.avatar_background_color == "#64748B"
     assert password_service.verify("player password", account.password_hash)
     assert db_session.add.call_count == 2
     assert isinstance(db_session.add.call_args_list[1].args[0], AdminAuditLog)

@@ -7,6 +7,7 @@ from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import (
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Identity,
@@ -21,6 +22,8 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+DEFAULT_AVATAR_BACKGROUND_COLOR = "#64748B"
 
 
 class AccountRole(StrEnum):
@@ -92,13 +95,29 @@ class Account(Base):
 
 class Profile(Base):
     __tablename__ = "profiles"
+    __table_args__ = (
+        CheckConstraint(
+            "length(btrim(avatar_text)) > 0",
+            name="ck_profiles_avatar_text_not_blank",
+        ),
+        CheckConstraint(
+            "avatar_background_color ~ '^#[0-9A-Fa-f]{6}$'",
+            name="ck_profiles_avatar_background_color_hex",
+        ),
+    )
 
     account_id: Mapped[int] = mapped_column(
         ForeignKey("accounts.account_id", ondelete="CASCADE"),
         primary_key=True,
     )
     display_name: Mapped[str] = mapped_column(String(), nullable=False)
-    avatar_path: Mapped[str | None] = mapped_column(String())
+    avatar_text: Mapped[str] = mapped_column(String(), nullable=False)
+    avatar_background_color: Mapped[str] = mapped_column(
+        String(7),
+        nullable=False,
+        default=DEFAULT_AVATAR_BACKGROUND_COLOR,
+        server_default=DEFAULT_AVATAR_BACKGROUND_COLOR,
+    )
     rank_badge_theme: Mapped[str] = mapped_column(
         String(),
         nullable=False,
@@ -139,6 +158,7 @@ class AccountSession(Base):
 
 
 __all__ = [
+    "DEFAULT_AVATAR_BACKGROUND_COLOR",
     "Account",
     "AccountRole",
     "AccountSession",
