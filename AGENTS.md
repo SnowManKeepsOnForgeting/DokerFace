@@ -209,7 +209,7 @@ pytest: 90 passed
 Alembic head: 0004_create_rooms
 PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
-Compose database migration: applied at 0003_profile_avatars (head); 0004 pending deployment
+Compose database migration: applied at 0004_create_rooms (head)
 Administrator bootstrap: created and verified in the Compose database
 HTTP login, current user, and logout through Caddy: passed
 HTTP administrator create, disable, password reset, and restore through Caddy: passed
@@ -217,6 +217,9 @@ HTTP public player list, text/emoji avatar update, normalization, and invalid co
 Caddy: passed
 Room rules, persistence, HTTP, Socket.IO authentication, membership, and waiting-room event tests:
 passed
+Room create/list/detail through Caddy: passed
+Engine.IO polling handshake through Caddy: valid Origin accepted and invalid Origin rejected
+with HTTP 400; Python AsyncClient smoke test not run because optional `aiohttp` is not installed
 Compose configuration: parsed successfully
 API image rebuild with migration files and no Pillow: passed
 PostgreSQL container: healthy
