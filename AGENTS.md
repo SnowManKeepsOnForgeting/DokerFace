@@ -143,10 +143,10 @@ Run local backend checks from `backend/`:
 
 ```bash
 UV_CACHE_DIR=/tmp/dokerface-uv-cache uv sync --dev
-.venv/bin/ruff format .
-.venv/bin/ruff check .
-.venv/bin/pytest -q
-XDG_CACHE_HOME=/tmp/dokerface-xdg-cache .venv/bin/pyright
+UV_CACHE_DIR=/tmp/dokerface-uv-cache uv run --locked ruff format .
+UV_CACHE_DIR=/tmp/dokerface-uv-cache uv run --locked ruff check .
+UV_CACHE_DIR=/tmp/dokerface-uv-cache uv run --locked pytest -q
+UV_CACHE_DIR=/tmp/dokerface-uv-cache XDG_CACHE_HOME=/tmp/dokerface-xdg-cache uv run --locked pyright
 ```
 
 Pyright's Python wrapper downloads a Node runtime on first use. In restricted environments it may
