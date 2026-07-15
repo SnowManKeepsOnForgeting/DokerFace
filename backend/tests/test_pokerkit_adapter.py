@@ -60,3 +60,45 @@ def test_check_or_call_amount_is_state_authoritative() -> None:
 
     applied = adapter.apply_action(ActionCommand(101, ActionType.CHECK_OR_CALL, amount=50))
     assert applied.amount == 50
+
+
+def test_three_player_button_and_blind_order_are_mapped() -> None:
+    adapter = PokerKitAdapter.create_hand(
+        CONFIG,
+        account_ids=(101, 202, 303),
+        starting_stacks=(1000, 1000, 1000),
+        button_account_id=101,
+    )
+
+    snapshot = adapter.public_snapshot()
+
+    assert snapshot.bets == (0, 50, 100)
+    assert snapshot.actor_account_id == 101
+
+
+def test_minimum_raise_is_enforced_by_adapter() -> None:
+    adapter = make_heads_up()
+
+    with pytest.raises(InvalidActionError):
+        adapter.apply_action(ActionCommand(101, ActionType.BET_OR_RAISE, amount=199))
+
+    applied = adapter.apply_action(ActionCommand(101, ActionType.BET_OR_RAISE, amount=200))
+    assert applied.amount == 200
+
+
+def test_short_stack_side_pot_flow_conserves_chips_and_limits_short_stack() -> None:
+    adapter = PokerKitAdapter.create_hand(
+        CONFIG,
+        account_ids=(101, 202, 303),
+        starting_stacks=(1000, 500, 200),
+        button_account_id=101,
+    )
+
+    adapter.apply_action(ActionCommand(101, ActionType.BET_OR_RAISE, amount=1000))
+    adapter.apply_action(ActionCommand(202, ActionType.CHECK_OR_CALL, amount=450))
+    adapter.apply_action(ActionCommand(303, ActionType.CHECK_OR_CALL, amount=100))
+    settlement = adapter.settlement()
+
+    assert sum(settlement.final_stacks) == 1700
+    assert sum(settlement.payoffs) == 0
+    assert settlement.final_stacks[2] <= 600
