@@ -18,6 +18,8 @@ from testcontainers.postgres import PostgresContainer
 
 from app.accounts.models import Account, AccountRole, AccountSession, AccountStatus, Profile
 from app.admin.models import AdminAuditLog
+from app.rooms.config import MatchEndMode, RoomRules, RoomVisibility
+from app.rooms.models import Room, RoomStatus
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 pytestmark = pytest.mark.integration
@@ -108,6 +110,41 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             assert loaded_audit_log is not None
             assert loaded_audit_log.target_account_id == player.account_id
             assert loaded_audit_log.after_state == {"status": "active"}
+
+            room_rules = RoomRules.model_validate(
+                {
+                    "max_players": 2,
+                    "end_mode": MatchEndMode.WINNER_TAKES_ALL,
+                    "starting_chips": 1000,
+                    "small_blind": 50,
+                    "big_blind": 100,
+                    "ante": 0,
+                    "decision_timeout_seconds": None,
+                    "blind_increase_every_hands": 10,
+                    "show_remaining_board": False,
+                    "winner_may_show_hand": True,
+                    "spectators_allowed": False,
+                    "auto_start": False,
+                    "counted_in_stats": True,
+                    "allow_mid_match_join": False,
+                    "allow_rebuys": False,
+                    "allow_voluntary_leave": False,
+                }
+            )
+            room = Room(
+                host_account_id=player.account_id,
+                name="Heads Up",
+                visibility=RoomVisibility.PUBLIC,
+                rules=room_rules.model_dump(mode="json"),
+            )
+            session.add(room)
+            await session.commit()
+
+            loaded_room = await session.scalar(select(Room).where(Room.room_id == room.room_id))
+            assert loaded_room is not None
+            assert loaded_room.host_account_id == player.account_id
+            assert loaded_room.status is RoomStatus.WAITING
+            assert loaded_room.rules["decision_timeout_seconds"] is None
 
             duplicate = Account(
                 login_name="alice",

@@ -8,8 +8,9 @@ from alembic import context
 from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-import app.accounts.models  # Register account tables with Base.metadata.
-import app.admin.models  # noqa: F401  # Register audit tables with Base.metadata.
+import app.accounts.models  # pyright: ignore[reportUnusedImport]
+import app.admin.models  # pyright: ignore[reportUnusedImport]
+import app.rooms.models  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from app.config import get_settings
 from app.db.base import Base
 
