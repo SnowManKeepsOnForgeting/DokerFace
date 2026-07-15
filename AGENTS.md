@@ -25,12 +25,22 @@ Completed and committed:
 - Database readiness endpoint: `GET /api/v1/health/ready`.
 - Ruff, Pyright, pytest, pytest-asyncio, Hypothesis, and testcontainers tooling.
 - Two health endpoint tests.
+- Account, profile, and session persistence models with PostgreSQL identity IDs and role/status
+  enums.
+- Alembic configuration and the first accounts/profiles/sessions migration.
+- PostgreSQL integration coverage for migration execution, identity IDs, uniqueness, and relations.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
 
 ```text
 419c07e Bootstrap backend service
+```
+
+Account persistence commit:
+
+```text
+a03f269 Add account persistence models and migrations
 ```
 
 Deployment commit:
@@ -55,10 +65,12 @@ Last successful checks:
 
 ```text
 Ruff: passed
-Pyright strict mode: passed for the committed backend skeleton
-pytest: 2 passed
+Pyright strict mode: passed for the account persistence changes
+pytest: 3 passed
+Alembic head: 0001_create_accounts
+PostgreSQL integration test: passed
 Compose configuration: parsed successfully
-API image build: passed
+API image rebuild with migration files: passed
 PostgreSQL container: healthy
 API container: healthy
 Caddy container: running
@@ -100,10 +112,13 @@ different in-memory room states. A server restart voids incomplete matches as sp
 backend/
 ├── app/
 │   ├── api/
+│   ├── accounts/
 │   ├── db/
 │   ├── config.py
 │   ├── logging.py
 │   └── main.py
+├── alembic.ini
+├── migrations/
 ├── tests/
 ├── Dockerfile
 ├── pyproject.toml
