@@ -17,6 +17,7 @@ from sqlalchemy.orm import selectinload
 from testcontainers.postgres import PostgresContainer
 
 from app.accounts.models import Account, AccountRole, AccountSession, AccountStatus, Profile
+from app.admin.models import AdminAuditLog
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 pytestmark = pytest.mark.integration
@@ -89,6 +90,22 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             assert loaded_player.profile is not None
             assert loaded_player.profile.display_name == "Alice"
             assert loaded_player.sessions[0].token_hash == "a" * 64
+
+            audit_log = AdminAuditLog(
+                administrator_account_id=administrator.account_id,
+                action="create_account",
+                target_account_id=player.account_id,
+                after_state={"status": "active"},
+            )
+            session.add(audit_log)
+            await session.commit()
+
+            loaded_audit_log = await session.scalar(
+                select(AdminAuditLog).where(AdminAuditLog.action == "create_account")
+            )
+            assert loaded_audit_log is not None
+            assert loaded_audit_log.target_account_id == player.account_id
+            assert loaded_audit_log.after_state == {"status": "active"}
 
             duplicate = Account(
                 login_name="alice",
