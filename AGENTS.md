@@ -32,6 +32,8 @@ Completed and committed:
 - Argon2 password hashing service backed by `pwdlib`.
 - Administrator bootstrap service that requires environment credentials only for a fresh database.
 - Opaque session token generation with SHA-256 token hashes.
+- Database session lifecycle service for creation, authentication, expiry, activity updates, and
+  revocation.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -64,6 +66,12 @@ Session token commit:
 2f613fd Add opaque session token service
 ```
 
+Database session commit:
+
+```text
+f3f0ea1 Add database session service
+```
+
 Deployment commit:
 
 ```text
@@ -87,7 +95,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed for the account and authentication foundation changes
-pytest: 10 passed
+pytest: 18 passed
 Alembic head: 0001_create_accounts
 PostgreSQL integration test: passed
 Compose database migration: applied at 0001_create_accounts (head)
