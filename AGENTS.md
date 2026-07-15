@@ -69,6 +69,7 @@ Pyright strict mode: passed for the account persistence changes
 pytest: 3 passed
 Alembic head: 0001_create_accounts
 PostgreSQL integration test: passed
+Compose database migration: applied at 0001_create_accounts (head)
 Compose configuration: parsed successfully
 API image rebuild with migration files: passed
 PostgreSQL container: healthy
@@ -87,6 +88,8 @@ cp deploy/.env.example deploy/.env
 docker compose --env-file deploy/.env -f deploy/compose.yml config
 docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
 docker compose --env-file deploy/.env -f deploy/compose.yml ps
+docker compose --env-file deploy/.env -f deploy/compose.yml exec -T api alembic upgrade head
+docker compose --env-file deploy/.env -f deploy/compose.yml exec -T api alembic current
 curl -f http://localhost:8080/api/v1/health/live
 curl -f http://localhost:8080/api/v1/health/ready
 ```
