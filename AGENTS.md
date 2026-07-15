@@ -57,6 +57,8 @@ Completed and committed:
 - Project-owned PokerKit adapter and pure multi-hand `MatchCoordinator` with heads-up action
   mapping, blind doubling, button rotation, winner-takes-all/fixed-hand lifecycle, and chip
   conservation tests.
+- One `asyncio.Queue`-backed `MatchActor` per match with duplicate `command_id` replay and
+  monotonic `state_version` snapshots.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -221,6 +223,18 @@ Poker seating property commit:
 f80a39f Add poker seating property coverage
 ```
 
+Match actor commit:
+
+```text
+8799b57 Add serialized match actor
+```
+
+Match state version commit:
+
+```text
+80fb987 Add match state versions
+```
+
 Odd-chip contract commit:
 
 ```text
@@ -250,7 +264,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed
-pytest: 106 passed
+pytest: 108 passed
 Alembic head: 0004_create_rooms
 PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
@@ -263,6 +277,7 @@ Caddy: passed
 Room rules, persistence, HTTP, Socket.IO authentication, membership, and waiting-room event tests:
 passed
 PokerKit adapter and MatchCoordinator contract tests: passed
+MatchActor serialization, duplicate command replay, and state-version tests: passed
 Room create/list/detail through Caddy: passed
 Engine.IO polling handshake through Caddy: valid Origin accepted and invalid Origin rejected
 with HTTP 400; Python AsyncClient smoke test not run because optional `aiohttp` is not installed
@@ -427,6 +442,8 @@ The user explicitly requires fine-grained, reversible Git history.
   automatic all-in runout, fixed-hand completion, odd-chip assignment, explicit show/muck actions,
   and chip conservation.
 - `MatchCoordinator` for winner-takes-all and fixed-hand-count modes is implemented.
+- One queue/task per running match, duplicate command replay, and monotonic state versions are
+  implemented in `MatchActor`.
 - Expand deterministic action/side-pot scenarios for four to eight players before exposing match
   start through Socket.IO.
 - Use one asyncio queue/task per running match so player and timeout commands are serialized.
