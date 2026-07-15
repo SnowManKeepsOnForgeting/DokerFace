@@ -35,6 +35,7 @@ Completed and committed:
 - Database session lifecycle service for creation, authentication, expiry, activity updates, and
   revocation.
 - Application startup bootstrap that creates the first administrator after migrations are applied.
+- Cookie-authenticated login, logout, current-user, and administrator permission dependencies.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -79,6 +80,12 @@ Bootstrap wiring commit:
 733ecac Wire administrator bootstrap into application startup
 ```
 
+HTTP authentication commit:
+
+```text
+e32278c Add cookie authentication endpoints
+```
+
 Deployment commit:
 
 ```text
@@ -107,6 +114,7 @@ Alembic head: 0001_create_accounts
 PostgreSQL integration test: passed
 Compose database migration: applied at 0001_create_accounts (head)
 Administrator bootstrap: created and verified in the Compose database
+HTTP login, current user, and logout through Caddy: passed
 Compose configuration: parsed successfully
 API image rebuild with migration files: passed
 PostgreSQL container: healthy
