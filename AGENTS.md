@@ -34,6 +34,7 @@ Completed and committed:
 - Opaque session token generation with SHA-256 token hashes.
 - Database session lifecycle service for creation, authentication, expiry, activity updates, and
   revocation.
+- Application startup bootstrap that creates the first administrator after migrations are applied.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -72,6 +73,12 @@ Database session commit:
 f3f0ea1 Add database session service
 ```
 
+Bootstrap wiring commit:
+
+```text
+733ecac Wire administrator bootstrap into application startup
+```
+
 Deployment commit:
 
 ```text
@@ -99,6 +106,7 @@ pytest: 18 passed
 Alembic head: 0001_create_accounts
 PostgreSQL integration test: passed
 Compose database migration: applied at 0001_create_accounts (head)
+Administrator bootstrap: created and verified in the Compose database
 Compose configuration: parsed successfully
 API image rebuild with migration files: passed
 PostgreSQL container: healthy
