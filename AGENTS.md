@@ -42,6 +42,7 @@ Completed and committed:
 - Administrator account lifecycle service for disable, restore, soft-delete, role changes, and
   password resets.
 - Administrator account management HTTP API for create, status/role updates, and password reset.
+- Async profile loading regression fixed for newly created account responses.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -122,6 +123,12 @@ Account administration API commit:
 ac7fff5 Add administrator account management API
 ```
 
+Account response fix commit:
+
+```text
+023fd67 Preserve account profile after creation
+```
+
 Deployment commit:
 
 ```text
@@ -151,6 +158,7 @@ PostgreSQL integration test: passed
 Compose database migration: applied at 0002_create_admin_audit_logs (head)
 Administrator bootstrap: created and verified in the Compose database
 HTTP login, current user, and logout through Caddy: passed
+HTTP administrator create, disable, password reset, and restore through Caddy: passed
 Compose configuration: parsed successfully
 API image rebuild with migration files: passed
 PostgreSQL container: healthy
