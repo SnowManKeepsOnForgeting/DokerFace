@@ -170,3 +170,39 @@ def test_fixed_deck_side_pots_award_main_and_side_pots_to_eligible_players() -> 
 
     settlement = adapter.settlement()
     assert settlement.final_stacks == (1100, 0, 600)
+
+
+def test_odd_split_pot_chip_is_awarded_to_one_tied_winner() -> None:
+    adapter = PokerKitAdapter.create_hand(
+        HandConfig(ante=1, small_blind=50, big_blind=100),
+        account_ids=(101, 202, 303),
+        starting_stacks=(1000, 1000, 1000),
+        button_account_id=101,
+        fixed_deck="2c3d4c5d6c7dAsKdQcJhTs9c8d7h6s",
+    )
+    adapter.deal_hole("2c3d")
+    adapter.deal_hole("4c5d")
+    adapter.deal_hole("6c7d")
+    while not adapter.public_snapshot().complete:
+        actor_account_id = adapter.public_snapshot().actor_account_id
+        assert actor_account_id is not None
+        if actor_account_id == 303:
+            adapter.apply_action(ActionCommand(303, ActionType.FOLD))
+            break
+        call_action = next(
+            action
+            for action in adapter.legal_actions(actor_account_id)
+            if action.action is ActionType.CHECK_OR_CALL
+        )
+        adapter.apply_action(
+            ActionCommand(actor_account_id, ActionType.CHECK_OR_CALL, call_action.min_amount)
+        )
+    deal_street(adapter, "9c", "AsKdQc")
+    check_until_dealing(adapter)
+    deal_street(adapter, "8d", "Jh")
+    check_until_dealing(adapter)
+    deal_street(adapter, "7h", "Ts")
+    check_until_dealing(adapter)
+
+    settlement = adapter.settlement()
+    assert sorted(settlement.final_stacks) == [899, 1050, 1051]

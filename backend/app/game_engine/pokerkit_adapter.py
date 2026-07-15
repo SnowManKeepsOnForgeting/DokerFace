@@ -174,7 +174,9 @@ class PokerKitAdapter:
         if command.action is ActionType.FOLD:
             if command.amount is not None:
                 raise InvalidActionError("Fold cannot include an amount")
-            self._state.fold()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                self._state.fold()
             return AppliedAction(command.account_id, command.action, None)
         if command.action is ActionType.CHECK_OR_CALL:
             expected_amount = self._state.checking_or_calling_amount
