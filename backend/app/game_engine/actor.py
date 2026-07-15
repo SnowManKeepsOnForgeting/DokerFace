@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from uuid import UUID
 
 from app.game_engine.contracts import ActionCommand, AppliedAction, PublicHandSnapshot
@@ -26,6 +26,7 @@ class MatchCommandResult:
     applied: AppliedAction
     snapshot: PublicHandSnapshot
     match_status: MatchStatus
+    state_version: int
 
 
 @dataclass
@@ -41,6 +42,7 @@ class MatchActor:
         self._task: asyncio.Task[None] | None = None
         self._inflight: dict[UUID, asyncio.Future[MatchCommandResult]] = {}
         self._processed: dict[UUID, MatchCommandResult] = {}
+        self._state_version = 0
 
     async def start(self) -> None:
         if self._task is not None:
@@ -74,6 +76,10 @@ class MatchActor:
     def coordinator(self) -> MatchCoordinator:
         return self._coordinator
 
+    @property
+    def state_version(self) -> int:
+        return self._state_version
+
     async def _run(self) -> None:
         while True:
             queued = await self._queue.get()
@@ -94,7 +100,11 @@ class MatchActor:
 
     def _apply(self, command: MatchCommand) -> MatchCommandResult:
         applied = self._coordinator.apply_action(command.action)
-        snapshot = self._coordinator.public_snapshot()
+        self._state_version += 1
+        snapshot = replace(
+            self._coordinator.public_snapshot(),
+            state_version=self._state_version,
+        )
         if self._coordinator.hand.is_complete():
             self._coordinator.settle_hand()
             if self._coordinator.status is MatchStatus.ACTIVE:
@@ -104,6 +114,7 @@ class MatchActor:
             applied=applied,
             snapshot=snapshot,
             match_status=self._coordinator.status,
+            state_version=self._state_version,
         )
 
 

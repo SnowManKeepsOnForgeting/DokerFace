@@ -58,6 +58,7 @@ class PublicHandSnapshot:
     folded: tuple[bool, ...]
     actor_account_id: int | None
     complete: bool
+    state_version: int = 0
 
 
 @dataclass(frozen=True)

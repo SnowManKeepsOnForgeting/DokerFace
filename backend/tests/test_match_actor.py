@@ -47,6 +47,9 @@ async def test_actor_requires_start_and_serializes_duplicate_commands() -> None:
     assert first is second
     assert first.command_id == command.command_id
     assert first.applied.action is ActionType.FOLD
+    assert first.state_version == 1
+    assert first.snapshot.state_version == 1
+    assert actor.state_version == 1
     assert actor.coordinator.hand_number == 2
     await actor.close()
 
