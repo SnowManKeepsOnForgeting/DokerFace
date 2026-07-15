@@ -37,6 +37,7 @@ Completed and committed:
 - Forced revocation of all active sessions for an account.
 - Application startup bootstrap that creates the first administrator after migrations are applied.
 - Cookie-authenticated login, logout, current-user, and administrator permission dependencies.
+- Administrator audit log persistence with before/after JSON summaries.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -93,6 +94,12 @@ Revocation and RBAC commit:
 98fee93 Add session revocation and admin authorization
 ```
 
+Audit log persistence commit:
+
+```text
+691b7a5 Add administrator audit log persistence
+```
+
 Deployment commit:
 
 ```text
@@ -117,9 +124,9 @@ Last successful checks:
 Ruff: passed
 Pyright strict mode: passed for the account and authentication foundation changes
 pytest: 27 passed
-Alembic head: 0001_create_accounts
+Alembic head: 0002_create_admin_audit_logs
 PostgreSQL integration test: passed
-Compose database migration: applied at 0001_create_accounts (head)
+Compose database migration: applied at 0002_create_admin_audit_logs (head)
 Administrator bootstrap: created and verified in the Compose database
 HTTP login, current user, and logout through Caddy: passed
 Compose configuration: parsed successfully
