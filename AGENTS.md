@@ -34,6 +34,7 @@ Completed and committed:
 - Opaque session token generation with SHA-256 token hashes.
 - Database session lifecycle service for creation, authentication, expiry, activity updates, and
   revocation.
+- Forced revocation of all active sessions for an account.
 - Application startup bootstrap that creates the first administrator after migrations are applied.
 - Cookie-authenticated login, logout, current-user, and administrator permission dependencies.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
@@ -86,6 +87,12 @@ HTTP authentication commit:
 e32278c Add cookie authentication endpoints
 ```
 
+Revocation and RBAC commit:
+
+```text
+98fee93 Add session revocation and admin authorization
+```
+
 Deployment commit:
 
 ```text
@@ -109,7 +116,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed for the account and authentication foundation changes
-pytest: 18 passed
+pytest: 27 passed
 Alembic head: 0001_create_accounts
 PostgreSQL integration test: passed
 Compose database migration: applied at 0001_create_accounts (head)
