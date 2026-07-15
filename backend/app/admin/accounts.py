@@ -154,7 +154,6 @@ class AccountAdminService:
             )
         )
         await db_session.commit()
-        await db_session.refresh(account)
         return account
 
     async def disable_account(
