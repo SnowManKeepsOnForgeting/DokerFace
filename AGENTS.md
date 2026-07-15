@@ -166,6 +166,7 @@ Compose database migration: applied at 0002_create_admin_audit_logs (head)
 Administrator bootstrap: created and verified in the Compose database
 HTTP login, current user, and logout through Caddy: passed
 HTTP administrator create, disable, password reset, and restore through Caddy: passed
+HTTP public player list and self profile update through Caddy: passed
 Compose configuration: parsed successfully
 API image rebuild with migration files: passed
 PostgreSQL container: healthy
