@@ -12,6 +12,8 @@ from app.config import Settings
 from app.db.session import Database
 from app.realtime.auth import extract_session_token, is_allowed_origin
 from app.realtime.connections import ConnectionRegistry
+from app.realtime.room_handlers import register_room_handlers
+from app.rooms.registry import RoomRegistry
 
 
 def create_socketio_server(app: FastAPI, settings: Settings) -> socketio.AsyncServer:
@@ -20,7 +22,10 @@ def create_socketio_server(app: FastAPI, settings: Settings) -> socketio.AsyncSe
         cors_allowed_origins=settings.cors_origins,
     )
     registry = ConnectionRegistry()
+    room_registry = RoomRegistry()
     app.state.connection_registry = registry
+    app.state.room_registry = room_registry
+    register_room_handlers(server, app, settings, room_registry)
 
     @server.event
     async def connect(
