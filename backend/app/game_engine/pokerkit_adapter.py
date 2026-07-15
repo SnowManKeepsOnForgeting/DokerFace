@@ -37,6 +37,7 @@ _AUTOMATIONS = (
     Automation.CARD_BURNING,
     Automation.HOLE_DEALING,
     Automation.BOARD_DEALING,
+    Automation.RUNOUT_COUNT_SELECTION,
     Automation.HOLE_CARDS_SHOWING_OR_MUCKING,
     Automation.HAND_KILLING,
     Automation.CHIPS_PUSHING,
