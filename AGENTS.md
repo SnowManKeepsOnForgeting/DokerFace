@@ -41,6 +41,7 @@ Completed and committed:
 - Administrator account creation service with Argon2 hashing and audit records.
 - Administrator account lifecycle service for disable, restore, soft-delete, role changes, and
   password resets.
+- Administrator account management HTTP API for create, status/role updates, and password reset.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -115,6 +116,12 @@ Account lifecycle commit:
 a9249d3 Add account lifecycle administration service
 ```
 
+Account administration API commit:
+
+```text
+ac7fff5 Add administrator account management API
+```
+
 Deployment commit:
 
 ```text
@@ -138,7 +145,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed for the account and authentication foundation changes
-pytest: 37 passed
+pytest: 42 passed
 Alembic head: 0002_create_admin_audit_logs
 PostgreSQL integration test: passed
 Compose database migration: applied at 0002_create_admin_audit_logs (head)
