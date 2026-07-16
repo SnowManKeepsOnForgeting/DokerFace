@@ -9,6 +9,7 @@ import { Lobby } from './pages/Lobby';
 import { PlayerProfile } from './pages/PlayerProfile';
 import { RoomContainer } from './pages/RoomContainer';
 import { Leaderboard } from './pages/Leaderboard';
+import { AdminConsole } from './pages/AdminConsole';
 
 const router = createBrowserRouter([
   // Guest only routes
@@ -67,12 +68,7 @@ const router = createBrowserRouter([
         path: '/admin/*',
         element: (
           <Layout>
-            <div className="flex flex-col gap-4">
-              <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent self-start">
-                Admin Console
-              </h1>
-              <p className="text-slate-400 text-sm">Admin management actions will show here.</p>
-            </div>
+            <AdminConsole />
           </Layout>
         ),
       },
