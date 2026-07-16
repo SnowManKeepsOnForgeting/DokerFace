@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -18,6 +19,22 @@ from testcontainers.postgres import PostgresContainer
 
 from app.accounts.models import Account, AccountRole, AccountSession, AccountStatus, Profile
 from app.admin.models import AdminAuditLog
+from app.matches.models import (
+    ActionRecord,
+    HandRecord,
+    MatchPlayerRecord,
+    MatchRecord,
+    PotRecord,
+)
+from app.matches.persistence import (
+    ActionHistory,
+    HandHistory,
+    HandPlayerHistory,
+    MatchHistoryPersistenceService,
+    MatchPlayerSeed,
+    MatchResult,
+    PotHistory,
+)
 from app.rooms.config import MatchEndMode, RoomRules, RoomVisibility
 from app.rooms.models import Room, RoomStatus
 
@@ -184,6 +201,98 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
                 "uq_actions_hand_id_sequence_no",
                 "uq_pots_hand_id_pot_number",
             } <= unique_constraints
+
+            history_service = MatchHistoryPersistenceService()
+            match_id = uuid.uuid4()
+            hand_id = uuid.uuid4()
+            await history_service.create_match(
+                session,
+                match_id=match_id,
+                room_id=room.room_id,
+                rules_snapshot=room.rules,
+                end_mode="winner_takes_all",
+                players=(
+                    MatchPlayerSeed(1, 0, "Alice", 1000),
+                    MatchPlayerSeed(2, 1, "Administrator", 1000),
+                ),
+            )
+            await history_service.persist_hand(
+                session,
+                HandHistory(
+                    hand_id=hand_id,
+                    match_id=match_id,
+                    hand_number=1,
+                    button_account_id=1,
+                    small_blind=50,
+                    big_blind=100,
+                    public_board=("Ah", "Kd", "Qc"),
+                    settlement_summary={"payoffs": [100, -100]},
+                    players=(
+                        HandPlayerHistory(1, ("As", "Ad"), False, False, True, 100, 200),
+                        HandPlayerHistory(2, None, True, False, False, 100, 0),
+                    ),
+                    actions=(ActionHistory(1, 1, 1, "preflop", "fold", None),),
+                    pots=(PotHistory(1, 200, (1, 2), {"1": 200}),),
+                ),
+            )
+            await history_service.complete_match(
+                session,
+                match_id=match_id,
+                results=(
+                    MatchResult(1, 1200, 1),
+                    MatchResult(2, 800, 2, "busted"),
+                ),
+            )
+
+            loaded_match = await session.scalar(
+                select(MatchRecord).where(MatchRecord.match_id == match_id)
+            )
+            assert loaded_match is not None
+            assert loaded_match.status == "complete"
+            loaded_players = list(
+                (
+                    await session.scalars(
+                        select(MatchPlayerRecord).where(MatchPlayerRecord.match_id == match_id)
+                    )
+                ).all()
+            )
+            assert {player.final_chips for player in loaded_players} == {1200, 800}
+            loaded_hand = await session.scalar(
+                select(HandRecord).where(HandRecord.hand_id == hand_id)
+            )
+            assert loaded_hand is not None
+            assert loaded_hand.public_board == ["Ah", "Kd", "Qc"]
+            assert (
+                await session.scalar(
+                    select(ActionRecord.sequence_no).where(ActionRecord.hand_id == hand_id)
+                )
+                == 1
+            )
+            assert (
+                await session.scalar(select(PotRecord.amount).where(PotRecord.hand_id == hand_id))
+                == 200
+            )
+
+            void_match_id = uuid.uuid4()
+            await history_service.create_match(
+                session,
+                match_id=void_match_id,
+                room_id=room.room_id,
+                rules_snapshot=room.rules,
+                end_mode="winner_takes_all",
+                players=(
+                    MatchPlayerSeed(1, 0, "Alice", 1000),
+                    MatchPlayerSeed(2, 1, "Administrator", 1000),
+                ),
+            )
+            assert (
+                await history_service.void_active_matches(session, reason="startup_recovery") == 1
+            )
+            void_match = await session.scalar(
+                select(MatchRecord).where(MatchRecord.match_id == void_match_id)
+            )
+            assert void_match is not None
+            assert void_match.status == "void"
 
             duplicate = Account(
                 login_name="alice",
