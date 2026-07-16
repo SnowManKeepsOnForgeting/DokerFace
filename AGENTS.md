@@ -327,6 +327,7 @@ ba1e603 Ensure rating records on startup
 7e45900 Honor statistics opt-out in matches
 9f6863a Add backend end-to-end coverage
 fec5810 Add backup and deployment hardening
+8e821a7 Add PostgreSQL settlement coverage
 ```
 
 ## Verification Status
@@ -340,8 +341,7 @@ pytest: 145 passed
 Alembic head: 0009_add_matches_played_to_stats
 PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
-Compose database migration: 0004_create_rooms was previously applied; run `alembic upgrade head`
-to apply the source head `0009_add_matches_played_to_stats` before deployment
+Compose database migration: applied at 0009_add_matches_played_to_stats (head)
 Administrator bootstrap: created and verified in the Compose database
 HTTP login, current user, and logout through Caddy: passed
 HTTP administrator create, disable, password reset, and restore through Caddy: passed
@@ -364,6 +364,7 @@ Engine.IO polling handshake through Caddy: valid Origin accepted and invalid Ori
 with HTTP 400; Python AsyncClient smoke test not run because optional `aiohttp` is not installed
 Compose configuration: parsed successfully
 Backup/restore script syntax and destructive-operation guards: passed
+Live compressed PostgreSQL backup and SHA-256 verification: passed
 GitHub Actions backend quality workflow: added
 API image rebuild with migration files and no Pillow: passed
 PostgreSQL container: healthy
