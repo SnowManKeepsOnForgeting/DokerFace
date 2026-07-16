@@ -31,6 +31,7 @@ class RoomMember:
     account_id: int
     sid: str
     ready: bool = False
+    seat: int | None = None
 
 
 def empty_members() -> dict[int, RoomMember]:
@@ -105,6 +106,13 @@ class RoomRegistry:
         room = self._rooms.get(room_id)
         if room is not None and not room.members:
             self._rooms.pop(room_id, None)
+
+    def reset_waiting_state(self, room_id: UUID) -> RoomRuntime:
+        room = self._require_room(room_id)
+        for member in room.members.values():
+            member.ready = False
+            member.seat = None
+        return room
 
     def _require_room(self, room_id: UUID) -> RoomRuntime:
         room = self._rooms.get(room_id)

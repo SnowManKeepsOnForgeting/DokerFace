@@ -69,3 +69,20 @@ def test_non_host_can_leave_and_empty_runtime_can_be_removed() -> None:
     assert registry.room_for_account(2) is None
     registry.remove_if_empty(room_id)
     assert registry.get(room_id) is not None
+
+
+def test_reset_waiting_state_clears_seats_and_ready_flags() -> None:
+    registry = RoomRegistry()
+    room_id = uuid4()
+    room = registry.ensure_room(room_id, host_account_id=1, max_players=2)
+    registry.join(room_id, account_id=1, sid="sid-1")
+    registry.join(room_id, account_id=2, sid="sid-2")
+    registry.set_ready(room_id, account_id=1, ready=True)
+    registry.set_ready(room_id, account_id=2, ready=True)
+    room.members[1].seat = 0
+    room.members[2].seat = 1
+
+    registry.reset_waiting_state(room_id)
+
+    assert all(member.ready is False for member in room.members.values())
+    assert all(member.seat is None for member in room.members.values())
