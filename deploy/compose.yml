@@ -1,9 +1,16 @@
 name: dokerface
 
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-dokerface}
       POSTGRES_USER: ${POSTGRES_USER:-dokerface}
@@ -24,6 +31,7 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     environment:
       DOKERFACE_ENVIRONMENT: ${DOKERFACE_ENVIRONMENT:-development}
       DOKERFACE_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-dokerface}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dokerface}
@@ -53,6 +61,7 @@ services:
   caddy:
     image: caddy:2.10-alpine
     restart: unless-stopped
+    logging: *default-logging
     depends_on:
       api:
         condition: service_healthy
@@ -67,4 +76,3 @@ volumes:
   postgres_data:
   caddy_data:
   caddy_config:
-
