@@ -161,6 +161,20 @@ class PokerKitAdapter:
             )
         return tuple(actions)
 
+    def private_snapshot(self, account_id: int) -> PrivateHandSnapshot:
+        player_index = self._player_index(account_id)
+        legal_actions: tuple[LegalAction, ...] = ()
+        if self._state.actor_index == player_index or self._state.showdown_index == player_index:
+            legal_actions = self.legal_actions(account_id)
+        return PrivateHandSnapshot(
+            public=self.public_snapshot(),
+            account_id=account_id,
+            hole_cards=tuple(
+                self._card_code(card) for card in self._state.hole_cards[player_index]
+            ),
+            legal_actions=legal_actions,
+        )
+
     def deal_hole(self, cards: str) -> None:
         if not self._manual_dealing:
             raise InvalidActionError("Manual dealing is only available for fixed-deck tests")
@@ -214,23 +228,30 @@ class PokerKitAdapter:
     def public_snapshot(self) -> PublicHandSnapshot:
         actor_index = cast(int | None, self._state.turn_index)
         actor_account_id = self._account_ids[actor_index] if actor_index is not None else None
+        street: str
+        if self._state.showdown_index is not None:
+            street = "showdown"
+        elif not self._state.status:
+            street = "settlement"
+        else:
+            street = ("preflop", "flop", "turn", "river")[cast(int, self._state.street_index)]
+        pot_amounts = tuple(self._state.pot_amounts)
+        if not pot_amounts:
+            pot_amounts = (cast(int, self._state.total_pot_amount),)
         return PublicHandSnapshot(
+            account_ids=self._account_ids,
             stacks=tuple(self._state.stacks),
             bets=tuple(self._state.bets),
             board=tuple(self._card_code(card) for card in self._state.get_board_cards(0)),
             folded=tuple(not status for status in self._state.statuses),
-            actor_account_id=actor_account_id,
-            complete=not self._state.status,
-        )
-
-    def private_snapshot(self, account_id: int) -> PrivateHandSnapshot:
-        player_index = self._player_index(account_id)
-        return PrivateHandSnapshot(
-            public=self.public_snapshot(),
-            account_id=account_id,
-            hole_cards=tuple(
-                self._card_code(card) for card in self._state.hole_cards[player_index]
+            all_in=tuple(
+                stack == 0 and status
+                for stack, status in zip(self._state.stacks, self._state.statuses, strict=True)
             ),
+            pot_amounts=pot_amounts,
+            actor_account_id=actor_account_id,
+            street=street,
+            complete=not self._state.status,
         )
 
     def is_complete(self) -> bool:

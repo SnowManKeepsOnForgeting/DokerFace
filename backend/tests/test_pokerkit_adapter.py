@@ -33,6 +33,24 @@ def test_heads_up_button_posts_small_blind_and_acts_first_preflop() -> None:
     }
 
 
+def test_snapshots_expose_public_state_and_private_legal_actions() -> None:
+    adapter = make_heads_up()
+
+    public = adapter.public_snapshot()
+    private = adapter.private_snapshot(101)
+
+    assert public.account_ids == (101, 202)
+    assert public.pot_amounts == (150,)
+    assert public.street == "preflop"
+    assert public.all_in == (False, False)
+    assert {action.action for action in private.legal_actions} == {
+        ActionType.FOLD,
+        ActionType.CHECK_OR_CALL,
+        ActionType.BET_OR_RAISE,
+    }
+    assert adapter.private_snapshot(202).legal_actions == ()
+
+
 def test_fold_completes_hand_and_preserves_chip_conservation() -> None:
     adapter = make_heads_up()
 

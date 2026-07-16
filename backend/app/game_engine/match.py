@@ -76,6 +76,10 @@ class MatchCoordinator:
         return self._stacks.copy()
 
     @property
+    def player_ids(self) -> tuple[int, ...]:
+        return self._player_ids
+
+    @property
     def button_account_id(self) -> int:
         return self._player_ids[self._button_index]
 

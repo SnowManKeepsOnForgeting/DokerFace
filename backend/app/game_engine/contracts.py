@@ -52,11 +52,15 @@ class AppliedAction:
 
 @dataclass(frozen=True)
 class PublicHandSnapshot:
+    account_ids: tuple[int, ...]
     stacks: tuple[int, ...]
     bets: tuple[int, ...]
     board: tuple[str, ...]
     folded: tuple[bool, ...]
+    all_in: tuple[bool, ...]
+    pot_amounts: tuple[int, ...]
     actor_account_id: int | None
+    street: str
     complete: bool
     state_version: int = 0
 
@@ -66,6 +70,7 @@ class PrivateHandSnapshot:
     public: PublicHandSnapshot
     account_id: int
     hole_cards: tuple[str, ...]
+    legal_actions: tuple[LegalAction, ...] = ()
 
 
 @dataclass(frozen=True)
