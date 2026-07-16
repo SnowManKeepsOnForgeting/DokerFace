@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
@@ -37,8 +37,11 @@ from app.matches.persistence import (
     PotHistory,
 )
 from app.ratings.models import RatingBatch, RatingChangeRecord, RatingRecord
+from app.ratings.service import RatingService
 from app.rooms.config import MatchEndMode, RoomRules, RoomVisibility
 from app.rooms.models import Room, RoomStatus
+from app.statistics.models import PlayerStatisticsRecord
+from app.statistics.service import StatisticsPersistenceService
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 pytestmark = pytest.mark.integration
@@ -227,6 +230,29 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             )
             assert rating_tables == {"rating_batches", "ratings", "rating_changes"}
 
+            statistics_tables = set(
+                (
+                    await session.execute(
+                        text(
+                            "SELECT table_name FROM information_schema.tables "
+                            "WHERE table_schema = 'public' AND table_name = 'player_stats'"
+                        )
+                    )
+                ).scalars()
+            )
+            assert statistics_tables == {"player_stats"}
+            statistics_columns = set(
+                (
+                    await session.execute(
+                        text(
+                            "SELECT column_name FROM information_schema.columns "
+                            "WHERE table_schema = 'public' AND table_name = 'player_stats'"
+                        )
+                    )
+                ).scalars()
+            )
+            assert "matches_played" in statistics_columns
+
             unique_constraints = set(
                 (
                     await session.execute(
@@ -316,6 +342,16 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
                 == 200
             )
 
+            totals = await StatisticsPersistenceService().rebuild_from_history(session)
+            await session.commit()
+            assert totals[1].matches_played == 1
+            loaded_statistics = await session.scalar(
+                select(PlayerStatisticsRecord).where(PlayerStatisticsRecord.account_id == 1)
+            )
+            assert loaded_statistics is not None
+            assert loaded_statistics.matches_played == 1
+            assert loaded_statistics.profitable_matches == 1
+
             void_match_id = uuid.uuid4()
             await history_service.create_match(
                 session,
@@ -364,6 +400,16 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             )
             assert loaded_rating is not None
             assert loaded_rating.rating == 1000
+            await RatingService().rebuild_current_batch(session)
+            await session.commit()
+            assert (
+                await session.scalar(
+                    select(func.count(RatingChangeRecord.rating_change_id)).where(
+                        RatingChangeRecord.batch_id == batch.batch_id
+                    )
+                )
+                == 0
+            )
 
             duplicate = Account(
                 login_name="alice",
