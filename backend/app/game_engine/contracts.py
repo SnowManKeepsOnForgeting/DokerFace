@@ -74,9 +74,18 @@ class PrivateHandSnapshot:
 
 
 @dataclass(frozen=True)
+class PotSettlement:
+    amount: int
+    eligible_indices: tuple[int, ...]
+    payouts: tuple[int, ...]
+
+
+@dataclass(frozen=True)
 class HandSettlement:
     final_stacks: tuple[int, ...]
     payoffs: tuple[int, ...]
+    contributions: tuple[int, ...] = ()
+    pots: tuple[PotSettlement, ...] = ()
 
 
 class PokerEngineAdapter(Protocol):
@@ -101,6 +110,7 @@ __all__ = [
     "HandSettlement",
     "LegalAction",
     "PokerEngineAdapter",
+    "PotSettlement",
     "PrivateHandSnapshot",
     "PublicHandSnapshot",
 ]

@@ -15,6 +15,7 @@ from app.game_engine.contracts import (
     HandConfig,
     HandSettlement,
     LegalAction,
+    PotSettlement,
     PrivateHandSnapshot,
     PublicHandSnapshot,
 )
@@ -264,9 +265,33 @@ class PokerKitAdapter:
     def settlement(self) -> HandSettlement:
         if not self.is_complete():
             raise ValueError("Hand is not complete")
+        contributions = [0] * len(self._account_ids)
+        payouts_by_pot: dict[int, list[int]] = {}
+        for operation in self._state.operations:
+            operation_name = type(operation).__name__
+            if operation_name == "BetCollection":
+                for index, amount in enumerate(operation.bets):
+                    contributions[index] += int(amount)
+            elif operation_name == "ChipsPushing":
+                payouts = payouts_by_pot.setdefault(
+                    int(operation.pot_index),
+                    [0] * len(self._account_ids),
+                )
+                for index, amount in enumerate(operation.amounts):
+                    payouts[index] += int(amount)
+        pots = tuple(
+            PotSettlement(
+                amount=sum(payouts_by_pot.get(index, ())),
+                eligible_indices=tuple(int(player_index) for player_index in pot.player_indices),
+                payouts=tuple(payouts_by_pot.get(index, (0,) * len(self._account_ids))),
+            )
+            for index, pot in enumerate(self._state.pots)
+        )
         return HandSettlement(
             final_stacks=tuple(self._state.stacks),
             payoffs=tuple(self._state.payoffs),
+            contributions=tuple(contributions),
+            pots=pots,
         )
 
     def _player_index(self, account_id: int) -> int:

@@ -191,6 +191,12 @@ def test_fixed_deck_side_pots_award_main_and_side_pots_to_eligible_players() -> 
 
     settlement = adapter.settlement()
     assert settlement.final_stacks == (1100, 0, 600)
+    assert settlement.contributions == (500, 500, 200)
+    assert [pot.amount for pot in settlement.pots] == [600, 600]
+    assert settlement.pots[0].eligible_indices == (0, 2)
+    assert settlement.pots[0].payouts == (0, 0, 600)
+    assert settlement.pots[1].eligible_indices == (0,)
+    assert settlement.pots[1].payouts == (600, 0, 0)
 
 
 def test_odd_split_pot_chip_is_awarded_to_one_tied_winner() -> None:

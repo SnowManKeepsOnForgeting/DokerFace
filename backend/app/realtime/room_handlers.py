@@ -552,7 +552,11 @@ def _hand_history(match: MatchRuntime, completed: Any) -> HandHistory:
             folded=public.folded[index],
             all_in=public.all_in[index],
             shown=account_id in shown_accounts,
-            invested_chips=max(0, completed.starting_stacks[index] - public.stacks[index]),
+            invested_chips=(
+                completed.settlement.contributions[index]
+                if len(completed.settlement.contributions) == len(public.account_ids)
+                else max(0, completed.starting_stacks[index] - public.stacks[index])
+            ),
             won_chips=max(0, completed.settlement.payoffs[index]),
         )
         for index, account_id in enumerate(public.account_ids)
@@ -568,32 +572,49 @@ def _hand_history(match: MatchRuntime, completed: Any) -> HandHistory:
         )
         for action in completed.actions
     )
-    eligible = tuple(
-        account_id
-        for index, account_id in enumerate(public.account_ids)
-        if not public.folded[index]
-    )
-    pots = tuple(
-        PotHistory(
-            pot_number=index + 1,
-            amount=amount,
-            eligible_account_ids=eligible,
-            winner_payouts=(
-                {
-                    str(account_id): payoff
-                    for account_id, payoff in zip(
-                        public.account_ids,
-                        completed.settlement.payoffs,
-                        strict=True,
-                    )
-                    if payoff > 0
-                }
-                if index == 0
-                else {}
-            ),
+    if completed.settlement.pots:
+        pots = tuple(
+            PotHistory(
+                pot_number=index + 1,
+                amount=pot.amount,
+                eligible_account_ids=tuple(
+                    public.account_ids[player_index] for player_index in pot.eligible_indices
+                ),
+                winner_payouts={
+                    str(public.account_ids[player_index]): payout
+                    for player_index, payout in enumerate(pot.payouts)
+                    if payout > 0
+                },
+            )
+            for index, pot in enumerate(completed.settlement.pots)
         )
-        for index, amount in enumerate(public.pot_amounts)
-    )
+    else:
+        eligible = tuple(
+            account_id
+            for index, account_id in enumerate(public.account_ids)
+            if not public.folded[index]
+        )
+        pots = tuple(
+            PotHistory(
+                pot_number=index + 1,
+                amount=amount,
+                eligible_account_ids=eligible,
+                winner_payouts=(
+                    {
+                        str(account_id): payoff
+                        for account_id, payoff in zip(
+                            public.account_ids,
+                            completed.settlement.payoffs,
+                            strict=True,
+                        )
+                        if payoff > 0
+                    }
+                    if index == 0
+                    else {}
+                ),
+            )
+            for index, amount in enumerate(public.pot_amounts)
+        )
     return HandHistory(
         hand_id=completed.hand_id,
         match_id=match.match_id,
@@ -657,7 +678,11 @@ def _statistics_hand(match: MatchRuntime, completed: Any) -> StatisticsHand:
     return StatisticsHand(
         hand_id=completed.hand_id,
         match_id=match.match_id,
-        pot_amount=sum(public.pot_amounts),
+        pot_amount=(
+            sum(pot.amount for pot in completed.settlement.pots)
+            if completed.settlement.pots
+            else sum(public.pot_amounts)
+        ),
         players=tuple(
             StatisticsPlayer(
                 account_id=account_id,
