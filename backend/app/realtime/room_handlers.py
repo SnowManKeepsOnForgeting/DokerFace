@@ -48,7 +48,9 @@ from app.realtime.schemas import (
     GamePrivateSnapshot,
     GamePublicSnapshot,
     GameRequestSnapshotEvent,
+    LobbyRoomsUpdatedEvent,
     RoomJoinEvent,
+    RoomKickedEvent,
     RoomKickEvent,
     RoomLeaveEvent,
     RoomMemberSnapshot,
@@ -160,6 +162,8 @@ def register_room_handlers(
         if was_last_member:
             await _set_room_status(app, event.room_id, RoomStatus.CLOSED)
             registry.remove_if_empty(event.room_id)
+            lobby_payload = LobbyRoomsUpdatedEvent().model_dump(mode="json")
+            await server.emit("lobby:rooms-updated", lobby_payload)
             return {
                 "ok": True,
                 "room": room_snapshot_payload(runtime, RoomStatus.CLOSED),
@@ -188,6 +192,12 @@ def register_room_handlers(
         if target.account_id == runtime.host_account_id:
             return _error("cannot_kick_host")
         try:
+            # Emit room:kicked event to the target before leaving
+            kicked_payload = RoomKickedEvent(room_id=event.room_id, reason="kicked").model_dump(
+                mode="json"
+            )
+            await server.emit("room:kicked", kicked_payload, to=target.sid)
+
             registry.leave(event.room_id, target.account_id)
         except RoomRuntimeError as error:
             return _error(_runtime_error_code(error))
@@ -754,6 +764,11 @@ async def _broadcast_room_snapshot(
 ) -> dict[str, Any]:
     payload = room_snapshot_payload(runtime, status, match_id=match_id)
     await server.emit("room:snapshot", payload, room=str(runtime.room_id))
+
+    # Broadcast lobby update to all connected clients
+    lobby_payload = LobbyRoomsUpdatedEvent().model_dump(mode="json")
+    await server.emit("lobby:rooms-updated", lobby_payload)
+
     return {"ok": True, "room": payload}
 
 

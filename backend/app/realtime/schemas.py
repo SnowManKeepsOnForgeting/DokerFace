@@ -41,6 +41,16 @@ class RoomKickEvent(BaseModel):
     target_account_id: int = Field(ge=1)
 
 
+class RoomKickedEvent(BaseModel):
+    schema_version: Literal[1] = 1
+    room_id: UUID
+    reason: str = "kicked"
+
+
+class LobbyRoomsUpdatedEvent(BaseModel):
+    schema_version: Literal[1] = 1
+
+
 class ChatSendEvent(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -206,7 +216,9 @@ __all__ = [
     "GamePrivateSnapshot",
     "GamePublicSnapshot",
     "GameRequestSnapshotEvent",
+    "LobbyRoomsUpdatedEvent",
     "RoomJoinEvent",
+    "RoomKickedEvent",
     "RoomLeaveEvent",
     "RoomMemberSnapshot",
     "RoomReadyEvent",
