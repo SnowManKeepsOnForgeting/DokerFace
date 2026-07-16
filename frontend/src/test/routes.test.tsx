@@ -37,6 +37,9 @@ describe('Secure Routes Redirects', () => {
           { status: 200 },
         );
       }),
+      http.get('http://localhost:8080/api/v1/rooms', () => {
+        return HttpResponse.json({ items: [] }, { status: 200 });
+      }),
     );
 
     render(<App />);
@@ -44,7 +47,7 @@ describe('Secure Routes Redirects', () => {
     await waitFor(() =>
       expect(
         screen.getByText(
-          'Welcome to the DokerFace poker waiting lobby. Active tables and waiting rooms will list here.',
+          'Create or join a poker table. Realtime rooms updates are synced automatically.',
         ),
       ).toBeInTheDocument(),
     );

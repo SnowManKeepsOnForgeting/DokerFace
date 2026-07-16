@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -8,6 +8,7 @@ import {
 } from '../contracts/rest';
 import type { CurrentUserResponse, LoginApiV1AuthLoginPostData } from '../contracts/rest/types.gen';
 import { ApiError } from './client';
+import { socket } from './socket';
 
 interface AuthContextType {
   user: CurrentUserResponse | null;
@@ -42,6 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     retry: false,
     staleTime: 5000,
   });
+
+  useEffect(() => {
+    if (user) {
+      socket.connect();
+    } else {
+      socket.disconnect();
+    }
+    return () => {
+      socket.disconnect();
+    };
+  }, [user]);
 
   const loginMutation = useMutation<
     CurrentUserResponse,
