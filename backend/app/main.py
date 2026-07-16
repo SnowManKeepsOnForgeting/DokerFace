@@ -19,6 +19,7 @@ from app.matches.api import router as matches_router
 from app.matches.persistence import MatchHistoryPersistenceService
 from app.players.api import router as players_router
 from app.ratings.api import router as ratings_router
+from app.ratings.service import RatingService
 from app.realtime.server import create_socketio_server
 from app.rooms.api import router as rooms_router
 from app.statistics.api import router as statistics_router
@@ -39,6 +40,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     login_name=app_settings.bootstrap_admin_login,
                     password=app_settings.bootstrap_admin_password,
                 )
+                await RatingService().ensure_account_ratings(session)
+                await session.commit()
                 await MatchHistoryPersistenceService().void_active_matches(
                     session,
                     reason="server_restart",

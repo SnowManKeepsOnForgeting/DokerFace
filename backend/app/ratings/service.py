@@ -71,6 +71,38 @@ class RatingService:
         session.add(rating)
         return rating
 
+    async def ensure_account_ratings(self, session: AsyncSession) -> RatingBatch:
+        batch = await self.ensure_current_batch(session)
+        await session.flush()
+        accounts = list(
+            (
+                await session.scalars(
+                    select(Account).where(Account.status != AccountStatus.DELETED)
+                )
+            ).all()
+        )
+        existing_account_ids = set(
+            (
+                await session.scalars(
+                    select(RatingRecord.account_id).where(RatingRecord.batch_id == batch.batch_id)
+                )
+            ).all()
+        )
+        session.add_all(
+            [
+                RatingRecord(
+                    batch_id=batch.batch_id,
+                    account_id=account.account_id,
+                    rating=INITIAL_RATING,
+                    highest_rating=INITIAL_RATING,
+                    completed_matches=0,
+                )
+                for account in accounts
+                if account.account_id not in existing_account_ids
+            ]
+        )
+        return batch
+
     async def reset_batch(
         self,
         session: AsyncSession,

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.main import create_app
 from app.matches.persistence import MatchHistoryPersistenceService
+from app.ratings.service import RatingService
 
 
 @pytest.mark.asyncio
@@ -19,6 +20,8 @@ async def test_startup_recovery_service_voids_active_matches(
         lambda: recovery,
     )
     monkeypatch.setattr("app.main.ensure_bootstrap_admin", AsyncMock(return_value=False))
+    ratings = AsyncMock(spec=RatingService)
+    monkeypatch.setattr("app.main.RatingService", lambda: ratings)
 
     app = create_app()
 
@@ -45,3 +48,4 @@ async def test_startup_recovery_service_voids_active_matches(
         pass
 
     recovery.void_active_matches.assert_awaited_once_with(session, reason="server_restart")
+    ratings.ensure_account_ratings.assert_awaited_once_with(session)
