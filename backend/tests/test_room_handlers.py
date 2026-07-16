@@ -95,7 +95,7 @@ async def test_join_initializes_runtime_enters_socket_room_and_broadcasts_snapsh
 
 
 @pytest.mark.asyncio
-async def test_ready_updates_snapshot_and_host_leave_is_rejected() -> None:
+async def test_ready_updates_snapshot_and_last_host_leave_closes_room() -> None:
     app = create_app(Settings(database_url="sqlite+aiosqlite:///:memory:"))
     server = MagicMock()
     server.handlers = {"/": {}}
@@ -114,7 +114,8 @@ async def test_ready_updates_snapshot_and_host_leave_is_rejected() -> None:
     server.emit = AsyncMock()
     db_session = AsyncMock()
     room_id = uuid4()
-    db_session.scalar.return_value = make_room(room_id)
+    room = make_room(room_id)
+    db_session.scalar.return_value = room
     database = MagicMock()
     database.session_factory.return_value.__aenter__ = AsyncMock(return_value=db_session)
     database.session_factory.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -128,5 +129,57 @@ async def test_ready_updates_snapshot_and_host_leave_is_rejected() -> None:
     assert ready_response["room"]["members"] == [
         {"account_id": 1, "ready": True, "seat": None, "connected": True}
     ]
-    assert leave_response == {"ok": False, "error": "host_leave_policy_required"}
-    server.leave_room.assert_not_awaited()
+    assert leave_response["ok"] is True
+    assert leave_response["room"]["status"] == "closed"
+    assert room.status is RoomStatus.CLOSED
+    server.leave_room.assert_awaited_once_with("sid-1", str(room_id))
+
+
+@pytest.mark.asyncio
+async def test_host_transfer_and_kick_are_waiting_room_operations() -> None:
+    app = create_app(Settings(database_url="sqlite+aiosqlite:///:memory:"))
+    server = MagicMock()
+    server.handlers = {"/": {}}
+
+    def register(event: str) -> Any:
+        def decorator(handler: Any) -> Any:
+            server.handlers["/"][event] = handler
+            return handler
+
+        return decorator
+
+    server.on.side_effect = register
+
+    async def session_for_sid(sid: str) -> dict[str, int]:
+        return {"account_id": {"sid-1": 1, "sid-2": 2, "sid-3": 3}[sid]}
+
+    server.get_session = session_for_sid
+    server.enter_room = AsyncMock()
+    server.leave_room = AsyncMock()
+    server.emit = AsyncMock()
+    db_session = AsyncMock()
+    room_id = uuid4()
+    room = make_room(room_id)
+    db_session.scalar.return_value = room
+    database = MagicMock()
+    database.session_factory.return_value.__aenter__ = AsyncMock(return_value=db_session)
+    database.session_factory.return_value.__aexit__ = AsyncMock(return_value=None)
+    app.state.database = database
+    handlers = room_handlers(server, app)
+
+    await handlers["room:join"]("sid-1", {"room_id": str(room_id)})
+    await handlers["room:join"]("sid-2", {"room_id": str(room_id)})
+    transfer = await handlers["room:leave"]("sid-1", {"room_id": str(room_id)})
+
+    assert transfer["room"]["host_account_id"] == 2
+    assert room.host_account_id == 2
+
+    await handlers["room:join"]("sid-3", {"room_id": str(room_id)})
+    kicked = await handlers["room:kick"](
+        "sid-2",
+        {"room_id": str(room_id), "target_account_id": 3},
+    )
+
+    assert kicked["ok"] is True
+    assert [member["account_id"] for member in kicked["room"]["members"]] == [2]
+    assert server.leave_room.await_args_list[-1].args == ("sid-3", str(room_id))

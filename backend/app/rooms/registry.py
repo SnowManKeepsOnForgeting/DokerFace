@@ -22,10 +22,6 @@ class RoomMemberNotFoundError(RoomRuntimeError):
     """Raised when an account is not a member of the requested room."""
 
 
-class HostLeaveRequiresPolicyError(RoomRuntimeError):
-    """Raised until the product chooses a host-leave policy."""
-
-
 @dataclass
 class RoomMember:
     account_id: int
@@ -33,6 +29,7 @@ class RoomMember:
     ready: bool = False
     seat: int | None = None
     connected: bool = True
+    join_order: int = 0
 
 
 def empty_members() -> dict[int, RoomMember]:
@@ -45,6 +42,7 @@ class RoomRuntime:
     host_account_id: int
     max_players: int
     members: dict[int, RoomMember] = field(default_factory=empty_members)
+    next_join_order: int = 0
 
 
 class RoomRegistry:
@@ -77,7 +75,12 @@ class RoomRegistry:
         if len(room.members) >= room.max_players:
             raise RoomFullError("Room has no available player slot")
 
-        room.members[account_id] = RoomMember(account_id=account_id, sid=sid)
+        room.members[account_id] = RoomMember(
+            account_id=account_id,
+            sid=sid,
+            join_order=room.next_join_order,
+        )
+        room.next_join_order += 1
         self._account_to_room[account_id] = room_id
         return room
 
@@ -115,11 +118,14 @@ class RoomRegistry:
 
     def leave(self, room_id: UUID, account_id: int) -> RoomRuntime:
         room = self._require_room(room_id)
-        if account_id == room.host_account_id:
-            raise HostLeaveRequiresPolicyError("Host-leave policy is not configured")
         if room.members.pop(account_id, None) is None:
             raise RoomMemberNotFoundError("Account is not a member of this room")
         self._account_to_room.pop(account_id, None)
+        if account_id == room.host_account_id and room.members:
+            room.host_account_id = min(
+                room.members.values(),
+                key=lambda member: member.join_order,
+            ).account_id
         return room
 
     def room_for_account(self, account_id: int) -> UUID | None:
@@ -149,7 +155,6 @@ class RoomRegistry:
 
 __all__ = [
     "AccountAlreadyInRoomError",
-    "HostLeaveRequiresPolicyError",
     "RoomFullError",
     "RoomMemberNotFoundError",
     "RoomRegistry",

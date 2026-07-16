@@ -33,6 +33,14 @@ class RoomLeaveEvent(BaseModel):
     room_id: UUID
 
 
+class RoomKickEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    room_id: UUID
+    target_account_id: int = Field(ge=1)
+
+
 class RoomStartEvent(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

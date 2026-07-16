@@ -34,6 +34,7 @@ from app.realtime.schemas import (
     GamePublicSnapshot,
     GameRequestSnapshotEvent,
     RoomJoinEvent,
+    RoomKickEvent,
     RoomLeaveEvent,
     RoomMemberSnapshot,
     RoomReadyEvent,
@@ -127,11 +128,47 @@ def register_room_handlers(
             return _error("room_not_joined")
         if matches.for_room(event.room_id) is not None:
             return _error("room_active")
+        was_last_member = len(runtime.members) == 1
         try:
             registry.leave(event.room_id, account_id)
         except RoomRuntimeError as error:
             return _error(_runtime_error_code(error))
         await server.leave_room(sid, str(event.room_id))
+        if was_last_member:
+            await _set_room_status(app, event.room_id, RoomStatus.CLOSED)
+            registry.remove_if_empty(event.room_id)
+            return {
+                "ok": True,
+                "room": room_snapshot_payload(runtime, RoomStatus.CLOSED),
+            }
+        await _set_room_host(app, event.room_id, runtime.host_account_id)
+        return await _broadcast_room_snapshot(server, runtime, RoomStatus.WAITING)
+
+    @server.on("room:kick")
+    async def room_kick(sid: str, data: Any) -> dict[str, Any]:
+        event = _parse_event(RoomKickEvent, data)
+        if event is None:
+            return _error("invalid_payload")
+        account_id = await _account_id_for_sid(server, sid)
+        if account_id is None:
+            return _error("authentication_required")
+        runtime = registry.get(event.room_id)
+        if runtime is None:
+            return _error("room_not_joined")
+        if matches.for_room(event.room_id) is not None:
+            return _error("room_active")
+        if account_id != runtime.host_account_id:
+            return _error("host_required")
+        target = runtime.members.get(event.target_account_id)
+        if target is None:
+            return _error("not_a_member")
+        if target.account_id == runtime.host_account_id:
+            return _error("cannot_kick_host")
+        try:
+            registry.leave(event.room_id, target.account_id)
+        except RoomRuntimeError as error:
+            return _error(_runtime_error_code(error))
+        await server.leave_room(target.sid, str(event.room_id))
         return await _broadcast_room_snapshot(server, runtime, RoomStatus.WAITING)
 
     @server.on("room:start")
@@ -305,6 +342,16 @@ async def _set_room_status(app: FastAPI, room_id: UUID, status: RoomStatus) -> N
         if room is None:
             raise RuntimeError("Room disappeared while updating its status")
         room.status = status
+        await db_session.commit()
+
+
+async def _set_room_host(app: FastAPI, room_id: UUID, host_account_id: int) -> None:
+    database = cast(Database, app.state.database)
+    async with database.session_factory() as db_session:
+        room = await db_session.scalar(select(Room).where(Room.room_id == room_id))
+        if room is None:
+            raise RuntimeError("Room disappeared while transferring host")
+        room.host_account_id = host_account_id
         await db_session.commit()
 
 

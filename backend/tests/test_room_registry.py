@@ -4,7 +4,6 @@ import pytest
 
 from app.rooms.registry import (
     AccountAlreadyInRoomError,
-    HostLeaveRequiresPolicyError,
     RoomFullError,
     RoomMemberNotFoundError,
     RoomRegistry,
@@ -64,14 +63,30 @@ def test_ready_requires_membership() -> None:
         registry.set_ready(room_id, account_id=1, ready=True)
 
 
-def test_host_leave_is_explicitly_blocked_until_policy_exists() -> None:
+def test_host_leave_transfers_to_the_earliest_remaining_member() -> None:
     registry = RoomRegistry()
     room_id = uuid4()
     registry.ensure_room(room_id, host_account_id=1, max_players=2)
     registry.join(room_id, account_id=1, sid="sid-1")
 
-    with pytest.raises(HostLeaveRequiresPolicyError):
-        registry.leave(room_id, account_id=1)
+    registry.join(room_id, account_id=2, sid="sid-2")
+
+    room = registry.leave(room_id, account_id=1)
+
+    assert room.host_account_id == 2
+    assert 1 not in room.members
+
+
+def test_host_leave_removes_an_empty_runtime() -> None:
+    registry = RoomRegistry()
+    room_id = uuid4()
+    registry.ensure_room(room_id, host_account_id=1, max_players=2)
+    registry.join(room_id, account_id=1, sid="sid-1")
+
+    registry.leave(room_id, account_id=1)
+    registry.remove_if_empty(room_id)
+
+    assert registry.get(room_id) is None
 
 
 def test_non_host_can_leave_and_empty_runtime_can_be_removed() -> None:
