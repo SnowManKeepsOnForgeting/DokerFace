@@ -27,7 +27,7 @@ class RoomRules(BaseModel):
     starting_chips: int = Field(ge=100)
     small_blind: int = Field(ge=1)
     big_blind: int = Field(ge=1)
-    ante: int = Field(ge=0)
+    ante: int = Field(default=0, ge=0)
     decision_timeout_seconds: int | None = Field(default=None, ge=1)
     blind_increase_every_hands: int = Field(ge=2, le=20)
     show_remaining_board: bool
@@ -41,8 +41,10 @@ class RoomRules(BaseModel):
 
     @model_validator(mode="after")
     def validate_cross_field_rules(self) -> "RoomRules":
-        if self.small_blind > self.big_blind:
-            raise ValueError("Small blind cannot exceed big blind")
+        if self.small_blind * 2 != self.big_blind:
+            raise ValueError("Small blind must be exactly half the big blind")
+        if self.ante != 0:
+            raise ValueError("Antes are disabled and must be zero")
         if self.end_mode is MatchEndMode.FIXED_HANDS and self.fixed_hand_count is None:
             raise ValueError("Fixed-hand mode requires fixed_hand_count")
         if self.end_mode is MatchEndMode.WINNER_TAKES_ALL and self.fixed_hand_count is not None:

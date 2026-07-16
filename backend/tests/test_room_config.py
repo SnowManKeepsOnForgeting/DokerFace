@@ -52,6 +52,7 @@ def test_fixed_hand_rules_require_and_preserve_hand_count() -> None:
         ("small_blind", 0),
         ("big_blind", 0),
         ("ante", -1),
+        ("ante", 1),
         ("decision_timeout_seconds", 0),
         ("blind_increase_every_hands", 1),
         ("blind_increase_every_hands", 21),
@@ -68,6 +69,7 @@ def test_explicit_numeric_limits_are_enforced(field: str, value: int) -> None:
         {"end_mode": MatchEndMode.FIXED_HANDS},
         {"end_mode": MatchEndMode.WINNER_TAKES_ALL, "fixed_hand_count": 5},
         {"small_blind": 101},
+        {"big_blind": 101},
     ],
 )
 def test_cross_field_rules_are_enforced(overrides: dict[str, object]) -> None:
