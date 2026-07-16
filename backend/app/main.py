@@ -21,6 +21,7 @@ from app.players.api import router as players_router
 from app.ratings.api import router as ratings_router
 from app.realtime.server import create_socketio_server
 from app.rooms.api import router as rooms_router
+from app.statistics.api import router as statistics_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -66,6 +67,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(matches_router)
     app.include_router(ratings_router)
     app.include_router(rooms_router)
+    app.include_router(statistics_router)
     app.state.socketio = create_socketio_server(app, app_settings)
     return app
 

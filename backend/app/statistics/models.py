@@ -21,6 +21,7 @@ class PlayerStatisticsRecord(Base):
     reducer_version: Mapped[int] = mapped_column(Integer, nullable=False)
     dealt_hands: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     won_hands: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    matches_played: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     profitable_matches: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     vpip_opportunities: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     vpip: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
