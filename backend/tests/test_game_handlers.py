@@ -13,7 +13,11 @@ from app.main import create_app
 from app.matches.persistence import MatchHistoryPersistenceService
 from app.matches.registry import MatchRegistry
 from app.ratings.service import RatingService
-from app.realtime.room_handlers import register_room_handlers
+from app.realtime.room_handlers import (
+    mark_account_disconnected,
+    register_room_handlers,
+    restore_account_connection,
+)
 from app.realtime.schemas import GamePrivateSnapshot, GamePublicSnapshot
 from app.rooms.config import RoomVisibility
 from app.rooms.models import Room, RoomStatus
@@ -94,6 +98,7 @@ def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
     app.state.database = database
 
     matches = MatchRegistry()
+    room_registry = RoomRegistry()
     history = MagicMock(spec=MatchHistoryPersistenceService)
     history.create_match = AsyncMock()
     history.persist_hand = AsyncMock()
@@ -111,13 +116,14 @@ def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
         server,
         app,
         Settings(database_url="sqlite+aiosqlite:///:memory:"),
-        RoomRegistry(),
+        room_registry,
         matches,
         Random(7),
         history,
         ratings,
         statistics,
     )
+    server.room_registry = room_registry
     return server.handlers["/"], server, room, matches
 
 
@@ -305,3 +311,51 @@ async def test_uncounted_match_skips_statistics_but_settles_history_and_ratings(
     assert server.history_service.persist_hand.await_count == 5
     server.history_service.complete_match.assert_awaited_once()
     server.rating_service.settle_match.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_backend_match_flow_recovers_connection_and_settles_all_layers() -> None:
+    handlers, server, room, matches = make_handlers()
+    await join_and_ready(handlers, room.room_id)
+    start = await handlers["room:start"]("sid-1", {"room_id": str(room.room_id)})
+
+    await mark_account_disconnected(
+        server,
+        server.room_registry,
+        matches,
+        "sid-1",
+        1,
+    )
+    runtime = server.room_registry.get(room.room_id)
+    assert runtime is not None
+    assert runtime.members[1].connected is False
+    await restore_account_connection(server, server.room_registry, matches, 1, "sid-1")
+    assert runtime.members[1].connected is True
+    assert server.emit.await_args_list[-1].args[1]["match_id"] == start["match_id"]
+
+    for _ in range(5):
+        public = GamePublicSnapshot.model_validate(
+            emitted_payloads(server, "game:public-snapshot")[-1]
+        )
+        actor_sid = "sid-1" if public.actor_account_id == 1 else "sid-2"
+        response = await handlers["game:action"](
+            actor_sid,
+            {
+                "command_id": str(uuid4()),
+                "match_id": start["match_id"],
+                "hand_id": str(public.hand_id),
+                "state_version": public.state_version,
+                "action": "fold",
+            },
+        )
+        assert response["ok"] is True
+
+    assert matches.for_room(room.room_id) is None
+    assert server.history_service.persist_hand.await_count == 5
+    server.history_service.complete_match.assert_awaited_once()
+    server.rating_service.settle_match.assert_awaited_once()
+    assert server.statistics_service.apply_hand.await_count == 5
+    server.statistics_service.apply_profitable_matches.assert_awaited_once()
+    assert len(emitted_payloads(server, "game:hand-settled")) == 5
+    assert emitted_payloads(server, "game:match-settled")[-1]["status"] == "complete"
+    assert emitted_payloads(server, "room:snapshot")[-1]["status"] == "waiting"
