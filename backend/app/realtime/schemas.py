@@ -62,6 +62,7 @@ class RoomMemberSnapshot(BaseModel):
     account_id: int
     ready: bool
     seat: int | None = None
+    connected: bool = True
 
 
 class RoomSnapshot(BaseModel):
@@ -70,6 +71,7 @@ class RoomSnapshot(BaseModel):
     host_account_id: int
     status: RoomStatus = RoomStatus.WAITING
     members: list[RoomMemberSnapshot]
+    match_id: UUID | None = None
 
 
 class GamePlayerSnapshot(BaseModel):
@@ -80,6 +82,7 @@ class GamePlayerSnapshot(BaseModel):
     bet: int
     folded: bool
     all_in: bool
+    connected: bool = True
 
 
 class GamePublicSnapshot(BaseModel):

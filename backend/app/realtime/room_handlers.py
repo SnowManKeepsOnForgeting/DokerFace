@@ -187,12 +187,17 @@ def register_room_handlers(
         except Exception:
             await matches.remove(match)
             raise
-        await _broadcast_room_snapshot(server, runtime, RoomStatus.ACTIVE)
+        await _broadcast_room_snapshot(
+            server,
+            runtime,
+            RoomStatus.ACTIVE,
+            match_id=match.match_id,
+        )
         await _broadcast_game_snapshots(server, runtime, match)
         return {
             "ok": True,
             "match_id": str(match_id),
-            "room": _room_snapshot_payload(runtime, RoomStatus.ACTIVE),
+            "room": room_snapshot_payload(runtime, RoomStatus.ACTIVE, match_id=match_id),
         }
 
     @server.on("game:action")
@@ -309,13 +314,18 @@ async def _broadcast_room_snapshot(
     server: Any,
     runtime: RoomRuntime,
     status: RoomStatus,
+    match_id: UUID | None = None,
 ) -> dict[str, Any]:
-    payload = _room_snapshot_payload(runtime, status)
+    payload = room_snapshot_payload(runtime, status, match_id=match_id)
     await server.emit("room:snapshot", payload, room=str(runtime.room_id))
     return {"ok": True, "room": payload}
 
 
-def _room_snapshot_payload(runtime: RoomRuntime, status: RoomStatus) -> dict[str, Any]:
+def room_snapshot_payload(
+    runtime: RoomRuntime,
+    status: RoomStatus,
+    match_id: UUID | None = None,
+) -> dict[str, Any]:
     snapshot = RoomSnapshot(
         room_id=runtime.room_id,
         host_account_id=runtime.host_account_id,
@@ -325,11 +335,63 @@ def _room_snapshot_payload(runtime: RoomRuntime, status: RoomStatus) -> dict[str
                 account_id=member.account_id,
                 ready=member.ready,
                 seat=member.seat,
+                connected=member.connected,
             )
             for member in sorted(runtime.members.values(), key=lambda member: member.account_id)
         ],
+        match_id=match_id,
     )
     return snapshot.model_dump(mode="json")
+
+
+async def restore_account_connection(
+    server: Any,
+    registry: RoomRegistry,
+    matches: MatchRegistry,
+    account_id: int,
+    sid: str,
+) -> None:
+    room_id = registry.rebind_sid(account_id, sid)
+    if room_id is None:
+        return
+    await server.enter_room(sid, str(room_id))
+    runtime = registry.get(room_id)
+    if runtime is None:
+        return
+    match = matches.for_room(room_id)
+    await server.emit(
+        "room:snapshot",
+        room_snapshot_payload(
+            runtime,
+            RoomStatus.ACTIVE if match is not None else RoomStatus.WAITING,
+            match_id=match.match_id if match is not None else None,
+        ),
+        to=sid,
+    )
+
+
+async def mark_account_disconnected(
+    server: Any,
+    registry: RoomRegistry,
+    matches: MatchRegistry,
+    sid: str,
+) -> None:
+    room_id = registry.disconnect_sid(sid)
+    if room_id is None:
+        return
+    runtime = registry.get(room_id)
+    if runtime is None:
+        return
+    match = matches.for_room(room_id)
+    await server.emit(
+        "room:snapshot",
+        room_snapshot_payload(
+            runtime,
+            RoomStatus.ACTIVE if match is not None else RoomStatus.WAITING,
+            match_id=match.match_id if match is not None else None,
+        ),
+        room=str(room_id),
+    )
 
 
 async def _broadcast_game_snapshots(
@@ -339,7 +401,7 @@ async def _broadcast_game_snapshots(
     target_sid: str | None = None,
 ) -> None:
     actor_snapshot = match.actor.current_snapshot()
-    public_payload = _public_snapshot_payload(match, actor_snapshot)
+    public_payload = _public_snapshot_payload(room_runtime, match, actor_snapshot)
     if target_sid is None:
         await server.emit("game:public-snapshot", public_payload, room=str(match.room_id))
     else:
@@ -349,11 +411,17 @@ async def _broadcast_game_snapshots(
         member = room_runtime.members.get(player.account_id)
         if member is None or (target_sid is not None and member.sid != target_sid):
             continue
-        private_payload = _private_snapshot_payload(match, actor_snapshot, player.account_id)
+        private_payload = _private_snapshot_payload(
+            room_runtime,
+            match,
+            actor_snapshot,
+            player.account_id,
+        )
         await server.emit("game:private-snapshot", private_payload, to=member.sid)
 
 
 def _public_snapshot_payload(
+    room_runtime: RoomRuntime,
     match: MatchRuntime,
     snapshot: MatchActorSnapshot,
 ) -> dict[str, Any]:
@@ -367,6 +435,11 @@ def _public_snapshot_payload(
             bet=public.bets[index],
             folded=public.folded[index],
             all_in=public.all_in[index],
+            connected=(
+                room_runtime.members[account_id].connected
+                if account_id in room_runtime.members
+                else False
+            ),
         )
         for index, account_id in enumerate(public.account_ids)
     ]
@@ -386,12 +459,15 @@ def _public_snapshot_payload(
 
 
 def _private_snapshot_payload(
+    room_runtime: RoomRuntime,
     match: MatchRuntime,
     snapshot: MatchActorSnapshot,
     account_id: int,
 ) -> dict[str, Any]:
     private = match.actor.private_snapshot(account_id)
-    public = GamePublicSnapshot.model_validate(_public_snapshot_payload(match, snapshot))
+    public = GamePublicSnapshot.model_validate(
+        _public_snapshot_payload(room_runtime, match, snapshot)
+    )
     return GamePrivateSnapshot(
         **public.model_dump(),
         account_id=account_id,
@@ -481,4 +557,9 @@ def _error(code: str) -> dict[str, Any]:
     return {"ok": False, "error": code}
 
 
-__all__ = ["register_room_handlers"]
+__all__ = [
+    "mark_account_disconnected",
+    "register_room_handlers",
+    "restore_account_connection",
+    "room_snapshot_payload",
+]

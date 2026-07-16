@@ -126,7 +126,9 @@ async def test_room_start_emits_public_and_private_initial_snapshots() -> None:
     assert matches.for_room(room.room_id) is not None
     room_snapshot = response["room"]
     assert room_snapshot["status"] == "active"
+    assert room_snapshot["match_id"] == response["match_id"]
     assert {member["seat"] for member in room_snapshot["members"]} == {0, 1}
+    assert all(member["connected"] is True for member in room_snapshot["members"])
 
     public = GamePublicSnapshot.model_validate(emitted_payloads(server, "game:public-snapshot")[0])
     private_payloads = emitted_payloads(server, "game:private-snapshot")

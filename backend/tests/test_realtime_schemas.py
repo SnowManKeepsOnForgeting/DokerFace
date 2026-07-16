@@ -42,7 +42,8 @@ def test_room_snapshot_serializes_uuid_and_version() -> None:
         "room_id": str(room_id),
         "host_account_id": 1,
         "status": "waiting",
-        "members": [{"account_id": 1, "ready": True, "seat": None}],
+        "members": [{"account_id": 1, "ready": True, "seat": None, "connected": True}],
+        "match_id": None,
     }
 
 

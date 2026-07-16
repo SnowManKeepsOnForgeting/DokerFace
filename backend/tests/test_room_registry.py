@@ -23,6 +23,22 @@ def test_join_is_idempotent_and_reconnect_updates_sid() -> None:
     assert rejoined is room
     assert room.members[1].sid == "new-sid"
     assert room.members[1].ready is True
+    assert room.members[1].connected is True
+
+
+def test_rebind_and_disconnect_ignore_an_old_sid() -> None:
+    registry = RoomRegistry()
+    room_id = uuid4()
+    registry.ensure_room(room_id, host_account_id=1, max_players=2)
+    registry.join(room_id, account_id=1, sid="old-sid")
+
+    assert registry.rebind_sid(1, "new-sid") == room_id
+    assert registry.disconnect_sid("old-sid") is None
+    runtime = registry.get(room_id)
+    assert runtime is not None
+    assert runtime.members[1].connected is True
+    assert registry.disconnect_sid("new-sid") == room_id
+    assert runtime.members[1].connected is False
 
 
 def test_room_capacity_and_cross_room_membership_are_enforced() -> None:

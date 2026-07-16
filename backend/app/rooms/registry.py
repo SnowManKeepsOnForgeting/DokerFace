@@ -32,6 +32,7 @@ class RoomMember:
     sid: str
     ready: bool = False
     seat: int | None = None
+    connected: bool = True
 
 
 def empty_members() -> dict[int, RoomMember]:
@@ -71,6 +72,7 @@ class RoomRegistry:
         member = room.members.get(account_id)
         if member is not None:
             member.sid = sid
+            member.connected = True
             return room
         if len(room.members) >= room.max_players:
             raise RoomFullError("Room has no available player slot")
@@ -78,6 +80,30 @@ class RoomRegistry:
         room.members[account_id] = RoomMember(account_id=account_id, sid=sid)
         self._account_to_room[account_id] = room_id
         return room
+
+    def rebind_sid(self, account_id: int, sid: str) -> UUID | None:
+        room_id = self._account_to_room.get(account_id)
+        if room_id is None:
+            return None
+        room = self._rooms.get(room_id)
+        if room is None:
+            self._account_to_room.pop(account_id, None)
+            return None
+        member = room.members.get(account_id)
+        if member is None:
+            self._account_to_room.pop(account_id, None)
+            return None
+        member.sid = sid
+        member.connected = True
+        return room_id
+
+    def disconnect_sid(self, sid: str) -> UUID | None:
+        for room_id, room in self._rooms.items():
+            for member in room.members.values():
+                if member.sid == sid and member.connected:
+                    member.connected = False
+                    return room_id
+        return None
 
     def set_ready(self, room_id: UUID, account_id: int, ready: bool) -> RoomRuntime:
         room = self._require_room(room_id)

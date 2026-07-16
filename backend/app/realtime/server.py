@@ -13,7 +13,11 @@ from app.db.session import Database
 from app.matches.registry import MatchRegistry
 from app.realtime.auth import extract_session_token, is_allowed_origin
 from app.realtime.connections import ConnectionRegistry
-from app.realtime.room_handlers import register_room_handlers
+from app.realtime.room_handlers import (
+    mark_account_disconnected,
+    register_room_handlers,
+    restore_account_connection,
+)
 from app.rooms.registry import RoomRegistry
 
 
@@ -54,13 +58,18 @@ def create_socketio_server(app: FastAPI, settings: Settings) -> socketio.AsyncSe
 
         await server.save_session(sid, {"account_id": account.account_id})
         previous_sid = registry.replace(account.account_id, sid)
+        await restore_account_connection(
+            server, room_registry, match_registry, account.account_id, sid
+        )
         if previous_sid is not None:
             await server.disconnect(previous_sid)
         return True
 
     @server.event
     async def disconnect(sid: str) -> None:
-        registry.release(sid)
+        account_id = registry.release(sid)
+        if account_id is not None:
+            await mark_account_disconnected(server, room_registry, match_registry, sid)
 
     return server
 
