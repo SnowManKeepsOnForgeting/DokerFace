@@ -242,7 +242,10 @@ class RatingService:
                 await session.scalars(
                     select(MatchRecord)
                     .options(selectinload(MatchRecord.players))
-                    .where(MatchRecord.status == "complete")
+                    .where(
+                        MatchRecord.status == "complete",
+                        MatchRecord.started_at >= batch.created_at,
+                    )
                     .order_by(MatchRecord.started_at, MatchRecord.match_id)
                 )
             ).all()
