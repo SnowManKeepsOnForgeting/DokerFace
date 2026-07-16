@@ -12,6 +12,7 @@ from app.config import Settings
 from app.main import create_app
 from app.matches.persistence import MatchHistoryPersistenceService
 from app.matches.registry import MatchRegistry
+from app.ratings.service import RatingService
 from app.realtime.room_handlers import register_room_handlers
 from app.realtime.schemas import GamePrivateSnapshot, GamePublicSnapshot
 from app.rooms.config import RoomVisibility
@@ -97,6 +98,8 @@ def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
     history.persist_hand = AsyncMock()
     history.complete_match = AsyncMock()
     history.void_match = AsyncMock()
+    ratings = MagicMock(spec=RatingService)
+    ratings.settle_match = AsyncMock()
     register_room_handlers(
         server,
         app,
@@ -105,6 +108,7 @@ def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
         matches,
         Random(7),
         history,
+        ratings,
     )
     return server.handlers["/"], server, room, matches
 

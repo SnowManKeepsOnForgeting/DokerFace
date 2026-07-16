@@ -4,15 +4,25 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
+from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.accounts.models import Account, AccountStatus
-from app.ratings.models import RatingBatch, RatingRecord
+from app.ratings.calculator import RatingParticipant, calculate_ratings
+from app.ratings.models import RatingBatch, RatingChangeRecord, RatingRecord
 
 INITIAL_RATING = 1000
+RATING_QUANTUM = Decimal("0.0001")
+
+
+@dataclass(frozen=True)
+class RatingSettlement:
+    account_id: int
+    finishing_rank: int
 
 
 class RatingService:
@@ -118,5 +128,65 @@ class RatingService:
         )
         return batch, entries
 
+    async def settle_match(
+        self,
+        session: AsyncSession,
+        *,
+        match_id: uuid.UUID,
+        results: Sequence[RatingSettlement],
+    ) -> tuple[RatingChangeRecord, ...]:
+        batch = await self.ensure_current_batch(session)
+        result_by_account = {result.account_id: result for result in results}
+        if len(result_by_account) != len(results) or len(result_by_account) < 2:
+            raise ValueError("Rating settlement requires unique results for at least two players")
+        ratings = {
+            rating.account_id: rating
+            for rating in await session.scalars(
+                select(RatingRecord)
+                .where(
+                    RatingRecord.batch_id == batch.batch_id,
+                    RatingRecord.account_id.in_(result_by_account),
+                )
+                .with_for_update()
+            )
+        }
+        for account_id in result_by_account:
+            if account_id not in ratings:
+                ratings[account_id] = await self.initialize_account(session, account_id)
+        participants = tuple(
+            RatingParticipant(
+                account_id=account_id,
+                rating=float(ratings[account_id].rating),
+                finishing_rank=result.finishing_rank,
+            )
+            for account_id, result in result_by_account.items()
+        )
+        changes = calculate_ratings(participants)
+        records: list[RatingChangeRecord] = []
+        for change in changes:
+            rating = ratings[change.account_id]
+            before = _quantize(Decimal(str(change.before_rating)))
+            delta = _quantize(Decimal(str(change.delta)))
+            after = _quantize(Decimal(str(change.after_rating)))
+            rating.rating = after
+            rating.highest_rating = max(rating.highest_rating, after)
+            rating.completed_matches += 1
+            record = RatingChangeRecord(
+                batch_id=batch.batch_id,
+                match_id=match_id,
+                account_id=change.account_id,
+                before_rating=before,
+                delta=delta,
+                after_rating=after,
+                finishing_rank=result_by_account[change.account_id].finishing_rank,
+            )
+            session.add(record)
+            records.append(record)
+        return tuple(records)
 
-__all__ = ["INITIAL_RATING", "RatingService"]
+
+def _quantize(value: Decimal) -> Decimal:
+    return value.quantize(RATING_QUANTUM, rounding=ROUND_HALF_UP)
+
+
+__all__ = ["INITIAL_RATING", "RatingService", "RatingSettlement"]

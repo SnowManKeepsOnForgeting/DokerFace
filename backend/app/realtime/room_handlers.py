@@ -33,6 +33,7 @@ from app.matches.persistence import (
     PotHistory,
 )
 from app.matches.registry import MatchPlayer, MatchRegistry, MatchRuntime, MatchRuntimeError
+from app.ratings.service import RatingService, RatingSettlement
 from app.realtime.schemas import (
     ChatMessagePayload,
     ChatSendEvent,
@@ -68,10 +69,12 @@ def register_room_handlers(
     match_registry: MatchRegistry | None = None,
     random_source: Random | SystemRandom | None = None,
     history_service: MatchHistoryPersistenceService | None = None,
+    rating_service: RatingService | None = None,
 ) -> None:
     matches = match_registry or MatchRegistry()
     randomizer = random_source or SystemRandom()
     history = history_service or MatchHistoryPersistenceService()
+    ratings = rating_service or RatingService()
 
     @server.on("room:join")
     async def room_join(sid: str, data: Any) -> dict[str, Any]:
@@ -370,7 +373,7 @@ def register_room_handlers(
         if not response.replayed:
             if result.completed_hand is not None:
                 try:
-                    await _persist_completed_hand(app, history, match, result)
+                    await _persist_completed_hand(app, history, ratings, match, result)
                 except Exception:
                     await _void_persistence_failure(app, history, match)
                     await matches.remove(match)
@@ -492,6 +495,7 @@ async def _persist_match_start(
 async def _persist_completed_hand(
     app: FastAPI,
     service: MatchHistoryPersistenceService,
+    rating_service: RatingService,
     match: MatchRuntime,
     result: Any,
 ) -> None:
@@ -507,6 +511,11 @@ async def _persist_completed_hand(
                 db_session,
                 match_id=match.match_id,
                 results=_match_results(match),
+            )
+            await rating_service.settle_match(
+                db_session,
+                match_id=match.match_id,
+                results=_rating_results(match),
             )
 
 
@@ -596,6 +605,13 @@ def _match_results(match: MatchRuntime) -> tuple[MatchResult, ...]:
             ),
         )
         for player in match.players
+    )
+
+
+def _rating_results(match: MatchRuntime) -> tuple[RatingSettlement, ...]:
+    return tuple(
+        RatingSettlement(result.account_id, result.finishing_rank or 1)
+        for result in _match_results(match)
     )
 
 
