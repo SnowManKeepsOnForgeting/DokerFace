@@ -59,6 +59,8 @@ from app.realtime.schemas import (
 from app.rooms.config import RoomRules, RoomVisibility
 from app.rooms.models import Room, RoomStatus
 from app.rooms.registry import RoomRegistry, RoomRuntime, RoomRuntimeError
+from app.statistics.reducer import StatisticsAction, StatisticsHand, StatisticsPlayer
+from app.statistics.service import StatisticsPersistenceService
 
 
 def register_room_handlers(
@@ -70,11 +72,13 @@ def register_room_handlers(
     random_source: Random | SystemRandom | None = None,
     history_service: MatchHistoryPersistenceService | None = None,
     rating_service: RatingService | None = None,
+    statistics_service: StatisticsPersistenceService | None = None,
 ) -> None:
     matches = match_registry or MatchRegistry()
     randomizer = random_source or SystemRandom()
     history = history_service or MatchHistoryPersistenceService()
     ratings = rating_service or RatingService()
+    statistics = statistics_service or StatisticsPersistenceService()
 
     @server.on("room:join")
     async def room_join(sid: str, data: Any) -> dict[str, Any]:
@@ -373,7 +377,14 @@ def register_room_handlers(
         if not response.replayed:
             if result.completed_hand is not None:
                 try:
-                    await _persist_completed_hand(app, history, ratings, match, result)
+                    await _persist_completed_hand(
+                        app,
+                        history,
+                        ratings,
+                        statistics,
+                        match,
+                        result,
+                    )
                 except Exception:
                     await _void_persistence_failure(app, history, match)
                     await matches.remove(match)
@@ -496,6 +507,7 @@ async def _persist_completed_hand(
     app: FastAPI,
     service: MatchHistoryPersistenceService,
     rating_service: RatingService,
+    statistics_service: StatisticsPersistenceService,
     match: MatchRuntime,
     result: Any,
 ) -> None:
@@ -506,6 +518,7 @@ async def _persist_completed_hand(
     database = cast(Database, app.state.database)
     async with database.session_factory() as db_session, db_session.begin():
         await service.persist_hand(db_session, history)
+        await statistics_service.apply_hand(db_session, _statistics_hand(match, completed))
         if result.match_status.value == "complete":
             await service.complete_match(
                 db_session,
@@ -516,6 +529,14 @@ async def _persist_completed_hand(
                 db_session,
                 match_id=match.match_id,
                 results=_rating_results(match),
+            )
+            await statistics_service.apply_profitable_matches(
+                db_session,
+                {
+                    player.account_id: match.actor.coordinator.stacks[player.account_id]
+                    > match.actor.coordinator.rules.starting_chips
+                    for player in match.players
+                },
             )
 
 
@@ -612,6 +633,54 @@ def _rating_results(match: MatchRuntime) -> tuple[RatingSettlement, ...]:
     return tuple(
         RatingSettlement(result.account_id, result.finishing_rank or 1)
         for result in _match_results(match)
+    )
+
+
+def _statistics_hand(match: MatchRuntime, completed: Any) -> StatisticsHand:
+    public = completed.public
+    shown_accounts = {
+        action.account_id for action in completed.actions if action.action.value == "show"
+    }
+    button_index = public.account_ids.index(completed.button_account_id)
+    positions = {
+        account_id: (
+            "button"
+            if index == button_index
+            else "small_blind"
+            if index == (button_index + 1) % len(public.account_ids)
+            else "big_blind"
+            if index == (button_index + 2) % len(public.account_ids)
+            else f"seat_{index}"
+        )
+        for index, account_id in enumerate(public.account_ids)
+    }
+    return StatisticsHand(
+        hand_id=completed.hand_id,
+        match_id=match.match_id,
+        pot_amount=sum(public.pot_amounts),
+        players=tuple(
+            StatisticsPlayer(
+                account_id=account_id,
+                position=positions[account_id],
+                folded=public.folded[index],
+                all_in=public.all_in[index],
+                won_chips=max(0, completed.settlement.payoffs[index]),
+                showdown=account_id in shown_accounts,
+            )
+            for index, account_id in enumerate(public.account_ids)
+        ),
+        actions=tuple(
+            StatisticsAction(
+                account_id=action.account_id,
+                street=action.street,
+                action=action.action,
+                amount=action.amount,
+            )
+            for action in completed.actions
+        ),
+        reached_showdown=any(
+            action.action.value in {"show", "muck"} for action in completed.actions
+        ),
     )
 
 

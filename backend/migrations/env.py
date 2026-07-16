@@ -13,7 +13,8 @@ import app.admin.models  # pyright: ignore[reportUnusedImport]
 import app.chat.models  # pyright: ignore[reportUnusedImport]
 import app.matches.models  # pyright: ignore[reportUnusedImport]
 import app.ratings.models  # pyright: ignore[reportUnusedImport]
-import app.rooms.models  # noqa: F401  # pyright: ignore[reportUnusedImport]
+import app.rooms.models  # pyright: ignore[reportUnusedImport]
+import app.statistics.models  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from app.config import get_settings
 from app.db.base import Base
 

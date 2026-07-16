@@ -18,6 +18,7 @@ from app.realtime.schemas import GamePrivateSnapshot, GamePublicSnapshot
 from app.rooms.config import RoomVisibility
 from app.rooms.models import Room, RoomStatus
 from app.rooms.registry import RoomRegistry
+from app.statistics.service import StatisticsPersistenceService
 
 
 def rules_payload() -> dict[str, object]:
@@ -100,6 +101,9 @@ def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
     history.void_match = AsyncMock()
     ratings = MagicMock(spec=RatingService)
     ratings.settle_match = AsyncMock()
+    statistics = MagicMock(spec=StatisticsPersistenceService)
+    statistics.apply_hand = AsyncMock()
+    statistics.apply_profitable_matches = AsyncMock()
     register_room_handlers(
         server,
         app,
@@ -109,6 +113,7 @@ def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
         Random(7),
         history,
         ratings,
+        statistics,
     )
     return server.handlers["/"], server, room, matches
 
