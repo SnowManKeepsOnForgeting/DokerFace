@@ -1,0 +1,3271 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DokerFace API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health/live": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Liveness",
+        "operationId": "liveness_api_v1_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Readiness",
+        "operationId": "readiness_api_v1_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Current User",
+        "operationId": "current_user_api_v1_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/accounts": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Create Account",
+        "operationId": "create_account_api_v1_admin_accounts_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Accounts",
+        "operationId": "list_accounts_api_v1_admin_accounts_get",
+        "parameters": [
+          {
+            "name": "login_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Login Name"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AccountRole"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AccountStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/accounts/{account_id}": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Update Account",
+        "operationId": "update_account_api_v1_admin_accounts__account_id__patch",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/accounts/{account_id}/reset-password": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Reset Password",
+        "operationId": "reset_password_api_v1_admin_accounts__account_id__reset_password_post",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/matches/{match_id}/void": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Void Match",
+        "operationId": "void_match_api_v1_admin_matches__match_id__void_post",
+        "parameters": [
+          {
+            "name": "match_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidMatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoidMatchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rooms": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Admin Rooms",
+        "operationId": "list_admin_rooms_api_v1_admin_rooms_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RoomStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminRoomListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rooms/{room_id}/close": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Close Room Admin",
+        "operationId": "close_room_admin_api_v1_admin_rooms__room_id__close_post",
+        "parameters": [
+          {
+            "name": "room_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Room Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/chats": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Admin Chats",
+        "operationId": "list_admin_chats_api_v1_admin_chats_get",
+        "parameters": [
+          {
+            "name": "room_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Room Id"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminChatListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/audit-logs": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Audit Logs",
+        "operationId": "list_audit_logs_api_v1_admin_audit_logs_get",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/matches": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Admin Matches",
+        "operationId": "list_admin_matches_api_v1_admin_matches_get",
+        "parameters": [
+          {
+            "name": "room_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Room Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMatchListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/players": {
+      "get": {
+        "tags": [
+          "players"
+        ],
+        "summary": "List Players",
+        "operationId": "list_players_api_v1_players_get",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/players/{account_id}": {
+      "get": {
+        "tags": [
+          "players"
+        ],
+        "summary": "Get Player",
+        "operationId": "get_player_api_v1_players__account_id__get",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPlayerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/profile": {
+      "patch": {
+        "tags": [
+          "players"
+        ],
+        "summary": "Update My Profile",
+        "operationId": "update_my_profile_api_v1_me_profile_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPlayerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/players/{account_id}/matches": {
+      "get": {
+        "tags": [
+          "matches"
+        ],
+        "summary": "List Player Matches",
+        "operationId": "list_player_matches_api_v1_players__account_id__matches_get",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/matches/{match_id}": {
+      "get": {
+        "tags": [
+          "matches"
+        ],
+        "summary": "Get Match History",
+        "operationId": "get_match_history_api_v1_matches__match_id__get",
+        "parameters": [
+          {
+            "name": "match_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Match Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hands/{hand_id}": {
+      "get": {
+        "tags": [
+          "matches"
+        ],
+        "summary": "Get Hand History",
+        "operationId": "get_hand_history_api_v1_hands__hand_id__get",
+        "parameters": [
+          {
+            "name": "hand_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hand Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HandHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leaderboard": {
+      "get": {
+        "tags": [
+          "ratings"
+        ],
+        "summary": "Leaderboard",
+        "operationId": "leaderboard_api_v1_leaderboard_get",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "rank_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Rank Filter"
+            }
+          },
+          {
+            "name": "only_with_matches",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Only With Matches"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rating-resets": {
+      "post": {
+        "tags": [
+          "ratings"
+        ],
+        "summary": "Reset Ratings",
+        "operationId": "reset_ratings_api_v1_admin_rating_resets_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RatingResetResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/players/{account_id}/ratings": {
+      "get": {
+        "tags": [
+          "ratings"
+        ],
+        "summary": "Get Player Rating History",
+        "operationId": "get_player_rating_history_api_v1_players__account_id__ratings_get",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerRatingHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms": {
+      "get": {
+        "tags": [
+          "rooms"
+        ],
+        "summary": "List Rooms",
+        "operationId": "list_rooms_api_v1_rooms_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "rooms"
+        ],
+        "summary": "Create Room",
+        "operationId": "create_room_api_v1_rooms_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms/{room_id}": {
+      "get": {
+        "tags": [
+          "rooms"
+        ],
+        "summary": "Get Room",
+        "operationId": "get_room_api_v1_rooms__room_id__get",
+        "parameters": [
+          {
+            "name": "room_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Room Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/players/{account_id}/statistics": {
+      "get": {
+        "tags": [
+          "statistics"
+        ],
+        "summary": "Get Player Statistics",
+        "operationId": "get_player_statistics_api_v1_players__account_id__statistics_get",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerStatisticsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountRole": {
+        "type": "string",
+        "enum": [
+          "player",
+          "administrator"
+        ],
+        "title": "AccountRole"
+      },
+      "AccountStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "disabled",
+          "deleted"
+        ],
+        "title": "AccountStatus"
+      },
+      "ActionHistoryResponse": {
+        "properties": {
+          "sequence_no": {
+            "type": "integer",
+            "title": "Sequence No"
+          },
+          "state_version": {
+            "type": "integer",
+            "title": "State Version"
+          },
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "street": {
+            "type": "string",
+            "title": "Street"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sequence_no",
+          "state_version",
+          "account_id",
+          "street",
+          "action",
+          "amount",
+          "created_at"
+        ],
+        "title": "ActionHistoryResponse"
+      },
+      "AdminAccountListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminAccountResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "AdminAccountListResponse"
+      },
+      "AdminAccountResponse": {
+        "properties": {
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "login_name": {
+            "type": "string",
+            "title": "Login Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AccountRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AccountStatus"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "avatar_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Text"
+          },
+          "avatar_background_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Background Color"
+          },
+          "rank_badge_theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank Badge Theme"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "last_login_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_id",
+          "login_name",
+          "role",
+          "status",
+          "display_name",
+          "created_at"
+        ],
+        "title": "AdminAccountResponse"
+      },
+      "AdminChatListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminChatResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "AdminChatListResponse"
+      },
+      "AdminChatResponse": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Id"
+          },
+          "room_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Room Id"
+          },
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "message_type": {
+            "type": "string",
+            "title": "Message Type"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "target_account_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Account Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "room_id",
+          "account_id",
+          "message_type",
+          "content",
+          "target_account_id",
+          "created_at"
+        ],
+        "title": "AdminChatResponse"
+      },
+      "AdminMatchListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MatchSummaryResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "AdminMatchListResponse"
+      },
+      "AdminRoomListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RoomResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "AdminRoomListResponse"
+      },
+      "AuditLogListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditLogResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "AuditLogListResponse"
+      },
+      "AuditLogResponse": {
+        "properties": {
+          "audit_log_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Audit Log Id"
+          },
+          "administrator_account_id": {
+            "type": "integer",
+            "title": "Administrator Account Id"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "target_account_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Account Id"
+          },
+          "before_state": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before State"
+          },
+          "after_state": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After State"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audit_log_id",
+          "administrator_account_id",
+          "action",
+          "target_account_id",
+          "before_state",
+          "after_state",
+          "created_at"
+        ],
+        "title": "AuditLogResponse"
+      },
+      "CreateAccountRequest": {
+        "properties": {
+          "login_name": {
+            "type": "string",
+            "title": "Login Name"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AccountRole",
+            "default": "player"
+          }
+        },
+        "type": "object",
+        "required": [
+          "login_name",
+          "password"
+        ],
+        "title": "CreateAccountRequest"
+      },
+      "CreateRoomRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/RoomVisibility"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "rules": {
+            "$ref": "#/components/schemas/RoomRules"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "visibility",
+          "rules"
+        ],
+        "title": "CreateRoomRequest"
+      },
+      "CurrentPlayerLeaderboardStats": {
+        "properties": {
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "rating": {
+            "type": "number",
+            "title": "Rating"
+          },
+          "highest_rating": {
+            "type": "number",
+            "title": "Highest Rating"
+          },
+          "completed_matches": {
+            "type": "integer",
+            "title": "Completed Matches"
+          },
+          "diff_to_previous_player": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diff To Previous Player"
+          },
+          "diff_to_next_rank": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diff To Next Rank"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rank",
+          "rating",
+          "highest_rating",
+          "completed_matches",
+          "diff_to_previous_player",
+          "diff_to_next_rank"
+        ],
+        "title": "CurrentPlayerLeaderboardStats"
+      },
+      "CurrentUserResponse": {
+        "properties": {
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "login_name": {
+            "type": "string",
+            "title": "Login Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AccountRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AccountStatus"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_id",
+          "login_name",
+          "role",
+          "status",
+          "display_name"
+        ],
+        "title": "CurrentUserResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HandHistoryResponse": {
+        "properties": {
+          "hand_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hand Id"
+          },
+          "match_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Match Id"
+          },
+          "hand_number": {
+            "type": "integer",
+            "title": "Hand Number"
+          },
+          "button_account_id": {
+            "type": "integer",
+            "title": "Button Account Id"
+          },
+          "small_blind": {
+            "type": "integer",
+            "title": "Small Blind"
+          },
+          "big_blind": {
+            "type": "integer",
+            "title": "Big Blind"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "public_board": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Public Board"
+          },
+          "settlement_summary": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settlement Summary"
+          },
+          "players": {
+            "items": {
+              "$ref": "#/components/schemas/HandPlayerHistoryResponse"
+            },
+            "type": "array",
+            "title": "Players"
+          },
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/ActionHistoryResponse"
+            },
+            "type": "array",
+            "title": "Actions"
+          },
+          "pots": {
+            "items": {
+              "$ref": "#/components/schemas/PotHistoryResponse"
+            },
+            "type": "array",
+            "title": "Pots"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "settled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settled At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hand_id",
+          "match_id",
+          "hand_number",
+          "button_account_id",
+          "small_blind",
+          "big_blind",
+          "status",
+          "public_board",
+          "settlement_summary",
+          "players",
+          "actions",
+          "pots",
+          "started_at",
+          "settled_at"
+        ],
+        "title": "HandHistoryResponse"
+      },
+      "HandPlayerHistoryResponse": {
+        "properties": {
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "hole_cards": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hole Cards"
+          },
+          "folded": {
+            "type": "boolean",
+            "title": "Folded"
+          },
+          "all_in": {
+            "type": "boolean",
+            "title": "All In"
+          },
+          "shown": {
+            "type": "boolean",
+            "title": "Shown"
+          },
+          "invested_chips": {
+            "type": "integer",
+            "title": "Invested Chips"
+          },
+          "won_chips": {
+            "type": "integer",
+            "title": "Won Chips"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_id",
+          "hole_cards",
+          "folded",
+          "all_in",
+          "shown",
+          "invested_chips",
+          "won_chips"
+        ],
+        "title": "HandPlayerHistoryResponse"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "version"
+        ],
+        "title": "HealthResponse"
+      },
+      "LeaderboardEntry": {
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "rating": {
+            "type": "number",
+            "title": "Rating"
+          },
+          "highest_rating": {
+            "type": "number",
+            "title": "Highest Rating"
+          },
+          "completed_matches": {
+            "type": "integer",
+            "title": "Completed Matches"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "avatar_text": {
+            "type": "string",
+            "title": "Avatar Text"
+          },
+          "avatar_background_color": {
+            "type": "string",
+            "title": "Avatar Background Color"
+          },
+          "rank_badge_theme": {
+            "type": "string",
+            "title": "Rank Badge Theme"
+          },
+          "win_rate": {
+            "type": "number",
+            "title": "Win Rate"
+          },
+          "last_change": {
+            "type": "number",
+            "title": "Last Change"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rank",
+          "account_id",
+          "rating",
+          "highest_rating",
+          "completed_matches",
+          "display_name",
+          "avatar_text",
+          "avatar_background_color",
+          "rank_badge_theme",
+          "win_rate",
+          "last_change"
+        ],
+        "title": "LeaderboardEntry"
+      },
+      "LeaderboardResponse": {
+        "properties": {
+          "batch_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardEntry"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "current_player_stats": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CurrentPlayerLeaderboardStats"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_id",
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "LeaderboardResponse"
+      },
+      "LoginRequest": {
+        "properties": {
+          "login_name": {
+            "type": "string",
+            "title": "Login Name"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "remember": {
+            "type": "boolean",
+            "title": "Remember",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "login_name",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "MatchEndMode": {
+        "type": "string",
+        "enum": [
+          "winner_takes_all",
+          "fixed_hands"
+        ],
+        "title": "MatchEndMode"
+      },
+      "MatchHistoryResponse": {
+        "properties": {
+          "match_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Match Id"
+          },
+          "room_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Room Id"
+          },
+          "end_mode": {
+            "type": "string",
+            "title": "End Mode"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "void_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Void Reason"
+          },
+          "players": {
+            "items": {
+              "$ref": "#/components/schemas/MatchPlayerHistoryResponse"
+            },
+            "type": "array",
+            "title": "Players"
+          },
+          "hands": {
+            "items": {
+              "$ref": "#/components/schemas/HandHistoryResponse"
+            },
+            "type": "array",
+            "title": "Hands"
+          }
+        },
+        "type": "object",
+        "required": [
+          "match_id",
+          "room_id",
+          "end_mode",
+          "status",
+          "started_at",
+          "completed_at",
+          "void_reason",
+          "players",
+          "hands"
+        ],
+        "title": "MatchHistoryResponse"
+      },
+      "MatchListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MatchSummaryResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "MatchListResponse"
+      },
+      "MatchPlayerHistoryResponse": {
+        "properties": {
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "seat": {
+            "type": "integer",
+            "title": "Seat"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "initial_chips": {
+            "type": "integer",
+            "title": "Initial Chips"
+          },
+          "final_chips": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Chips"
+          },
+          "finishing_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finishing Rank"
+          },
+          "exit_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_id",
+          "seat",
+          "display_name",
+          "initial_chips",
+          "final_chips",
+          "finishing_rank",
+          "exit_reason"
+        ],
+        "title": "MatchPlayerHistoryResponse"
+      },
+      "MatchSummaryResponse": {
+        "properties": {
+          "match_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Match Id"
+          },
+          "room_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Room Id"
+          },
+          "end_mode": {
+            "type": "string",
+            "title": "End Mode"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "void_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Void Reason"
+          },
+          "players": {
+            "items": {
+              "$ref": "#/components/schemas/MatchPlayerHistoryResponse"
+            },
+            "type": "array",
+            "title": "Players"
+          }
+        },
+        "type": "object",
+        "required": [
+          "match_id",
+          "room_id",
+          "end_mode",
+          "status",
+          "started_at",
+          "completed_at",
+          "void_reason",
+          "players"
+        ],
+        "title": "MatchSummaryResponse"
+      },
+      "PlayerListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicPlayerResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "PlayerListResponse"
+      },
+      "PlayerRatingHistoryEntry": {
+        "properties": {
+          "match_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Match Id"
+          },
+          "before_rating": {
+            "type": "number",
+            "title": "Before Rating"
+          },
+          "delta": {
+            "type": "number",
+            "title": "Delta"
+          },
+          "after_rating": {
+            "type": "number",
+            "title": "After Rating"
+          },
+          "finishing_rank": {
+            "type": "integer",
+            "title": "Finishing Rank"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "match_id",
+          "before_rating",
+          "delta",
+          "after_rating",
+          "finishing_rank",
+          "created_at"
+        ],
+        "title": "PlayerRatingHistoryEntry"
+      },
+      "PlayerRatingHistoryResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PlayerRatingHistoryEntry"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PlayerRatingHistoryResponse"
+      },
+      "PlayerStatisticsResponse": {
+        "properties": {
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "reducer_version": {
+            "type": "integer",
+            "title": "Reducer Version"
+          },
+          "dealt_hands": {
+            "type": "integer",
+            "title": "Dealt Hands"
+          },
+          "won_hands": {
+            "type": "integer",
+            "title": "Won Hands"
+          },
+          "matches_played": {
+            "type": "integer",
+            "title": "Matches Played"
+          },
+          "profitable_matches": {
+            "type": "integer",
+            "title": "Profitable Matches"
+          },
+          "vpip_opportunities": {
+            "type": "integer",
+            "title": "Vpip Opportunities"
+          },
+          "vpip": {
+            "type": "integer",
+            "title": "Vpip"
+          },
+          "vpip_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vpip Rate"
+          },
+          "pfr_opportunities": {
+            "type": "integer",
+            "title": "Pfr Opportunities"
+          },
+          "pfr": {
+            "type": "integer",
+            "title": "Pfr"
+          },
+          "pfr_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pfr Rate"
+          },
+          "three_bet_opportunities": {
+            "type": "integer",
+            "title": "Three Bet Opportunities"
+          },
+          "three_bets": {
+            "type": "integer",
+            "title": "Three Bets"
+          },
+          "three_bet_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Three Bet Rate"
+          },
+          "showdown_opportunities": {
+            "type": "integer",
+            "title": "Showdown Opportunities"
+          },
+          "showdowns": {
+            "type": "integer",
+            "title": "Showdowns"
+          },
+          "showdown_wins": {
+            "type": "integer",
+            "title": "Showdown Wins"
+          },
+          "showdown_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Showdown Rate"
+          },
+          "showdown_win_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Showdown Win Rate"
+          },
+          "decisions": {
+            "type": "integer",
+            "title": "Decisions"
+          },
+          "folds": {
+            "type": "integer",
+            "title": "Folds"
+          },
+          "fold_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fold Rate"
+          },
+          "all_ins": {
+            "type": "integer",
+            "title": "All Ins"
+          },
+          "pot_total": {
+            "type": "integer",
+            "title": "Pot Total"
+          },
+          "pot_count": {
+            "type": "integer",
+            "title": "Pot Count"
+          },
+          "average_pot": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Pot"
+          },
+          "position_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Position Counts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_id",
+          "reducer_version",
+          "dealt_hands",
+          "won_hands",
+          "matches_played",
+          "profitable_matches",
+          "vpip_opportunities",
+          "vpip",
+          "vpip_rate",
+          "pfr_opportunities",
+          "pfr",
+          "pfr_rate",
+          "three_bet_opportunities",
+          "three_bets",
+          "three_bet_rate",
+          "showdown_opportunities",
+          "showdowns",
+          "showdown_wins",
+          "showdown_rate",
+          "showdown_win_rate",
+          "decisions",
+          "folds",
+          "fold_rate",
+          "all_ins",
+          "pot_total",
+          "pot_count",
+          "average_pot",
+          "position_counts"
+        ],
+        "title": "PlayerStatisticsResponse"
+      },
+      "PotHistoryResponse": {
+        "properties": {
+          "pot_number": {
+            "type": "integer",
+            "title": "Pot Number"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "eligible_account_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Eligible Account Ids"
+          },
+          "winner_payouts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Winner Payouts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pot_number",
+          "amount",
+          "eligible_account_ids",
+          "winner_payouts"
+        ],
+        "title": "PotHistoryResponse"
+      },
+      "ProfileUpdateRequest": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "avatar_text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Text"
+          },
+          "avatar_background_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Background Color"
+          },
+          "rank_badge_theme": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank Badge Theme"
+          }
+        },
+        "type": "object",
+        "title": "ProfileUpdateRequest"
+      },
+      "PublicPlayerResponse": {
+        "properties": {
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "avatar_text": {
+            "type": "string",
+            "title": "Avatar Text"
+          },
+          "avatar_background_color": {
+            "type": "string",
+            "title": "Avatar Background Color"
+          },
+          "rank_badge_theme": {
+            "type": "string",
+            "title": "Rank Badge Theme"
+          },
+          "is_online": {
+            "type": "boolean",
+            "title": "Is Online"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_id",
+          "display_name",
+          "avatar_text",
+          "avatar_background_color",
+          "rank_badge_theme",
+          "is_online"
+        ],
+        "title": "PublicPlayerResponse"
+      },
+      "RatingResetResponse": {
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Batch Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "initial_rating": {
+            "type": "integer",
+            "title": "Initial Rating"
+          },
+          "account_count": {
+            "type": "integer",
+            "title": "Account Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_id",
+          "created_at",
+          "initial_rating",
+          "account_count"
+        ],
+        "title": "RatingResetResponse"
+      },
+      "ResetPasswordRequest": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "ResetPasswordRequest"
+      },
+      "RoomListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RoomResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "RoomListResponse"
+      },
+      "RoomResponse": {
+        "properties": {
+          "room_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Room Id"
+          },
+          "host_account_id": {
+            "type": "integer",
+            "title": "Host Account Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/RoomVisibility"
+          },
+          "has_password": {
+            "type": "boolean",
+            "title": "Has Password"
+          },
+          "rules": {
+            "$ref": "#/components/schemas/RoomRules"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RoomStatus"
+          },
+          "player_count": {
+            "type": "integer",
+            "title": "Player Count"
+          },
+          "spectator_count": {
+            "type": "integer",
+            "title": "Spectator Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "room_id",
+          "host_account_id",
+          "name",
+          "visibility",
+          "has_password",
+          "rules",
+          "status",
+          "player_count",
+          "spectator_count"
+        ],
+        "title": "RoomResponse"
+      },
+      "RoomRules": {
+        "properties": {
+          "max_players": {
+            "type": "integer",
+            "maximum": 8.0,
+            "minimum": 2.0,
+            "title": "Max Players"
+          },
+          "end_mode": {
+            "$ref": "#/components/schemas/MatchEndMode"
+          },
+          "fixed_hand_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 20.0,
+                "minimum": 5.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fixed Hand Count"
+          },
+          "starting_chips": {
+            "type": "integer",
+            "minimum": 100.0,
+            "title": "Starting Chips"
+          },
+          "small_blind": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Small Blind"
+          },
+          "big_blind": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Big Blind"
+          },
+          "ante": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ante",
+            "default": 0
+          },
+          "decision_timeout_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Timeout Seconds"
+          },
+          "blind_increase_every_hands": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 2.0,
+            "title": "Blind Increase Every Hands"
+          },
+          "show_remaining_board": {
+            "type": "boolean",
+            "title": "Show Remaining Board"
+          },
+          "winner_may_show_hand": {
+            "type": "boolean",
+            "title": "Winner May Show Hand"
+          },
+          "spectators_allowed": {
+            "type": "boolean",
+            "title": "Spectators Allowed"
+          },
+          "auto_start": {
+            "type": "boolean",
+            "title": "Auto Start"
+          },
+          "counted_in_stats": {
+            "type": "boolean",
+            "title": "Counted In Stats"
+          },
+          "allow_mid_match_join": {
+            "type": "boolean",
+            "title": "Allow Mid Match Join"
+          },
+          "allow_rebuys": {
+            "type": "boolean",
+            "title": "Allow Rebuys"
+          },
+          "allow_voluntary_leave": {
+            "type": "boolean",
+            "title": "Allow Voluntary Leave"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "max_players",
+          "end_mode",
+          "starting_chips",
+          "small_blind",
+          "big_blind",
+          "blind_increase_every_hands",
+          "show_remaining_board",
+          "winner_may_show_hand",
+          "spectators_allowed",
+          "auto_start",
+          "counted_in_stats",
+          "allow_mid_match_join",
+          "allow_rebuys",
+          "allow_voluntary_leave"
+        ],
+        "title": "RoomRules",
+        "description": "Rules that are frozen when a match starts."
+      },
+      "RoomStatus": {
+        "type": "string",
+        "enum": [
+          "waiting",
+          "active",
+          "closed"
+        ],
+        "title": "RoomStatus"
+      },
+      "RoomVisibility": {
+        "type": "string",
+        "enum": [
+          "public",
+          "password",
+          "invite"
+        ],
+        "title": "RoomVisibility"
+      },
+      "UpdateAccountRequest": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccountStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccountRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "UpdateAccountRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VoidMatchRequest": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "VoidMatchRequest"
+      },
+      "VoidMatchResponse": {
+        "properties": {
+          "match_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Match Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "void_reason": {
+            "type": "string",
+            "title": "Void Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "match_id",
+          "status",
+          "void_reason"
+        ],
+        "title": "VoidMatchResponse"
+      }
+    }
+  }
+}
