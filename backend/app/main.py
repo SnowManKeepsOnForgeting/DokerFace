@@ -16,6 +16,7 @@ from app.config import Settings, get_settings
 from app.db.session import Database
 from app.logging import configure_logging
 from app.matches.api import router as matches_router
+from app.matches.persistence import MatchHistoryPersistenceService
 from app.players.api import router as players_router
 from app.ratings.api import router as ratings_router
 from app.realtime.server import create_socketio_server
@@ -36,6 +37,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     session,
                     login_name=app_settings.bootstrap_admin_login,
                     password=app_settings.bootstrap_admin_password,
+                )
+                await MatchHistoryPersistenceService().void_active_matches(
+                    session,
+                    reason="server_restart",
                 )
             yield
         finally:
