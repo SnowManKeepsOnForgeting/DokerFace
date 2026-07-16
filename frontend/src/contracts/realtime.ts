@@ -3,6 +3,58 @@
 
 export type SchemaVersion = 1;
 
+export type MessageId = string;
+
+export type RoomId = string;
+
+export type AccountId = number;
+
+export type MessageType = 'text' | 'quick' | 'custom_quick';
+
+export type Content = string;
+
+export type TargetAccountId = number | null;
+
+export type CreatedAt = string;
+
+
+export interface ChatMessagePayload {
+  schema_version?: SchemaVersion;
+  message_id: MessageId;
+  room_id: RoomId;
+  account_id: AccountId;
+  message_type: MessageType;
+  content: Content;
+  target_account_id?: TargetAccountId;
+  created_at: CreatedAt;
+  [k: string]: unknown;
+}
+
+export interface ChatSendEvent {
+  schema_version?: SchemaVersion;
+  room_id: RoomId;
+  message_type: MessageType;
+  content: Content;
+}
+
+export type Emote = string;
+
+export interface EmotePayload {
+  schema_version?: SchemaVersion;
+  room_id: RoomId;
+  account_id: AccountId;
+  emote: Emote;
+  target_account_id?: TargetAccountId;
+  [k: string]: unknown;
+}
+
+export interface EmoteSendEvent {
+  schema_version?: SchemaVersion;
+  room_id: RoomId;
+  emote: Emote;
+  target_account_id?: TargetAccountId;
+}
+
 export type CommandId = string;
 
 export type MatchId = string;
@@ -84,8 +136,6 @@ export interface GameMatchSettled {
   status: Status;
   [k: string]: unknown;
 }
-
-export type AccountId = number;
 
 export type Seat = number;
 
@@ -184,8 +234,6 @@ export interface LobbyRoomsUpdatedEvent {
   [k: string]: unknown;
 }
 
-export type RoomId = string;
-
 export type Password = string | null;
 
 
@@ -193,6 +241,12 @@ export interface RoomJoinEvent {
   schema_version?: SchemaVersion;
   room_id: RoomId;
   password?: Password;
+}
+
+export interface RoomKickEvent {
+  schema_version?: SchemaVersion;
+  room_id: RoomId;
+  target_account_id: TargetAccountId;
 }
 
 export type Reason = string;

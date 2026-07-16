@@ -21,6 +21,11 @@ from app.realtime.schemas import (
     RoomReadyEvent,
     RoomSnapshot,
     RoomStartEvent,
+    RoomKickEvent,
+    ChatSendEvent,
+    EmoteSendEvent,
+    ChatMessagePayload,
+    EmotePayload,
 )
 
 SCHEMAS = {
@@ -41,6 +46,11 @@ SCHEMAS = {
     "RoomStartEvent": RoomStartEvent,
     "RoomKickedEvent": RoomKickedEvent,
     "LobbyRoomsUpdatedEvent": LobbyRoomsUpdatedEvent,
+    "RoomKickEvent": RoomKickEvent,
+    "ChatSendEvent": ChatSendEvent,
+    "EmoteSendEvent": EmoteSendEvent,
+    "ChatMessagePayload": ChatMessagePayload,
+    "EmotePayload": EmotePayload,
 }
 
 

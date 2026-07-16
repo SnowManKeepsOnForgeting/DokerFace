@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "room_id": {
+      "format": "uuid",
+      "title": "Room Id",
+      "type": "string"
+    },
+    "emote": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Emote",
+      "type": "string"
+    },
+    "target_account_id": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target Account Id"
+    }
+  },
+  "required": [
+    "room_id",
+    "emote"
+  ],
+  "title": "EmoteSendEvent",
+  "type": "object"
+}
