@@ -61,6 +61,63 @@ const mockRatings = [
   },
 ];
 
+const mockMatches = {
+  items: [
+    {
+      match_id: 'match-12345678',
+      room_id: 'room-abc',
+      end_mode: 'winner_takes_all',
+      status: 'completed',
+      started_at: '2026-07-16T10:00:00Z',
+      completed_at: '2026-07-16T10:30:00Z',
+      void_reason: null,
+      players: [{ account_id: 1, final_chips: 2000 }],
+    },
+  ],
+  total: 1,
+  offset: 0,
+  limit: 20,
+};
+
+const mockMatchDetail = {
+  match_id: 'match-12345678',
+  room_id: 'room-abc',
+  end_mode: 'winner_takes_all',
+  status: 'completed',
+  started_at: '2026-07-16T10:00:00Z',
+  completed_at: '2026-07-16T10:30:00Z',
+  void_reason: null,
+  players: [{ account_id: 1, final_chips: 2000 }],
+  hands: [
+    {
+      hand_id: 'hand-999',
+      match_id: 'match-12345678',
+      hand_number: 1,
+      button_account_id: 1,
+      small_blind: 10,
+      big_blind: 20,
+      status: 'settled',
+      public_board: ['As', 'Kd', 'Qc'],
+      settlement_summary: { '1': 1500 },
+      players: [{ account_id: 1, chips: 1500 }],
+      actions: [
+        {
+          sequence_no: 1,
+          state_version: 1,
+          account_id: 1,
+          street: 'flop',
+          action: 'bet_or_raise',
+          amount: 100,
+          created_at: '2026-07-16T10:05:00Z',
+        },
+      ],
+      pots: [],
+      started_at: '2026-07-16T10:04:00Z',
+      settled_at: '2026-07-16T10:06:00Z',
+    },
+  ],
+};
+
 describe('PlayerProfile View and Editing', () => {
   beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
   afterEach(() => server.resetHandlers());
@@ -90,6 +147,12 @@ describe('PlayerProfile View and Editing', () => {
       }),
       http.get('http://localhost:8080/api/v1/players/1/ratings', () => {
         return HttpResponse.json({ items: mockRatings }, { status: 200 });
+      }),
+      http.get('http://localhost:8080/api/v1/players/1/matches', () => {
+        return HttpResponse.json(mockMatches, { status: 200 });
+      }),
+      http.get('http://localhost:8080/api/v1/matches/match-12345678', () => {
+        return HttpResponse.json(mockMatchDetail, { status: 200 });
       }),
     );
 
@@ -121,6 +184,41 @@ describe('PlayerProfile View and Editing', () => {
     expect(screen.getByText('1050')).toBeInTheDocument();
     expect(screen.getByText('+50')).toBeInTheDocument();
 
+    // Toggle Tab to Match History
+    const historyTab = screen.getByText('Match History');
+    await userEvent.click(historyTab);
+
+    // Should list the match summary
+    await waitFor(() => expect(screen.getByText(/Match ID: match-12/)).toBeInTheDocument());
+
+    // Click the match to open detail modal
+    const matchRow = screen.getByText(/Match ID: match-12/);
+    await userEvent.click(matchRow);
+
+    // Verify Match detail standings render
+    await waitFor(() => expect(screen.getByText('Match Standings')).toBeInTheDocument());
+    expect(screen.getByText('Player #1')).toBeInTheDocument();
+
+    // Verify Hand list row renders
+    expect(screen.getByText('Hand #1')).toBeInTheDocument();
+
+    // Expand hand details
+    const handRow = screen.getByText('Hand #1');
+    await userEvent.click(handRow);
+
+    // Verify Street actions are displayed (CSS capitalize is visual-only, DOM text is lowercase)
+    await waitFor(() => expect(screen.getByText('bet or raise')).toBeInTheDocument());
+    expect(screen.getByText('100')).toBeInTheDocument();
+
+    // Close Modal
+    const closeBtn = screen.getByRole('button', { name: '' }); // X close button
+    await userEvent.click(closeBtn);
+    await waitFor(() => expect(screen.queryByText('Match Standings')).not.toBeInTheDocument());
+
+    // Trigger edit profile form
+    const statsTab = screen.getByText('Stats');
+    await userEvent.click(statsTab);
+
     const editBtn = screen.getByText('Edit Profile');
     await userEvent.click(editBtn);
 
@@ -145,7 +243,6 @@ describe('PlayerProfile View and Editing', () => {
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, 'Alice Updated');
 
-    // Find the save check button
     const nameInputGroup = nameInput.closest('form');
     expect(nameInputGroup).not.toBeNull();
     const saveBtn = nameInputGroup!.querySelector('button[type="submit"]');
