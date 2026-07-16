@@ -75,9 +75,9 @@ async def test_account_admin_service_creates_account_and_audit_log() -> None:
     assert account.profile.avatar_text == "Alice"
     assert account.profile.avatar_background_color == "#64748B"
     assert password_service.verify("player password", account.password_hash)
-    assert db_session.add.call_count == 2
-    assert isinstance(db_session.add.call_args_list[1].args[0], AdminAuditLog)
-    audit_log = db_session.add.call_args_list[1].args[0]
+    assert db_session.add.call_count == 4
+    assert isinstance(db_session.add.call_args_list[3].args[0], AdminAuditLog)
+    audit_log = db_session.add.call_args_list[3].args[0]
     assert audit_log.action == "account_created"
     assert audit_log.target_account_id == 2
     db_session.commit.assert_awaited_once()

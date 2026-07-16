@@ -22,10 +22,9 @@ async def test_bootstrap_creates_administrator_with_hashed_password() -> None:
     )
 
     assert created
-    session.add.assert_called_once()
+    assert session.add.call_count == 3
     session.commit.assert_awaited_once()
-    assert session.add.call_args is not None
-    account = cast(Account, session.add.call_args.args[0])
+    account = cast(Account, session.add.call_args_list[0].args[0])
     assert account.login_name == "admin"
     assert account.role is AccountRole.ADMINISTRATOR
     assert account.profile is not None

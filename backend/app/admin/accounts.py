@@ -16,6 +16,7 @@ from app.accounts.models import (
 )
 from app.admin.models import AdminAuditLog
 from app.auth.passwords import PasswordService
+from app.ratings.service import RatingService
 
 
 class AccountManagementError(ValueError):
@@ -156,6 +157,7 @@ class AccountAdminService:
         )
         db_session.add(account)
         await db_session.flush()
+        await RatingService().initialize_account(db_session, account.account_id)
         db_session.add(
             AdminAuditLog(
                 administrator_account_id=administrator.account_id,

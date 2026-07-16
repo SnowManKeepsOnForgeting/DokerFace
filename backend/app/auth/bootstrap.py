@@ -10,6 +10,7 @@ from app.accounts.models import (
     Profile,
 )
 from app.auth.passwords import PasswordService
+from app.ratings.service import RatingService
 
 
 class BootstrapConfigurationError(RuntimeError):
@@ -45,5 +46,7 @@ async def ensure_bootstrap_admin(
         ),
     )
     session.add(account)
+    await session.flush()
+    await RatingService().initialize_account(session, account.account_id)
     await session.commit()
     return True
