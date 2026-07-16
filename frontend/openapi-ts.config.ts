@@ -4,4 +4,10 @@ export default defineConfig({
   client: 'fetch',
   input: '../openapi.json',
   output: 'src/contracts/rest',
+  plugins: [
+    {
+      name: '@hey-api/sdk',
+      responseStyle: 'data',
+    },
+  ],
 });

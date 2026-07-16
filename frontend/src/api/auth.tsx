@@ -1,4 +1,5 @@
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext } from 'react';
+import type { ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   currentUserApiV1MeGet,
@@ -21,11 +22,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading, refetch } = useQuery<CurrentUserResponse | null, ApiError>({
+  const {
+    data: user,
+    isLoading,
+    refetch,
+  } = useQuery<CurrentUserResponse | null, ApiError>({
     queryKey: ['me'],
     queryFn: async () => {
       try {
-        const res = await currentUserApiV1MeGet();
+        const res = await currentUserApiV1MeGet({ throwOnError: true });
         return res;
       } catch (err: any) {
         if (err instanceof ApiError && err.status === 401) {
@@ -38,9 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     staleTime: 5000,
   });
 
-  const loginMutation = useMutation<CurrentUserResponse, ApiError, LoginApiV1AuthLoginPostData['body']>({
+  const loginMutation = useMutation<
+    CurrentUserResponse,
+    ApiError,
+    LoginApiV1AuthLoginPostData['body']
+  >({
     mutationFn: async (body) => {
-      return await loginApiV1AuthLoginPost({ body });
+      return await loginApiV1AuthLoginPost({ body, throwOnError: true });
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['me'], data);

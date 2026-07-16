@@ -21,17 +21,26 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 /**
  * Liveness
  */
-export const livenessApiV1HealthLiveGet = <ThrowOnError extends boolean = false>(options?: Options<LivenessApiV1HealthLiveGetData, ThrowOnError>): RequestResult<LivenessApiV1HealthLiveGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<LivenessApiV1HealthLiveGetResponses, unknown, ThrowOnError>({ url: '/api/v1/health/live', ...options });
+export const livenessApiV1HealthLiveGet = <ThrowOnError extends boolean = false>(options?: Options<LivenessApiV1HealthLiveGetData, ThrowOnError>): RequestResult<LivenessApiV1HealthLiveGetResponses, unknown, ThrowOnError, 'data'> => (options?.client ?? client).get<LivenessApiV1HealthLiveGetResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/health/live',
+    ...options
+});
 
 /**
  * Readiness
  */
-export const readinessApiV1HealthReadyGet = <ThrowOnError extends boolean = false>(options?: Options<ReadinessApiV1HealthReadyGetData, ThrowOnError>): RequestResult<ReadinessApiV1HealthReadyGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ReadinessApiV1HealthReadyGetResponses, unknown, ThrowOnError>({ url: '/api/v1/health/ready', ...options });
+export const readinessApiV1HealthReadyGet = <ThrowOnError extends boolean = false>(options?: Options<ReadinessApiV1HealthReadyGetData, ThrowOnError>): RequestResult<ReadinessApiV1HealthReadyGetResponses, unknown, ThrowOnError, 'data'> => (options?.client ?? client).get<ReadinessApiV1HealthReadyGetResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/health/ready',
+    ...options
+});
 
 /**
  * Login
  */
-export const loginApiV1AuthLoginPost = <ThrowOnError extends boolean = false>(options: Options<LoginApiV1AuthLoginPostData, ThrowOnError>): RequestResult<LoginApiV1AuthLoginPostResponses, LoginApiV1AuthLoginPostErrors, ThrowOnError> => (options.client ?? client).post<LoginApiV1AuthLoginPostResponses, LoginApiV1AuthLoginPostErrors, ThrowOnError>({
+export const loginApiV1AuthLoginPost = <ThrowOnError extends boolean = false>(options: Options<LoginApiV1AuthLoginPostData, ThrowOnError>): RequestResult<LoginApiV1AuthLoginPostResponses, LoginApiV1AuthLoginPostErrors, ThrowOnError, 'data'> => (options.client ?? client).post<LoginApiV1AuthLoginPostResponses, LoginApiV1AuthLoginPostErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
     url: '/api/v1/auth/login',
     ...options,
     headers: {
@@ -43,22 +52,35 @@ export const loginApiV1AuthLoginPost = <ThrowOnError extends boolean = false>(op
 /**
  * Logout
  */
-export const logoutApiV1AuthLogoutPost = <ThrowOnError extends boolean = false>(options?: Options<LogoutApiV1AuthLogoutPostData, ThrowOnError>): RequestResult<LogoutApiV1AuthLogoutPostResponses, unknown, ThrowOnError> => (options?.client ?? client).post<LogoutApiV1AuthLogoutPostResponses, unknown, ThrowOnError>({ url: '/api/v1/auth/logout', ...options });
+export const logoutApiV1AuthLogoutPost = <ThrowOnError extends boolean = false>(options?: Options<LogoutApiV1AuthLogoutPostData, ThrowOnError>): RequestResult<LogoutApiV1AuthLogoutPostResponses, unknown, ThrowOnError, 'data'> => (options?.client ?? client).post<LogoutApiV1AuthLogoutPostResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/auth/logout',
+    ...options
+});
 
 /**
  * Current User
  */
-export const currentUserApiV1MeGet = <ThrowOnError extends boolean = false>(options?: Options<CurrentUserApiV1MeGetData, ThrowOnError>): RequestResult<CurrentUserApiV1MeGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<CurrentUserApiV1MeGetResponses, unknown, ThrowOnError>({ url: '/api/v1/me', ...options });
+export const currentUserApiV1MeGet = <ThrowOnError extends boolean = false>(options?: Options<CurrentUserApiV1MeGetData, ThrowOnError>): RequestResult<CurrentUserApiV1MeGetResponses, unknown, ThrowOnError, 'data'> => (options?.client ?? client).get<CurrentUserApiV1MeGetResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/me',
+    ...options
+});
 
 /**
  * List Accounts
  */
-export const listAccountsApiV1AdminAccountsGet = <ThrowOnError extends boolean = false>(options?: Options<ListAccountsApiV1AdminAccountsGetData, ThrowOnError>): RequestResult<ListAccountsApiV1AdminAccountsGetResponses, ListAccountsApiV1AdminAccountsGetErrors, ThrowOnError> => (options?.client ?? client).get<ListAccountsApiV1AdminAccountsGetResponses, ListAccountsApiV1AdminAccountsGetErrors, ThrowOnError>({ url: '/api/v1/admin/accounts', ...options });
+export const listAccountsApiV1AdminAccountsGet = <ThrowOnError extends boolean = false>(options?: Options<ListAccountsApiV1AdminAccountsGetData, ThrowOnError>): RequestResult<ListAccountsApiV1AdminAccountsGetResponses, ListAccountsApiV1AdminAccountsGetErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<ListAccountsApiV1AdminAccountsGetResponses, ListAccountsApiV1AdminAccountsGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/admin/accounts',
+    ...options
+});
 
 /**
  * Create Account
  */
-export const createAccountApiV1AdminAccountsPost = <ThrowOnError extends boolean = false>(options: Options<CreateAccountApiV1AdminAccountsPostData, ThrowOnError>): RequestResult<CreateAccountApiV1AdminAccountsPostResponses, CreateAccountApiV1AdminAccountsPostErrors, ThrowOnError> => (options.client ?? client).post<CreateAccountApiV1AdminAccountsPostResponses, CreateAccountApiV1AdminAccountsPostErrors, ThrowOnError>({
+export const createAccountApiV1AdminAccountsPost = <ThrowOnError extends boolean = false>(options: Options<CreateAccountApiV1AdminAccountsPostData, ThrowOnError>): RequestResult<CreateAccountApiV1AdminAccountsPostResponses, CreateAccountApiV1AdminAccountsPostErrors, ThrowOnError, 'data'> => (options.client ?? client).post<CreateAccountApiV1AdminAccountsPostResponses, CreateAccountApiV1AdminAccountsPostErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
     url: '/api/v1/admin/accounts',
     ...options,
     headers: {
@@ -70,7 +92,8 @@ export const createAccountApiV1AdminAccountsPost = <ThrowOnError extends boolean
 /**
  * Update Account
  */
-export const updateAccountApiV1AdminAccountsAccountIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateAccountApiV1AdminAccountsAccountIdPatchData, ThrowOnError>): RequestResult<UpdateAccountApiV1AdminAccountsAccountIdPatchResponses, UpdateAccountApiV1AdminAccountsAccountIdPatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateAccountApiV1AdminAccountsAccountIdPatchResponses, UpdateAccountApiV1AdminAccountsAccountIdPatchErrors, ThrowOnError>({
+export const updateAccountApiV1AdminAccountsAccountIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateAccountApiV1AdminAccountsAccountIdPatchData, ThrowOnError>): RequestResult<UpdateAccountApiV1AdminAccountsAccountIdPatchResponses, UpdateAccountApiV1AdminAccountsAccountIdPatchErrors, ThrowOnError, 'data'> => (options.client ?? client).patch<UpdateAccountApiV1AdminAccountsAccountIdPatchResponses, UpdateAccountApiV1AdminAccountsAccountIdPatchErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
     url: '/api/v1/admin/accounts/{account_id}',
     ...options,
     headers: {
@@ -82,7 +105,8 @@ export const updateAccountApiV1AdminAccountsAccountIdPatch = <ThrowOnError exten
 /**
  * Reset Password
  */
-export const resetPasswordApiV1AdminAccountsAccountIdResetPasswordPost = <ThrowOnError extends boolean = false>(options: Options<ResetPasswordApiV1AdminAccountsAccountIdResetPasswordPostData, ThrowOnError>): RequestResult<ResetPasswordApiV1AdminAccountsAccountIdResetPasswordPostResponses, ResetPasswordApiV1AdminAccountsAccountIdResetPasswordPostErrors, ThrowOnError> => (options.client ?? client).post<ResetPasswordApiV1AdminAccountsAccountIdResetPasswordPostResponses, ResetPasswordApiV1AdminAccountsAccountIdResetPasswordPostErrors, ThrowOnError>({
+export const resetPasswordApiV1AdminAccountsAccountIdResetPasswordPost = <ThrowOnError extends boolean = false>(options: Options<ResetPasswordApiV1AdminAccountsAccountIdResetPasswordPostData, ThrowOnError>): RequestResult<ResetPasswordApiV1AdminAccountsAccountIdResetPasswordPostResponses, ResetPasswordApiV1AdminAccountsAccountIdResetPasswordPostErrors, ThrowOnError, 'data'> => (options.client ?? client).post<ResetPasswordApiV1AdminAccountsAccountIdResetPasswordPostResponses, ResetPasswordApiV1AdminAccountsAccountIdResetPasswordPostErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
     url: '/api/v1/admin/accounts/{account_id}/reset-password',
     ...options,
     headers: {
@@ -94,7 +118,8 @@ export const resetPasswordApiV1AdminAccountsAccountIdResetPasswordPost = <ThrowO
 /**
  * Void Match
  */
-export const voidMatchApiV1AdminMatchesMatchIdVoidPost = <ThrowOnError extends boolean = false>(options: Options<VoidMatchApiV1AdminMatchesMatchIdVoidPostData, ThrowOnError>): RequestResult<VoidMatchApiV1AdminMatchesMatchIdVoidPostResponses, VoidMatchApiV1AdminMatchesMatchIdVoidPostErrors, ThrowOnError> => (options.client ?? client).post<VoidMatchApiV1AdminMatchesMatchIdVoidPostResponses, VoidMatchApiV1AdminMatchesMatchIdVoidPostErrors, ThrowOnError>({
+export const voidMatchApiV1AdminMatchesMatchIdVoidPost = <ThrowOnError extends boolean = false>(options: Options<VoidMatchApiV1AdminMatchesMatchIdVoidPostData, ThrowOnError>): RequestResult<VoidMatchApiV1AdminMatchesMatchIdVoidPostResponses, VoidMatchApiV1AdminMatchesMatchIdVoidPostErrors, ThrowOnError, 'data'> => (options.client ?? client).post<VoidMatchApiV1AdminMatchesMatchIdVoidPostResponses, VoidMatchApiV1AdminMatchesMatchIdVoidPostErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
     url: '/api/v1/admin/matches/{match_id}/void',
     ...options,
     headers: {
@@ -106,42 +131,71 @@ export const voidMatchApiV1AdminMatchesMatchIdVoidPost = <ThrowOnError extends b
 /**
  * List Admin Rooms
  */
-export const listAdminRoomsApiV1AdminRoomsGet = <ThrowOnError extends boolean = false>(options?: Options<ListAdminRoomsApiV1AdminRoomsGetData, ThrowOnError>): RequestResult<ListAdminRoomsApiV1AdminRoomsGetResponses, ListAdminRoomsApiV1AdminRoomsGetErrors, ThrowOnError> => (options?.client ?? client).get<ListAdminRoomsApiV1AdminRoomsGetResponses, ListAdminRoomsApiV1AdminRoomsGetErrors, ThrowOnError>({ url: '/api/v1/admin/rooms', ...options });
+export const listAdminRoomsApiV1AdminRoomsGet = <ThrowOnError extends boolean = false>(options?: Options<ListAdminRoomsApiV1AdminRoomsGetData, ThrowOnError>): RequestResult<ListAdminRoomsApiV1AdminRoomsGetResponses, ListAdminRoomsApiV1AdminRoomsGetErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<ListAdminRoomsApiV1AdminRoomsGetResponses, ListAdminRoomsApiV1AdminRoomsGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/admin/rooms',
+    ...options
+});
 
 /**
  * Close Room Admin
  */
-export const closeRoomAdminApiV1AdminRoomsRoomIdClosePost = <ThrowOnError extends boolean = false>(options: Options<CloseRoomAdminApiV1AdminRoomsRoomIdClosePostData, ThrowOnError>): RequestResult<CloseRoomAdminApiV1AdminRoomsRoomIdClosePostResponses, CloseRoomAdminApiV1AdminRoomsRoomIdClosePostErrors, ThrowOnError> => (options.client ?? client).post<CloseRoomAdminApiV1AdminRoomsRoomIdClosePostResponses, CloseRoomAdminApiV1AdminRoomsRoomIdClosePostErrors, ThrowOnError>({ url: '/api/v1/admin/rooms/{room_id}/close', ...options });
+export const closeRoomAdminApiV1AdminRoomsRoomIdClosePost = <ThrowOnError extends boolean = false>(options: Options<CloseRoomAdminApiV1AdminRoomsRoomIdClosePostData, ThrowOnError>): RequestResult<CloseRoomAdminApiV1AdminRoomsRoomIdClosePostResponses, CloseRoomAdminApiV1AdminRoomsRoomIdClosePostErrors, ThrowOnError, 'data'> => (options.client ?? client).post<CloseRoomAdminApiV1AdminRoomsRoomIdClosePostResponses, CloseRoomAdminApiV1AdminRoomsRoomIdClosePostErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/admin/rooms/{room_id}/close',
+    ...options
+});
 
 /**
  * List Admin Chats
  */
-export const listAdminChatsApiV1AdminChatsGet = <ThrowOnError extends boolean = false>(options?: Options<ListAdminChatsApiV1AdminChatsGetData, ThrowOnError>): RequestResult<ListAdminChatsApiV1AdminChatsGetResponses, ListAdminChatsApiV1AdminChatsGetErrors, ThrowOnError> => (options?.client ?? client).get<ListAdminChatsApiV1AdminChatsGetResponses, ListAdminChatsApiV1AdminChatsGetErrors, ThrowOnError>({ url: '/api/v1/admin/chats', ...options });
+export const listAdminChatsApiV1AdminChatsGet = <ThrowOnError extends boolean = false>(options?: Options<ListAdminChatsApiV1AdminChatsGetData, ThrowOnError>): RequestResult<ListAdminChatsApiV1AdminChatsGetResponses, ListAdminChatsApiV1AdminChatsGetErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<ListAdminChatsApiV1AdminChatsGetResponses, ListAdminChatsApiV1AdminChatsGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/admin/chats',
+    ...options
+});
 
 /**
  * List Audit Logs
  */
-export const listAuditLogsApiV1AdminAuditLogsGet = <ThrowOnError extends boolean = false>(options?: Options<ListAuditLogsApiV1AdminAuditLogsGetData, ThrowOnError>): RequestResult<ListAuditLogsApiV1AdminAuditLogsGetResponses, ListAuditLogsApiV1AdminAuditLogsGetErrors, ThrowOnError> => (options?.client ?? client).get<ListAuditLogsApiV1AdminAuditLogsGetResponses, ListAuditLogsApiV1AdminAuditLogsGetErrors, ThrowOnError>({ url: '/api/v1/admin/audit-logs', ...options });
+export const listAuditLogsApiV1AdminAuditLogsGet = <ThrowOnError extends boolean = false>(options?: Options<ListAuditLogsApiV1AdminAuditLogsGetData, ThrowOnError>): RequestResult<ListAuditLogsApiV1AdminAuditLogsGetResponses, ListAuditLogsApiV1AdminAuditLogsGetErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<ListAuditLogsApiV1AdminAuditLogsGetResponses, ListAuditLogsApiV1AdminAuditLogsGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/admin/audit-logs',
+    ...options
+});
 
 /**
  * List Admin Matches
  */
-export const listAdminMatchesApiV1AdminMatchesGet = <ThrowOnError extends boolean = false>(options?: Options<ListAdminMatchesApiV1AdminMatchesGetData, ThrowOnError>): RequestResult<ListAdminMatchesApiV1AdminMatchesGetResponses, ListAdminMatchesApiV1AdminMatchesGetErrors, ThrowOnError> => (options?.client ?? client).get<ListAdminMatchesApiV1AdminMatchesGetResponses, ListAdminMatchesApiV1AdminMatchesGetErrors, ThrowOnError>({ url: '/api/v1/admin/matches', ...options });
+export const listAdminMatchesApiV1AdminMatchesGet = <ThrowOnError extends boolean = false>(options?: Options<ListAdminMatchesApiV1AdminMatchesGetData, ThrowOnError>): RequestResult<ListAdminMatchesApiV1AdminMatchesGetResponses, ListAdminMatchesApiV1AdminMatchesGetErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<ListAdminMatchesApiV1AdminMatchesGetResponses, ListAdminMatchesApiV1AdminMatchesGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/admin/matches',
+    ...options
+});
 
 /**
  * List Players
  */
-export const listPlayersApiV1PlayersGet = <ThrowOnError extends boolean = false>(options?: Options<ListPlayersApiV1PlayersGetData, ThrowOnError>): RequestResult<ListPlayersApiV1PlayersGetResponses, ListPlayersApiV1PlayersGetErrors, ThrowOnError> => (options?.client ?? client).get<ListPlayersApiV1PlayersGetResponses, ListPlayersApiV1PlayersGetErrors, ThrowOnError>({ url: '/api/v1/players', ...options });
+export const listPlayersApiV1PlayersGet = <ThrowOnError extends boolean = false>(options?: Options<ListPlayersApiV1PlayersGetData, ThrowOnError>): RequestResult<ListPlayersApiV1PlayersGetResponses, ListPlayersApiV1PlayersGetErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<ListPlayersApiV1PlayersGetResponses, ListPlayersApiV1PlayersGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/players',
+    ...options
+});
 
 /**
  * Get Player
  */
-export const getPlayerApiV1PlayersAccountIdGet = <ThrowOnError extends boolean = false>(options: Options<GetPlayerApiV1PlayersAccountIdGetData, ThrowOnError>): RequestResult<GetPlayerApiV1PlayersAccountIdGetResponses, GetPlayerApiV1PlayersAccountIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetPlayerApiV1PlayersAccountIdGetResponses, GetPlayerApiV1PlayersAccountIdGetErrors, ThrowOnError>({ url: '/api/v1/players/{account_id}', ...options });
+export const getPlayerApiV1PlayersAccountIdGet = <ThrowOnError extends boolean = false>(options: Options<GetPlayerApiV1PlayersAccountIdGetData, ThrowOnError>): RequestResult<GetPlayerApiV1PlayersAccountIdGetResponses, GetPlayerApiV1PlayersAccountIdGetErrors, ThrowOnError, 'data'> => (options.client ?? client).get<GetPlayerApiV1PlayersAccountIdGetResponses, GetPlayerApiV1PlayersAccountIdGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/players/{account_id}',
+    ...options
+});
 
 /**
  * Update My Profile
  */
-export const updateMyProfileApiV1MeProfilePatch = <ThrowOnError extends boolean = false>(options: Options<UpdateMyProfileApiV1MeProfilePatchData, ThrowOnError>): RequestResult<UpdateMyProfileApiV1MeProfilePatchResponses, UpdateMyProfileApiV1MeProfilePatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateMyProfileApiV1MeProfilePatchResponses, UpdateMyProfileApiV1MeProfilePatchErrors, ThrowOnError>({
+export const updateMyProfileApiV1MeProfilePatch = <ThrowOnError extends boolean = false>(options: Options<UpdateMyProfileApiV1MeProfilePatchData, ThrowOnError>): RequestResult<UpdateMyProfileApiV1MeProfilePatchResponses, UpdateMyProfileApiV1MeProfilePatchErrors, ThrowOnError, 'data'> => (options.client ?? client).patch<UpdateMyProfileApiV1MeProfilePatchResponses, UpdateMyProfileApiV1MeProfilePatchErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
     url: '/api/v1/me/profile',
     ...options,
     headers: {
@@ -153,42 +207,71 @@ export const updateMyProfileApiV1MeProfilePatch = <ThrowOnError extends boolean 
 /**
  * List Player Matches
  */
-export const listPlayerMatchesApiV1PlayersAccountIdMatchesGet = <ThrowOnError extends boolean = false>(options: Options<ListPlayerMatchesApiV1PlayersAccountIdMatchesGetData, ThrowOnError>): RequestResult<ListPlayerMatchesApiV1PlayersAccountIdMatchesGetResponses, ListPlayerMatchesApiV1PlayersAccountIdMatchesGetErrors, ThrowOnError> => (options.client ?? client).get<ListPlayerMatchesApiV1PlayersAccountIdMatchesGetResponses, ListPlayerMatchesApiV1PlayersAccountIdMatchesGetErrors, ThrowOnError>({ url: '/api/v1/players/{account_id}/matches', ...options });
+export const listPlayerMatchesApiV1PlayersAccountIdMatchesGet = <ThrowOnError extends boolean = false>(options: Options<ListPlayerMatchesApiV1PlayersAccountIdMatchesGetData, ThrowOnError>): RequestResult<ListPlayerMatchesApiV1PlayersAccountIdMatchesGetResponses, ListPlayerMatchesApiV1PlayersAccountIdMatchesGetErrors, ThrowOnError, 'data'> => (options.client ?? client).get<ListPlayerMatchesApiV1PlayersAccountIdMatchesGetResponses, ListPlayerMatchesApiV1PlayersAccountIdMatchesGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/players/{account_id}/matches',
+    ...options
+});
 
 /**
  * Get Match History
  */
-export const getMatchHistoryApiV1MatchesMatchIdGet = <ThrowOnError extends boolean = false>(options: Options<GetMatchHistoryApiV1MatchesMatchIdGetData, ThrowOnError>): RequestResult<GetMatchHistoryApiV1MatchesMatchIdGetResponses, GetMatchHistoryApiV1MatchesMatchIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetMatchHistoryApiV1MatchesMatchIdGetResponses, GetMatchHistoryApiV1MatchesMatchIdGetErrors, ThrowOnError>({ url: '/api/v1/matches/{match_id}', ...options });
+export const getMatchHistoryApiV1MatchesMatchIdGet = <ThrowOnError extends boolean = false>(options: Options<GetMatchHistoryApiV1MatchesMatchIdGetData, ThrowOnError>): RequestResult<GetMatchHistoryApiV1MatchesMatchIdGetResponses, GetMatchHistoryApiV1MatchesMatchIdGetErrors, ThrowOnError, 'data'> => (options.client ?? client).get<GetMatchHistoryApiV1MatchesMatchIdGetResponses, GetMatchHistoryApiV1MatchesMatchIdGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/matches/{match_id}',
+    ...options
+});
 
 /**
  * Get Hand History
  */
-export const getHandHistoryApiV1HandsHandIdGet = <ThrowOnError extends boolean = false>(options: Options<GetHandHistoryApiV1HandsHandIdGetData, ThrowOnError>): RequestResult<GetHandHistoryApiV1HandsHandIdGetResponses, GetHandHistoryApiV1HandsHandIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetHandHistoryApiV1HandsHandIdGetResponses, GetHandHistoryApiV1HandsHandIdGetErrors, ThrowOnError>({ url: '/api/v1/hands/{hand_id}', ...options });
+export const getHandHistoryApiV1HandsHandIdGet = <ThrowOnError extends boolean = false>(options: Options<GetHandHistoryApiV1HandsHandIdGetData, ThrowOnError>): RequestResult<GetHandHistoryApiV1HandsHandIdGetResponses, GetHandHistoryApiV1HandsHandIdGetErrors, ThrowOnError, 'data'> => (options.client ?? client).get<GetHandHistoryApiV1HandsHandIdGetResponses, GetHandHistoryApiV1HandsHandIdGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/hands/{hand_id}',
+    ...options
+});
 
 /**
  * Leaderboard
  */
-export const leaderboardApiV1LeaderboardGet = <ThrowOnError extends boolean = false>(options?: Options<LeaderboardApiV1LeaderboardGetData, ThrowOnError>): RequestResult<LeaderboardApiV1LeaderboardGetResponses, LeaderboardApiV1LeaderboardGetErrors, ThrowOnError> => (options?.client ?? client).get<LeaderboardApiV1LeaderboardGetResponses, LeaderboardApiV1LeaderboardGetErrors, ThrowOnError>({ url: '/api/v1/leaderboard', ...options });
+export const leaderboardApiV1LeaderboardGet = <ThrowOnError extends boolean = false>(options?: Options<LeaderboardApiV1LeaderboardGetData, ThrowOnError>): RequestResult<LeaderboardApiV1LeaderboardGetResponses, LeaderboardApiV1LeaderboardGetErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<LeaderboardApiV1LeaderboardGetResponses, LeaderboardApiV1LeaderboardGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/leaderboard',
+    ...options
+});
 
 /**
  * Reset Ratings
  */
-export const resetRatingsApiV1AdminRatingResetsPost = <ThrowOnError extends boolean = false>(options?: Options<ResetRatingsApiV1AdminRatingResetsPostData, ThrowOnError>): RequestResult<ResetRatingsApiV1AdminRatingResetsPostResponses, unknown, ThrowOnError> => (options?.client ?? client).post<ResetRatingsApiV1AdminRatingResetsPostResponses, unknown, ThrowOnError>({ url: '/api/v1/admin/rating-resets', ...options });
+export const resetRatingsApiV1AdminRatingResetsPost = <ThrowOnError extends boolean = false>(options?: Options<ResetRatingsApiV1AdminRatingResetsPostData, ThrowOnError>): RequestResult<ResetRatingsApiV1AdminRatingResetsPostResponses, unknown, ThrowOnError, 'data'> => (options?.client ?? client).post<ResetRatingsApiV1AdminRatingResetsPostResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/admin/rating-resets',
+    ...options
+});
 
 /**
  * Get Player Rating History
  */
-export const getPlayerRatingHistoryApiV1PlayersAccountIdRatingsGet = <ThrowOnError extends boolean = false>(options: Options<GetPlayerRatingHistoryApiV1PlayersAccountIdRatingsGetData, ThrowOnError>): RequestResult<GetPlayerRatingHistoryApiV1PlayersAccountIdRatingsGetResponses, GetPlayerRatingHistoryApiV1PlayersAccountIdRatingsGetErrors, ThrowOnError> => (options.client ?? client).get<GetPlayerRatingHistoryApiV1PlayersAccountIdRatingsGetResponses, GetPlayerRatingHistoryApiV1PlayersAccountIdRatingsGetErrors, ThrowOnError>({ url: '/api/v1/players/{account_id}/ratings', ...options });
+export const getPlayerRatingHistoryApiV1PlayersAccountIdRatingsGet = <ThrowOnError extends boolean = false>(options: Options<GetPlayerRatingHistoryApiV1PlayersAccountIdRatingsGetData, ThrowOnError>): RequestResult<GetPlayerRatingHistoryApiV1PlayersAccountIdRatingsGetResponses, GetPlayerRatingHistoryApiV1PlayersAccountIdRatingsGetErrors, ThrowOnError, 'data'> => (options.client ?? client).get<GetPlayerRatingHistoryApiV1PlayersAccountIdRatingsGetResponses, GetPlayerRatingHistoryApiV1PlayersAccountIdRatingsGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/players/{account_id}/ratings',
+    ...options
+});
 
 /**
  * List Rooms
  */
-export const listRoomsApiV1RoomsGet = <ThrowOnError extends boolean = false>(options?: Options<ListRoomsApiV1RoomsGetData, ThrowOnError>): RequestResult<ListRoomsApiV1RoomsGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListRoomsApiV1RoomsGetResponses, unknown, ThrowOnError>({ url: '/api/v1/rooms', ...options });
+export const listRoomsApiV1RoomsGet = <ThrowOnError extends boolean = false>(options?: Options<ListRoomsApiV1RoomsGetData, ThrowOnError>): RequestResult<ListRoomsApiV1RoomsGetResponses, unknown, ThrowOnError, 'data'> => (options?.client ?? client).get<ListRoomsApiV1RoomsGetResponses, unknown, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/rooms',
+    ...options
+});
 
 /**
  * Create Room
  */
-export const createRoomApiV1RoomsPost = <ThrowOnError extends boolean = false>(options: Options<CreateRoomApiV1RoomsPostData, ThrowOnError>): RequestResult<CreateRoomApiV1RoomsPostResponses, CreateRoomApiV1RoomsPostErrors, ThrowOnError> => (options.client ?? client).post<CreateRoomApiV1RoomsPostResponses, CreateRoomApiV1RoomsPostErrors, ThrowOnError>({
+export const createRoomApiV1RoomsPost = <ThrowOnError extends boolean = false>(options: Options<CreateRoomApiV1RoomsPostData, ThrowOnError>): RequestResult<CreateRoomApiV1RoomsPostResponses, CreateRoomApiV1RoomsPostErrors, ThrowOnError, 'data'> => (options.client ?? client).post<CreateRoomApiV1RoomsPostResponses, CreateRoomApiV1RoomsPostErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
     url: '/api/v1/rooms',
     ...options,
     headers: {
@@ -200,9 +283,17 @@ export const createRoomApiV1RoomsPost = <ThrowOnError extends boolean = false>(o
 /**
  * Get Room
  */
-export const getRoomApiV1RoomsRoomIdGet = <ThrowOnError extends boolean = false>(options: Options<GetRoomApiV1RoomsRoomIdGetData, ThrowOnError>): RequestResult<GetRoomApiV1RoomsRoomIdGetResponses, GetRoomApiV1RoomsRoomIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetRoomApiV1RoomsRoomIdGetResponses, GetRoomApiV1RoomsRoomIdGetErrors, ThrowOnError>({ url: '/api/v1/rooms/{room_id}', ...options });
+export const getRoomApiV1RoomsRoomIdGet = <ThrowOnError extends boolean = false>(options: Options<GetRoomApiV1RoomsRoomIdGetData, ThrowOnError>): RequestResult<GetRoomApiV1RoomsRoomIdGetResponses, GetRoomApiV1RoomsRoomIdGetErrors, ThrowOnError, 'data'> => (options.client ?? client).get<GetRoomApiV1RoomsRoomIdGetResponses, GetRoomApiV1RoomsRoomIdGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/rooms/{room_id}',
+    ...options
+});
 
 /**
  * Get Player Statistics
  */
-export const getPlayerStatisticsApiV1PlayersAccountIdStatisticsGet = <ThrowOnError extends boolean = false>(options: Options<GetPlayerStatisticsApiV1PlayersAccountIdStatisticsGetData, ThrowOnError>): RequestResult<GetPlayerStatisticsApiV1PlayersAccountIdStatisticsGetResponses, GetPlayerStatisticsApiV1PlayersAccountIdStatisticsGetErrors, ThrowOnError> => (options.client ?? client).get<GetPlayerStatisticsApiV1PlayersAccountIdStatisticsGetResponses, GetPlayerStatisticsApiV1PlayersAccountIdStatisticsGetErrors, ThrowOnError>({ url: '/api/v1/players/{account_id}/statistics', ...options });
+export const getPlayerStatisticsApiV1PlayersAccountIdStatisticsGet = <ThrowOnError extends boolean = false>(options: Options<GetPlayerStatisticsApiV1PlayersAccountIdStatisticsGetData, ThrowOnError>): RequestResult<GetPlayerStatisticsApiV1PlayersAccountIdStatisticsGetResponses, GetPlayerStatisticsApiV1PlayersAccountIdStatisticsGetErrors, ThrowOnError, 'data'> => (options.client ?? client).get<GetPlayerStatisticsApiV1PlayersAccountIdStatisticsGetResponses, GetPlayerStatisticsApiV1PlayersAccountIdStatisticsGetErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/api/v1/players/{account_id}/statistics',
+    ...options
+});

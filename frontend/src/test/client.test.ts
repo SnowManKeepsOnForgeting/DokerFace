@@ -7,11 +7,8 @@ import '../api/client'; // Import client config
 
 const server = setupServer(
   http.post('http://localhost:8080/api/v1/auth/login', () => {
-    return HttpResponse.json(
-      { detail: 'Invalid credentials' },
-      { status: 401 }
-    );
-  })
+    return HttpResponse.json({ detail: 'Invalid credentials' }, { status: 401 });
+  }),
 );
 
 describe('API Client Error Normalization', () => {

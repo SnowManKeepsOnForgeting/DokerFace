@@ -10,10 +10,16 @@ import '../api/client'; // Init client
 const server = setupServer(
   http.get('http://localhost:8080/api/v1/me', () => {
     return HttpResponse.json(
-      { account_id: 1, login_name: 'alice', role: 'player', status: 'active', display_name: 'Alice' },
-      { status: 200 }
+      {
+        account_id: 1,
+        login_name: 'alice',
+        role: 'player',
+        status: 'active',
+        display_name: 'Alice',
+      },
+      { status: 200 },
     );
-  })
+  }),
 );
 
 function TestComponent() {
@@ -52,7 +58,7 @@ describe('AuthProvider Flow', () => {
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     expect(screen.getByText('Loading...')).toBeInTheDocument();
@@ -65,7 +71,7 @@ describe('AuthProvider Flow', () => {
       }),
       http.get('http://localhost:8080/api/v1/me', () => {
         return HttpResponse.json({ detail: 'Not authenticated' }, { status: 401 });
-      })
+      }),
     );
 
     const logoutBtn = screen.getByText('Logout');
