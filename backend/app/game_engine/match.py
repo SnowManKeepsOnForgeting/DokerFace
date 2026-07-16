@@ -61,6 +61,7 @@ class MatchCoordinator:
         self._hand_number = 0
         self._hand: PokerKitAdapter | None = None
         self._hand_player_ids: tuple[int, ...] = ()
+        self._hand_blinds: BlindAmounts | None = None
         self._status = MatchStatus.ACTIVE
 
     @property
@@ -89,6 +90,20 @@ class MatchCoordinator:
             raise MatchStateError("No hand is currently active")
         return self._hand
 
+    @property
+    def rules(self) -> RoomRules:
+        return self._rules
+
+    @property
+    def hand_player_ids(self) -> tuple[int, ...]:
+        return self._hand_player_ids
+
+    @property
+    def hand_blinds(self) -> BlindAmounts:
+        if self._hand_blinds is None:
+            raise MatchStateError("No current hand blinds")
+        return self._hand_blinds
+
     def start_hand(self) -> PokerKitAdapter:
         if self._status is MatchStatus.COMPLETE:
             raise MatchStateError("Match is complete")
@@ -104,6 +119,7 @@ class MatchCoordinator:
         button_account_id = self._next_active_button(active_ids)
         amounts = blind_amounts(self._rules, self._hand_number + 1)
         self._hand_player_ids = active_ids
+        self._hand_blinds = amounts
         self._hand_number += 1
         self._hand = PokerKitAdapter.create_hand(
             self._hand_config(amounts),
@@ -128,6 +144,7 @@ class MatchCoordinator:
             self._stacks[account_id] = stack
         self._hand = None
         self._hand_player_ids = ()
+        self._hand_blinds = None
         self._button_index = (self._button_index + 1) % len(self._player_ids)
         if self._match_is_complete():
             self._status = MatchStatus.COMPLETE

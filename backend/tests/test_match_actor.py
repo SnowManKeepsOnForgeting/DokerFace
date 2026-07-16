@@ -112,6 +112,15 @@ async def test_actor_exposes_initial_private_snapshot_and_validates_state_identi
     assert response.result.hand_id != initial.hand_id
     assert response.result.settled_hand_id == initial.hand_id
     assert response.result.snapshot.street == "preflop"
+    completed = response.result.completed_hand
+    assert completed is not None
+    assert completed.hand_id == initial.hand_id
+    assert completed.actions[0].state_version == 1
+    assert completed.actions[0].action is ActionType.FOLD
+    assert completed.starting_stacks == (1000, 1000)
+    assert completed.small_blind == 50
+    assert completed.big_blind == 100
+    assert set(completed.private_snapshots) == {1, 2}
     await actor.close()
 
 

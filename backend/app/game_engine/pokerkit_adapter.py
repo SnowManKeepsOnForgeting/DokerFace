@@ -71,6 +71,10 @@ class PokerKitAdapter:
         self._starting_stacks = starting_stacks
         self._manual_dealing = manual_dealing
 
+    @property
+    def starting_stacks(self) -> tuple[int, ...]:
+        return self._starting_stacks
+
     @classmethod
     def create_hand(
         cls,

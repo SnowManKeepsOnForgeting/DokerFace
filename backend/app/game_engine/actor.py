@@ -45,6 +45,30 @@ class MatchActorSnapshot:
 
 
 @dataclass(frozen=True)
+class HandActionSnapshot:
+    sequence_no: int
+    state_version: int
+    account_id: int
+    street: str
+    action: ActionType
+    amount: int | None
+
+
+@dataclass(frozen=True)
+class CompletedHandSnapshot:
+    hand_id: UUID
+    hand_number: int
+    button_account_id: int
+    small_blind: int
+    big_blind: int
+    public: PublicHandSnapshot
+    private_snapshots: dict[int, PrivateHandSnapshot]
+    starting_stacks: tuple[int, ...]
+    settlement: HandSettlement
+    actions: tuple[HandActionSnapshot, ...]
+
+
+@dataclass(frozen=True)
 class MatchCommand:
     command_id: UUID
     action: ActionCommand
@@ -66,6 +90,7 @@ class MatchCommandResult:
     settled_hand_id: UUID | None = None
     settled_hand_number: int | None = None
     settlement: HandSettlement | None = None
+    completed_hand: CompletedHandSnapshot | None = None
 
 
 @dataclass(frozen=True)
@@ -101,6 +126,8 @@ class MatchActor:
         self._timer_task: asyncio.Task[object] | None = None
         self._disconnect_timer_task: asyncio.Task[object] | None = None
         self._disconnect_timer_account_id: int | None = None
+        self._hand_starting_stacks: tuple[int, ...] = ()
+        self._hand_actions: list[HandActionSnapshot] = []
         self._terminal_snapshot: MatchActorSnapshot | None = None
         self._terminal_private: dict[int, PrivateHandSnapshot] = {}
         self._queue: asyncio.Queue[_QueuedCommand | None] = asyncio.Queue()
@@ -114,6 +141,8 @@ class MatchActor:
             return self.current_snapshot()
         self._coordinator.start_hand()
         self._hand_id = uuid4()
+        self._hand_starting_stacks = self._coordinator.hand.starting_stacks
+        self._hand_actions = []
         self._task = asyncio.create_task(self._run(), name="dokerface-match-actor")
         self._schedule_action_timer()
         return self.current_snapshot()
@@ -266,8 +295,19 @@ class MatchActor:
         hand_id = self._require_hand_id()
         hand_number = self._coordinator.hand_number
         button_account_id = self._coordinator.button_account_id
+        before_action = self._coordinator.public_snapshot()
         applied = self._coordinator.apply_action(command.action)
         self._state_version += 1
+        self._hand_actions.append(
+            HandActionSnapshot(
+                sequence_no=len(self._hand_actions) + 1,
+                state_version=self._state_version,
+                account_id=applied.account_id,
+                street=before_action.street,
+                action=applied.action,
+                amount=applied.amount,
+            )
+        )
         public = replace(
             self._coordinator.public_snapshot(),
             state_version=self._state_version,
@@ -277,7 +317,20 @@ class MatchActor:
                 account_id: self._coordinator.hand.private_snapshot(account_id)
                 for account_id in self._coordinator.player_ids
             }
+            blinds = self._coordinator.hand_blinds
             settlement = self._coordinator.settle_hand()
+            completed_hand = CompletedHandSnapshot(
+                hand_id=hand_id,
+                hand_number=hand_number,
+                button_account_id=button_account_id,
+                small_blind=blinds.small_blind,
+                big_blind=blinds.big_blind,
+                public=public,
+                private_snapshots=terminal_private,
+                starting_stacks=self._hand_starting_stacks,
+                settlement=settlement,
+                actions=tuple(self._hand_actions),
+            )
             terminal_public = replace(
                 public,
                 stacks=settlement.final_stacks,
@@ -289,6 +342,8 @@ class MatchActor:
             if self._coordinator.status is MatchStatus.ACTIVE:
                 self._coordinator.start_hand()
                 self._hand_id = uuid4()
+                self._hand_starting_stacks = self._coordinator.hand.starting_stacks
+                self._hand_actions = []
                 self._schedule_action_timer()
                 public = replace(
                     self._coordinator.public_snapshot(),
@@ -305,6 +360,7 @@ class MatchActor:
                     settled_hand_id=hand_id,
                     settled_hand_number=hand_number,
                     settlement=settlement,
+                    completed_hand=completed_hand,
                 )
             self._terminal_snapshot = MatchActorSnapshot(
                 match_id=self._match_id,
@@ -329,6 +385,7 @@ class MatchActor:
                 settled_hand_id=hand_id,
                 settled_hand_number=hand_number,
                 settlement=settlement,
+                completed_hand=completed_hand,
             )
         self._schedule_action_timer()
         return MatchCommandResult(
@@ -429,6 +486,8 @@ class MatchActor:
 
 
 __all__ = [
+    "CompletedHandSnapshot",
+    "HandActionSnapshot",
     "MatchActor",
     "MatchActorSnapshot",
     "MatchActorStateError",
