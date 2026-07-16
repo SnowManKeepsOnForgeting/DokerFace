@@ -249,6 +249,7 @@ GET    /api/v1/players
 GET    /api/v1/players/{account_id}
 PATCH  /api/v1/me/profile
 GET    /api/v1/players/{account_id}/matches
+GET    /api/v1/players/{account_id}/statistics
 
 GET    /api/v1/rooms
 POST   /api/v1/rooms
@@ -409,7 +410,11 @@ DokerFace/
 ├── deploy/
 │   ├── Caddyfile
 │   ├── compose.yml
-│   └── backup.sh
+│   ├── backup.sh
+│   ├── restore.sh
+│   └── README.md
+├── .github/
+│   └── workflows/backend.yml
 ├── Feature.md
 └── Architecture.md
 ```

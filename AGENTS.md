@@ -65,7 +65,17 @@ Completed and committed:
 - Socket.IO `room:start`, `game:action`, and `game:request-snapshot` events with public/private
   snapshot broadcasting, stale-command rejection, hand settlement, and room reset after match
   completion.
+- Finite decision timers, unlimited-room disconnected-player fallback, active-match SID rebinding,
+  and full snapshot recovery after reconnect.
+- Match history persistence for completed hands and matches, startup voiding of abandoned active
+  matches, private-hole-card history redaction, per-pot settlement details, and administrator voiding.
+- Versioned player statistics reducer, persistent counters, statistics rebuild from completed
+  `actions`, `GET /api/v1/players/{account_id}/statistics`, and `counted_in_stats` enforcement.
+- Multiplayer Elo batches, deterministic leaderboard, startup rating initialization, administrator
+  rating reset, and current-batch replay after match voiding.
+- Waiting-room host transfer/kick policy, public chat/quick phrases/custom phrases, and emote events.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
+- PostgreSQL backup/restore scripts, container log rotation, and backend GitHub Actions quality checks.
 
 Backend implementation commit:
 
@@ -297,7 +307,27 @@ Deployment files:
   volumes.
 - `deploy/Caddyfile`: API and future Socket.IO reverse proxy.
 - `deploy/.env.example`: local Compose settings and bootstrap administrator placeholders.
-- `deploy/README.md`: startup and shutdown instructions.
+- `deploy/backup.sh` and `deploy/restore.sh`: compressed PostgreSQL backup and explicitly confirmed
+  restore workflows.
+- `deploy/README.md`: startup, shutdown, backup, restore, and log rotation instructions.
+- `.github/workflows/backend.yml`: locked uv, formatting, Ruff, Pyright, and pytest checks.
+
+Recent backend commits:
+
+```text
+ce7ca21 Persist realtime match history
+0cd661b Add startup match recovery
+49e2168 Settle ratings with completed matches
+0ff4405 Persist player statistics
+78f5c63 Replay ratings after match void
+082dd0a Rebuild player statistics from history
+ba1e603 Ensure rating records on startup
+721ebe9 Persist per-pot settlement details
+147b8d7 Scope rating replay to current batch
+7e45900 Honor statistics opt-out in matches
+9f6863a Add backend end-to-end coverage
+fec5810 Add backup and deployment hardening
+```
 
 ## Verification Status
 
@@ -306,11 +336,12 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed
-pytest: 123 passed
-Alembic head: 0004_create_rooms
+pytest: 145 passed
+Alembic head: 0009_add_matches_played_to_stats
 PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
-Compose database migration: applied at 0004_create_rooms (head)
+Compose database migration: 0004_create_rooms was previously applied; run `alembic upgrade head`
+to apply the source head `0009_add_matches_played_to_stats` before deployment
 Administrator bootstrap: created and verified in the Compose database
 HTTP login, current user, and logout through Caddy: passed
 HTTP administrator create, disable, password reset, and restore through Caddy: passed
@@ -324,10 +355,16 @@ PokerKit public/private snapshot and legal-action tests: passed
 Active match registry and random-seat room lifecycle tests: passed
 Room start, game action, snapshot request, stale-command, duplicate-command, and match reset
 tests: passed
+Finite action deadlines, disconnected-player fallback, SID rebinding, and snapshot recovery tests:
+passed
+Match history, privacy redaction, per-pot settlement, statistics rebuild/API, rating replay, and
+backend end-to-end tests: passed
 Room create/list/detail through Caddy: passed
 Engine.IO polling handshake through Caddy: valid Origin accepted and invalid Origin rejected
 with HTTP 400; Python AsyncClient smoke test not run because optional `aiohttp` is not installed
 Compose configuration: parsed successfully
+Backup/restore script syntax and destructive-operation guards: passed
+GitHub Actions backend quality workflow: added
 API image rebuild with migration files and no Pillow: passed
 PostgreSQL container: healthy
 API container: healthy
@@ -477,10 +514,9 @@ The user explicitly requires fine-grained, reversible Git history.
   events are implemented.
 - Room start validation, random seat/button assignment, active match runtime registration, and
   room reset after match completion are implemented.
-- Implement remaining lobby updates, host controls, and invitations after the corresponding
-  runtime policies are finalized.
+- Waiting-room host transfer and kick controls are implemented; invitations remain out of scope.
 - One active Socket.IO connection per account is enforced in memory.
-- Implement public room chat, quick messages, custom quick messages, and emote events.
+- Public room chat, quick messages, custom quick messages, and emote events are implemented.
 
 ### 6. PokerKit contract and match engine
 
@@ -504,9 +540,10 @@ The user explicitly requires fine-grained, reversible Git history.
 - State versions and idempotent command IDs are implemented.
 - Separate public and player-private snapshots plus `game:request-snapshot` are implemented;
   spectator snapshots remain out of scope until spectator policy is finalized.
-- Implement finite action timers and the 60-second disconnected-player fallback for unlimited rooms.
-- Replace old connections on reconnect and send a full current snapshot.
-- Persist only completed hands/matches; void incomplete matches after process restart.
+- Finite action timers and the 60-second disconnected-player fallback for unlimited rooms are
+  implemented.
+- Old connections are replaced on reconnect and a full current snapshot is available.
+- Only completed hands/matches are persisted; incomplete matches are voided after process restart.
 
 ### 8. Match persistence and history
 
@@ -523,7 +560,7 @@ The user explicitly requires fine-grained, reversible Git history.
   showdown rate, showdown win rate, average pot, fold rate, all-in count, recent form, and position
   usage.
 - Derive ratios at query time and return insufficient-data state for zero/small denominators.
-- Ensure statistics can be rebuilt from persisted actions.
+- Ensure statistics can be rebuilt from persisted actions and queried publicly with derived rates.
 
 ### 10. Rating and leaderboard
 
@@ -541,7 +578,8 @@ The user explicitly requires fine-grained, reversible Git history.
   and zero-sum Elo changes.
 - Add end-to-end tests for account setup, room start, one complete hand, reconnect, match settlement,
   leaderboard update, and rating reset.
-- Add database backup/restore scripts, log rotation, health checks, and CI.
+- Database backup/restore scripts, log rotation, health checks, CI, and backend end-to-end coverage
+  are implemented.
 - Load test 10 concurrent clients on a 2 vCPU / 4GB environment.
 
 ## Open Product Decisions
@@ -551,9 +589,6 @@ behavior materially:
 
 - Spectator capacity and whether spectators may join mid-match.
 - Mid-match player joining, rebuying, and voluntary seat-leave behavior.
-- Whether small blind is always exactly half the big blind and whether ante is enabled.
-- Fixed-hand-mode tie ranking and reward behavior.
-- Exact host transfer behavior when the host leaves voluntarily.
 - Nickname change frequency and account/history retention periods.
 
 Implement surrounding work first when possible. Before finalizing one of these behaviors, obtain a
