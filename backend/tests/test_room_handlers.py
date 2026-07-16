@@ -84,7 +84,8 @@ async def test_join_initializes_runtime_enters_socket_room_and_broadcasts_snapsh
     response = await handlers["room:join"]("sid-1", {"room_id": str(room_id)})
 
     assert response["ok"] is True
-    assert response["room"]["members"] == [{"account_id": 1, "ready": False}]
+    assert response["room"]["status"] == "waiting"
+    assert response["room"]["members"] == [{"account_id": 1, "ready": False, "seat": None}]
     server.enter_room.assert_awaited_once_with("sid-1", str(room_id))
     emitted = server.emit.await_args.args
     assert emitted[0] == "room:snapshot"
@@ -122,6 +123,6 @@ async def test_ready_updates_snapshot_and_host_leave_is_rejected() -> None:
     ready_response = await handlers["room:ready"]("sid-1", {"room_id": str(room_id), "ready": True})
     leave_response = await handlers["room:leave"]("sid-1", {"room_id": str(room_id)})
 
-    assert ready_response["room"]["members"] == [{"account_id": 1, "ready": True}]
+    assert ready_response["room"]["members"] == [{"account_id": 1, "ready": True, "seat": None}]
     assert leave_response == {"ok": False, "error": "host_leave_policy_required"}
     server.leave_room.assert_not_awaited()
