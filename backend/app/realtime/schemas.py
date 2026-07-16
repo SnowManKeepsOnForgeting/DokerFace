@@ -41,6 +41,43 @@ class RoomKickEvent(BaseModel):
     target_account_id: int = Field(ge=1)
 
 
+class ChatSendEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    room_id: UUID
+    message_type: Literal["text", "quick", "custom_quick"]
+    content: str = Field(min_length=1, max_length=500)
+
+
+class EmoteSendEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    room_id: UUID
+    emote: str = Field(min_length=1, max_length=64)
+    target_account_id: int | None = Field(default=None, ge=1)
+
+
+class ChatMessagePayload(BaseModel):
+    schema_version: Literal[1] = 1
+    message_id: UUID
+    room_id: UUID
+    account_id: int
+    message_type: Literal["text", "quick", "custom_quick"]
+    content: str
+    target_account_id: int | None = None
+    created_at: datetime
+
+
+class EmotePayload(BaseModel):
+    schema_version: Literal[1] = 1
+    room_id: UUID
+    account_id: int
+    emote: str
+    target_account_id: int | None = None
+
+
 class RoomStartEvent(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

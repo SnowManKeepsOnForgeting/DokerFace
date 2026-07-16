@@ -19,6 +19,7 @@ from testcontainers.postgres import PostgresContainer
 
 from app.accounts.models import Account, AccountRole, AccountSession, AccountStatus, Profile
 from app.admin.models import AdminAuditLog
+from app.chat.models import ChatMessageRecord
 from app.matches.models import (
     ActionRecord,
     HandRecord,
@@ -163,6 +164,34 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             assert loaded_room.host_account_id == player.account_id
             assert loaded_room.status is RoomStatus.WAITING
             assert loaded_room.rules["decision_timeout_seconds"] is None
+
+            chat_tables = set(
+                (
+                    await session.execute(
+                        text(
+                            "SELECT table_name FROM information_schema.tables "
+                            "WHERE table_schema = 'public' AND table_name = 'chat_messages'"
+                        )
+                    )
+                ).scalars()
+            )
+            assert chat_tables == {"chat_messages"}
+            chat_message = ChatMessageRecord(
+                message_id=uuid.uuid4(),
+                room_id=room.room_id,
+                account_id=player.account_id,
+                message_type="quick",
+                content="Nice hand",
+            )
+            session.add(chat_message)
+            await session.commit()
+            loaded_chat_message = await session.scalar(
+                select(ChatMessageRecord).where(
+                    ChatMessageRecord.message_id == chat_message.message_id
+                )
+            )
+            assert loaded_chat_message is not None
+            assert loaded_chat_message.content == "Nice hand"
 
             history_tables = set(
                 (

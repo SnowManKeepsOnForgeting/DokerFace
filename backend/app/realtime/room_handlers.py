@@ -12,6 +12,7 @@ from sqlalchemy import select
 
 from app.accounts.models import Profile
 from app.auth.passwords import PasswordService
+from app.chat.service import ChatService
 from app.config import Settings
 from app.db.session import Database
 from app.game_engine.actor import (
@@ -24,6 +25,10 @@ from app.game_engine.contracts import ActionCommand
 from app.game_engine.match import MatchCoordinator
 from app.matches.registry import MatchPlayer, MatchRegistry, MatchRuntime, MatchRuntimeError
 from app.realtime.schemas import (
+    ChatMessagePayload,
+    ChatSendEvent,
+    EmotePayload,
+    EmoteSendEvent,
     GameActionEvent,
     GameActionRejected,
     GameHandSettled,
@@ -170,6 +175,66 @@ def register_room_handlers(
             return _error(_runtime_error_code(error))
         await server.leave_room(target.sid, str(event.room_id))
         return await _broadcast_room_snapshot(server, runtime, RoomStatus.WAITING)
+
+    @server.on("chat:send")
+    async def chat_send(sid: str, data: Any) -> dict[str, Any]:
+        event = _parse_event(ChatSendEvent, data)
+        if event is None:
+            return _error("invalid_payload")
+        account_id = await _account_id_for_sid(server, sid)
+        if account_id is None:
+            return _error("authentication_required")
+        runtime = registry.get(event.room_id)
+        if runtime is None:
+            return _error("room_not_joined")
+        member = runtime.members.get(account_id)
+        if member is None or member.sid != sid:
+            return _error("not_a_member")
+        try:
+            message = await _persist_chat_message(
+                app,
+                event.room_id,
+                account_id,
+                event.message_type,
+                event.content,
+            )
+        except Exception:
+            return _error("chat_persistence_failed")
+        payload = ChatMessagePayload(
+            message_id=message.message_id,
+            room_id=message.room_id,
+            account_id=message.account_id,
+            message_type=event.message_type,
+            content=message.content,
+            created_at=message.created_at,
+        ).model_dump(mode="json")
+        await server.emit("chat:message", payload, room=str(event.room_id))
+        return {"ok": True, "message": payload}
+
+    @server.on("emote:send")
+    async def emote_send(sid: str, data: Any) -> dict[str, Any]:
+        event = _parse_event(EmoteSendEvent, data)
+        if event is None:
+            return _error("invalid_payload")
+        account_id = await _account_id_for_sid(server, sid)
+        if account_id is None:
+            return _error("authentication_required")
+        runtime = registry.get(event.room_id)
+        if runtime is None:
+            return _error("room_not_joined")
+        member = runtime.members.get(account_id)
+        if member is None or member.sid != sid:
+            return _error("not_a_member")
+        if event.target_account_id is not None and event.target_account_id not in runtime.members:
+            return _error("target_not_a_member")
+        payload = EmotePayload(
+            room_id=event.room_id,
+            account_id=account_id,
+            emote=event.emote,
+            target_account_id=event.target_account_id,
+        ).model_dump(mode="json")
+        await server.emit("emote:received", payload, room=str(event.room_id))
+        return {"ok": True, "emote": payload}
 
     @server.on("room:start")
     async def room_start(sid: str, data: Any) -> dict[str, Any]:
@@ -343,6 +408,24 @@ async def _set_room_status(app: FastAPI, room_id: UUID, status: RoomStatus) -> N
             raise RuntimeError("Room disappeared while updating its status")
         room.status = status
         await db_session.commit()
+
+
+async def _persist_chat_message(
+    app: FastAPI,
+    room_id: UUID,
+    account_id: int,
+    message_type: str,
+    content: str,
+) -> Any:
+    database = cast(Database, app.state.database)
+    async with database.session_factory() as db_session:
+        return await ChatService().create_message(
+            db_session,
+            room_id=room_id,
+            account_id=account_id,
+            message_type=message_type,
+            content=content,
+        )
 
 
 async def _set_room_host(app: FastAPI, room_id: UUID, host_account_id: int) -> None:

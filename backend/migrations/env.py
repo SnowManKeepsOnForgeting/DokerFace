@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 import app.accounts.models  # pyright: ignore[reportUnusedImport]
 import app.admin.models  # pyright: ignore[reportUnusedImport]
+import app.chat.models  # pyright: ignore[reportUnusedImport]
 import app.matches.models  # pyright: ignore[reportUnusedImport]
 import app.ratings.models  # pyright: ignore[reportUnusedImport]
 import app.rooms.models  # noqa: F401  # pyright: ignore[reportUnusedImport]
