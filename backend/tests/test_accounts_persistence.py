@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
@@ -145,6 +145,45 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             assert loaded_room.host_account_id == player.account_id
             assert loaded_room.status is RoomStatus.WAITING
             assert loaded_room.rules["decision_timeout_seconds"] is None
+
+            history_tables = set(
+                (
+                    await session.execute(
+                        text(
+                            "SELECT table_name FROM information_schema.tables "
+                            "WHERE table_schema = 'public' AND table_name IN "
+                            "('matches', 'match_players', 'hands', 'hand_players', "
+                            "'actions', 'pots')"
+                        )
+                    )
+                ).scalars()
+            )
+            assert history_tables == {
+                "matches",
+                "match_players",
+                "hands",
+                "hand_players",
+                "actions",
+                "pots",
+            }
+
+            unique_constraints = set(
+                (
+                    await session.execute(
+                        text(
+                            "SELECT constraint_name FROM information_schema.table_constraints "
+                            "WHERE constraint_type = 'UNIQUE' AND table_name IN "
+                            "('match_players', 'hands', 'actions', 'pots')"
+                        )
+                    )
+                ).scalars()
+            )
+            assert {
+                "uq_match_players_match_id_seat",
+                "uq_hands_match_id_hand_number",
+                "uq_actions_hand_id_sequence_no",
+                "uq_pots_hand_id_pot_number",
+            } <= unique_constraints
 
             duplicate = Account(
                 login_name="alice",
