@@ -3,7 +3,7 @@
 import re
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +12,7 @@ from sqlalchemy.orm import selectinload
 from app.accounts.models import Account, AccountStatus
 from app.auth.dependencies import get_current_account
 from app.db.dependencies import get_db_session
+from app.realtime.connections import ConnectionRegistry
 
 router = APIRouter(prefix="/api/v1", tags=["players"])
 
@@ -22,6 +23,7 @@ class PublicPlayerResponse(BaseModel):
     avatar_text: str
     avatar_background_color: str
     rank_badge_theme: str
+    is_online: bool
 
 
 class PlayerListResponse(BaseModel):
@@ -52,18 +54,26 @@ class ProfileUpdateRequest(BaseModel):
         return value.upper() if value is not None else None
 
 
-def to_public_player(account: Account) -> PublicPlayerResponse:
+def to_public_player(
+    account: Account,
+    connection_registry: ConnectionRegistry | None = None,
+) -> PublicPlayerResponse:
     if account.profile is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Account profile is missing",
         )
+    is_online = False
+    if connection_registry is not None:
+        is_online = connection_registry.sid_for_account(account.account_id) is not None
+
     return PublicPlayerResponse(
         account_id=account.account_id,
         display_name=account.profile.display_name,
         avatar_text=account.profile.avatar_text,
         avatar_background_color=account.profile.avatar_background_color,
         rank_badge_theme=account.profile.rank_badge_theme,
+        is_online=is_online,
     )
 
 
@@ -71,6 +81,7 @@ def to_public_player(account: Account) -> PublicPlayerResponse:
 async def list_players(
     _: Annotated[Account, Depends(get_current_account)],
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    request: Request,
     offset: int = 0,
     limit: int = 20,
 ) -> PlayerListResponse:
@@ -95,8 +106,9 @@ async def list_players(
             )
         ).all()
     )
+    connection_registry = getattr(request.app.state, "connection_registry", None)
     return PlayerListResponse(
-        items=[to_public_player(account) for account in accounts],
+        items=[to_public_player(account, connection_registry) for account in accounts],
         total=int(total or 0),
         offset=offset,
         limit=limit,
@@ -108,6 +120,7 @@ async def get_player(
     account_id: int,
     _: Annotated[Account, Depends(get_current_account)],
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    request: Request,
 ) -> PublicPlayerResponse:
     account = await db_session.scalar(
         select(Account)
@@ -119,7 +132,8 @@ async def get_player(
     )
     if account is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
-    return to_public_player(account)
+    connection_registry = getattr(request.app.state, "connection_registry", None)
+    return to_public_player(account, connection_registry)
 
 
 @router.patch("/me/profile", response_model=PublicPlayerResponse)

@@ -65,6 +65,7 @@ async def test_player_list_returns_public_profiles() -> None:
                 "avatar_text": "Alice",
                 "avatar_background_color": "#64748B",
                 "rank_badge_theme": "default",
+                "is_online": False,
             },
             {
                 "account_id": 2,
@@ -72,6 +73,7 @@ async def test_player_list_returns_public_profiles() -> None:
                 "avatar_text": "Bob",
                 "avatar_background_color": "#64748B",
                 "rank_badge_theme": "default",
+                "is_online": False,
             },
         ],
         "total": 2,

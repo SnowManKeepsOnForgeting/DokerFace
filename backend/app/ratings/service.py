@@ -8,11 +8,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.accounts.models import Account, AccountStatus
+from app.accounts.models import Account, AccountStatus, Profile
 from app.matches.models import MatchRecord
 from app.ratings.calculator import RatingParticipant, calculate_ratings
 from app.ratings.models import RatingBatch, RatingChangeRecord, RatingRecord
@@ -140,16 +140,75 @@ class RatingService:
         session: AsyncSession,
         offset: int,
         limit: int,
-    ) -> tuple[RatingBatch | None, Sequence[RatingRecord]]:
+        search: str | None = None,
+        rank_filter: str | None = None,
+        only_with_matches: bool = False,
+    ) -> tuple[RatingBatch | None, Sequence[RatingRecord], int]:
         batch = await self.current_batch(session)
         if batch is None:
-            return None, ()
+            return None, (), 0
+
+        query = select(RatingRecord).where(RatingRecord.batch_id == batch.batch_id)
+        count_query = (
+            select(func.count())
+            .select_from(RatingRecord)
+            .where(RatingRecord.batch_id == batch.batch_id)
+        )
+
+        if only_with_matches:
+            query = query.where(RatingRecord.completed_matches > 0)
+            count_query = count_query.where(RatingRecord.completed_matches > 0)
+
+        if rank_filter:
+            if rank_filter == "D":
+                query = query.where(RatingRecord.rating < 850)
+                count_query = count_query.where(RatingRecord.rating < 850)
+            elif rank_filter == "C":
+                query = query.where(RatingRecord.rating >= 850, RatingRecord.rating < 950)
+                count_query = count_query.where(
+                    RatingRecord.rating >= 850, RatingRecord.rating < 950
+                )
+            elif rank_filter == "B":
+                query = query.where(RatingRecord.rating >= 950, RatingRecord.rating < 1050)
+                count_query = count_query.where(
+                    RatingRecord.rating >= 950, RatingRecord.rating < 1050
+                )
+            elif rank_filter == "A":
+                query = query.where(RatingRecord.rating >= 1050, RatingRecord.rating < 1150)
+                count_query = count_query.where(
+                    RatingRecord.rating >= 1050, RatingRecord.rating < 1150
+                )
+            elif rank_filter == "S":
+                query = query.where(RatingRecord.rating >= 1150, RatingRecord.rating < 1250)
+                count_query = count_query.where(
+                    RatingRecord.rating >= 1150, RatingRecord.rating < 1250
+                )
+            elif rank_filter == "S+":
+                query = query.where(RatingRecord.rating >= 1250)
+                count_query = count_query.where(RatingRecord.rating >= 1250)
+
+        if search and search.strip():
+            search_str = search.strip()
+            query = query.join(Profile, RatingRecord.account_id == Profile.account_id)
+            count_query = count_query.join(Profile, RatingRecord.account_id == Profile.account_id)
+            if search_str.isdigit():
+                query = query.where(
+                    (RatingRecord.account_id == int(search_str))
+                    | (Profile.display_name.ilike(f"%{search_str}%"))
+                )
+                count_query = count_query.where(
+                    (RatingRecord.account_id == int(search_str))
+                    | (Profile.display_name.ilike(f"%{search_str}%"))
+                )
+            else:
+                query = query.where(Profile.display_name.ilike(f"%{search_str}%"))
+                count_query = count_query.where(Profile.display_name.ilike(f"%{search_str}%"))
+
+        total = await session.scalar(count_query) or 0
         entries = list(
             (
                 await session.scalars(
-                    select(RatingRecord)
-                    .where(RatingRecord.batch_id == batch.batch_id)
-                    .order_by(
+                    query.order_by(
                         RatingRecord.rating.desc(),
                         RatingRecord.highest_rating.desc(),
                         RatingRecord.completed_matches.desc(),
@@ -160,7 +219,8 @@ class RatingService:
                 )
             ).all()
         )
-        return batch, entries
+
+        return batch, entries, int(total)
 
     async def settle_match(
         self,
