@@ -35,6 +35,7 @@ from app.matches.persistence import (
     MatchResult,
     PotHistory,
 )
+from app.ratings.models import RatingBatch, RatingChangeRecord, RatingRecord
 from app.rooms.config import MatchEndMode, RoomRules, RoomVisibility
 from app.rooms.models import Room, RoomStatus
 
@@ -184,6 +185,19 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
                 "pots",
             }
 
+            rating_tables = set(
+                (
+                    await session.execute(
+                        text(
+                            "SELECT table_name FROM information_schema.tables "
+                            "WHERE table_schema = 'public' AND table_name IN "
+                            "('rating_batches', 'ratings', 'rating_changes')"
+                        )
+                    )
+                ).scalars()
+            )
+            assert rating_tables == {"rating_batches", "ratings", "rating_changes"}
+
             unique_constraints = set(
                 (
                     await session.execute(
@@ -293,6 +307,34 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             )
             assert void_match is not None
             assert void_match.status == "void"
+
+            batch = RatingBatch(created_by_account_id=administrator.account_id)
+            session.add(batch)
+            await session.flush()
+            session.add_all(
+                [
+                    RatingRecord(batch_id=batch.batch_id, account_id=1),
+                    RatingRecord(batch_id=batch.batch_id, account_id=2),
+                    RatingChangeRecord(
+                        batch_id=batch.batch_id,
+                        match_id=match_id,
+                        account_id=1,
+                        before_rating=1000,
+                        delta=20,
+                        after_rating=1020,
+                        finishing_rank=1,
+                    ),
+                ]
+            )
+            await session.commit()
+            loaded_rating = await session.scalar(
+                select(RatingRecord).where(
+                    RatingRecord.batch_id == batch.batch_id,
+                    RatingRecord.account_id == 1,
+                )
+            )
+            assert loaded_rating is not None
+            assert loaded_rating.rating == 1000
 
             duplicate = Account(
                 login_name="alice",
