@@ -59,6 +59,12 @@ Completed and committed:
   conservation tests.
 - One `asyncio.Queue`-backed `MatchActor` per match with duplicate `command_id` replay and
   monotonic `state_version` snapshots.
+- Rich public/private PokerKit snapshots with street, pot, all-in, seat, and legal-action data.
+- In-memory active match registry with random start seats, random initial buttons, and frozen
+  player display names.
+- Socket.IO `room:start`, `game:action`, and `game:request-snapshot` events with public/private
+  snapshot broadcasting, stale-command rejection, hand settlement, and room reset after match
+  completion.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 
 Backend implementation commit:
@@ -235,6 +241,42 @@ Match state version commit:
 80fb987 Add match state versions
 ```
 
+Poker snapshot commit:
+
+```text
+1ced8a4 Expose richer poker hand snapshots
+```
+
+Match actor lifecycle commit:
+
+```text
+184f303 Add match actor snapshot lifecycle
+```
+
+Match registry commit:
+
+```text
+575d457 Add active match registry
+```
+
+Realtime schema commit:
+
+```text
+7b7a19e Add realtime game event schemas
+```
+
+Socket.IO wiring commit:
+
+```text
+6d2c4ce Wire match registry into Socket.IO
+```
+
+Room and game events commit:
+
+```text
+3192374 Add room start and game realtime events
+```
+
 Odd-chip contract commit:
 
 ```text
@@ -264,7 +306,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed
-pytest: 108 passed
+pytest: 123 passed
 Alembic head: 0004_create_rooms
 PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
@@ -278,6 +320,10 @@ Room rules, persistence, HTTP, Socket.IO authentication, membership, and waiting
 passed
 PokerKit adapter and MatchCoordinator contract tests: passed
 MatchActor serialization, duplicate command replay, and state-version tests: passed
+PokerKit public/private snapshot and legal-action tests: passed
+Active match registry and random-seat room lifecycle tests: passed
+Room start, game action, snapshot request, stale-command, duplicate-command, and match reset
+tests: passed
 Room create/list/detail through Caddy: passed
 Engine.IO polling handshake through Caddy: valid Origin accepted and invalid Origin rejected
 with HTTP 400; Python AsyncClient smoke test not run because optional `aiohttp` is not installed
@@ -429,7 +475,9 @@ The user explicitly requires fine-grained, reversible Git history.
 - python-socketio Cookie/Origin authentication and one-active-connection replacement are implemented.
 - Room create/list/detail REST endpoints and waiting-room `room:join`, `room:ready`, and `room:leave`
   events are implemented.
-- Implement remaining lobby updates, seats, host controls, and invitations after the corresponding
+- Room start validation, random seat/button assignment, active match runtime registration, and
+  room reset after match completion are implemented.
+- Implement remaining lobby updates, host controls, and invitations after the corresponding
   runtime policies are finalized.
 - One active Socket.IO connection per account is enforced in memory.
 - Implement public room chat, quick messages, custom quick messages, and emote events.
@@ -444,15 +492,18 @@ The user explicitly requires fine-grained, reversible Git history.
 - `MatchCoordinator` for winner-takes-all and fixed-hand-count modes is implemented.
 - One queue/task per running match, duplicate command replay, and monotonic state versions are
   implemented in `MatchActor`.
-- Expand deterministic action/side-pot scenarios for four to eight players before exposing match
-  start through Socket.IO.
+- Socket.IO match start, public/private snapshots, action validation, request snapshots, and
+  settlement events are implemented.
+- Expand deterministic action/side-pot scenarios for four to eight players before production use
+  beyond the current real-time contract coverage.
 - Use one asyncio queue/task per running match so player and timeout commands are serialized.
 - Do not continue to networking/UI work if PokerKit contract tests expose unresolved rule gaps.
 
 ### 7. Snapshots, timers, and reconnects
 
-- Add state versions and idempotent command IDs.
-- Generate separate public, player-private, and spectator snapshots.
+- State versions and idempotent command IDs are implemented.
+- Separate public and player-private snapshots plus `game:request-snapshot` are implemented;
+  spectator snapshots remain out of scope until spectator policy is finalized.
 - Implement finite action timers and the 60-second disconnected-player fallback for unlimited rooms.
 - Replace old connections on reconnect and send a full current snapshot.
 - Persist only completed hands/matches; void incomplete matches after process restart.
