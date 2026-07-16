@@ -75,7 +75,7 @@ describe('Lobby View and Interactions', () => {
             <Lobby />
           </AuthProvider>
         </QueryClientProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     await waitFor(() => expect(screen.getByText('Standard Room')).toBeInTheDocument());
@@ -98,7 +98,9 @@ describe('Lobby View and Interactions', () => {
     );
 
     // Trigger the registered socket listeners directly to simulate server broadcast
-    const listeners = (socket as any).listeners ? (socket as any).listeners('lobby:rooms-updated') : [];
+    const listeners = (socket as any).listeners
+      ? (socket as any).listeners('lobby:rooms-updated')
+      : [];
     if (listeners.length > 0) {
       listeners.forEach((listener: any) => listener());
     } else {

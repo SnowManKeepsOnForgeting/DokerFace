@@ -686,6 +686,21 @@ export function Lobby() {
                       </p>
                     </div>
                   </label>
+
+                  <label className="flex items-center gap-3 bg-slate-950/40 p-3 rounded-lg border border-slate-800 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={winnerShow}
+                      onChange={(e) => setWinnerShow(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-purple-600 focus:ring-purple-500/30"
+                    />
+                    <div>
+                      <p className="text-xs font-semibold text-slate-200">Winner May Show Hand</p>
+                      <p className="text-[10px] text-slate-500">
+                        Allow winning players to show or muck cards
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
 
