@@ -32,6 +32,7 @@ client.setConfig({
   baseUrl: isDev ? 'http://localhost:8080' : '',
   credentials: 'include',
   throwOnError: true,
+  responseStyle: 'data',
 });
 
 // Error interceptor to catch failed requests and normalize them
