@@ -1,4 +1,5 @@
 import asyncio
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -167,4 +168,53 @@ async def test_player_and_disconnect_timeout_commands_are_serialized_by_version(
     assert sum(not isinstance(result, Exception) for result in results) == 1
     assert sum(isinstance(result, MatchCommandConflictError) for result in results) == 1
     assert actor.state_version == 1
+    await actor.close()
+
+
+@pytest.mark.asyncio
+async def test_finite_action_timer_folds_and_refreshes_the_deadline() -> None:
+    release = asyncio.Event()
+    sleeper_calls = 0
+
+    async def sleeper(seconds: float) -> object:
+        nonlocal sleeper_calls
+        assert seconds == 1
+        sleeper_calls += 1
+        if sleeper_calls == 1:
+            await release.wait()
+        else:
+            await asyncio.Event().wait()
+        return None
+
+    fixed_now = datetime(2026, 7, 16, 12, 30, tzinfo=UTC)
+    rules = make_rules().model_copy(update={"decision_timeout_seconds": 1})
+    actor = MatchActor(
+        MatchCoordinator((1, 2), rules),
+        decision_timeout_seconds=rules.decision_timeout_seconds,
+        clock=lambda: fixed_now,
+        sleeper=sleeper,
+    )
+    initial = await actor.start()
+
+    assert initial.action_deadline_at == datetime(2026, 7, 16, 12, 30, 1, tzinfo=UTC)
+    release.set()
+    for _ in range(10):
+        await asyncio.sleep(0)
+        if actor.state_version == 1:
+            break
+
+    current = actor.current_snapshot()
+    assert actor.state_version == 1
+    assert current.public.actor_account_id == 2
+    assert current.action_deadline_at == initial.action_deadline_at
+    await actor.close()
+
+
+@pytest.mark.asyncio
+async def test_unlimited_action_time_does_not_create_a_deadline() -> None:
+    actor = MatchActor(MatchCoordinator((1, 2), make_rules()))
+
+    initial = await actor.start()
+
+    assert initial.action_deadline_at is None
     await actor.close()

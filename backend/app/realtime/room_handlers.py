@@ -169,7 +169,11 @@ def register_room_handlers(
         profile_names = await _load_profile_names(app, member_ids)
         match_id = uuid4()
         coordinator = MatchCoordinator(tuple(member_ids), rules, button_index=button_index)
-        actor = MatchActor(coordinator, match_id=match_id)
+        actor = MatchActor(
+            coordinator,
+            match_id=match_id,
+            decision_timeout_seconds=rules.decision_timeout_seconds,
+        )
         await actor.start()
         players = tuple(
             MatchPlayer(

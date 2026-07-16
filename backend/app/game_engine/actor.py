@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from uuid import UUID, uuid4
 
@@ -80,10 +81,22 @@ class _QueuedCommand:
 
 
 class MatchActor:
-    def __init__(self, coordinator: MatchCoordinator, match_id: UUID | None = None) -> None:
+    def __init__(
+        self,
+        coordinator: MatchCoordinator,
+        match_id: UUID | None = None,
+        decision_timeout_seconds: int | None = None,
+        clock: Callable[[], datetime] | None = None,
+        sleeper: Callable[[float], Awaitable[object]] | None = None,
+    ) -> None:
         self._coordinator = coordinator
         self._match_id = match_id or uuid4()
+        self._decision_timeout_seconds = decision_timeout_seconds
+        self._clock = clock or (lambda: datetime.now(UTC))
+        self._sleeper = sleeper or asyncio.sleep
         self._hand_id: UUID | None = None
+        self._action_deadline_at: datetime | None = None
+        self._timer_task: asyncio.Task[object] | None = None
         self._terminal_snapshot: MatchActorSnapshot | None = None
         self._terminal_private: dict[int, PrivateHandSnapshot] = {}
         self._queue: asyncio.Queue[_QueuedCommand | None] = asyncio.Queue()
@@ -98,6 +111,7 @@ class MatchActor:
         self._coordinator.start_hand()
         self._hand_id = uuid4()
         self._task = asyncio.create_task(self._run(), name="dokerface-match-actor")
+        self._schedule_action_timer()
         return self.current_snapshot()
 
     async def submit(self, command: MatchCommand) -> MatchCommandResponse:
@@ -147,6 +161,7 @@ class MatchActor:
     async def close(self) -> None:
         if self._task is None:
             return
+        self._cancel_action_timer()
         await self._queue.put(None)
         await self._task
         self._task = None
@@ -173,6 +188,7 @@ class MatchActor:
             hand_id=self._hand_id,
             hand_number=self._coordinator.hand_number,
             button_account_id=self._coordinator.button_account_id,
+            action_deadline_at=self._action_deadline_at,
             public=replace(
                 self._coordinator.public_snapshot(),
                 state_version=self._state_version,
@@ -242,6 +258,7 @@ class MatchActor:
             if self._coordinator.status is MatchStatus.ACTIVE:
                 self._coordinator.start_hand()
                 self._hand_id = uuid4()
+                self._schedule_action_timer()
                 public = replace(
                     self._coordinator.public_snapshot(),
                     state_version=self._state_version,
@@ -264,8 +281,11 @@ class MatchActor:
                 hand_number=hand_number,
                 button_account_id=button_account_id,
                 public=terminal_public,
+                action_deadline_at=None,
             )
             self._terminal_private = terminal_private
+            self._action_deadline_at = None
+            self._cancel_action_timer()
             return MatchCommandResult(
                 command_id=command.command_id,
                 applied=applied,
@@ -278,6 +298,7 @@ class MatchActor:
                 settled_hand_number=hand_number,
                 settlement=settlement,
             )
+        self._schedule_action_timer()
         return MatchCommandResult(
             command_id=command.command_id,
             applied=applied,
@@ -311,6 +332,39 @@ class MatchActor:
         if self._hand_id is None:
             raise MatchActorStateError("Match actor has not started")
         return self._hand_id
+
+    def _schedule_action_timer(self) -> None:
+        self._cancel_action_timer()
+        snapshot = self._coordinator.public_snapshot()
+        if self._decision_timeout_seconds is None or snapshot.actor_account_id is None:
+            self._action_deadline_at = None
+            return
+        self._action_deadline_at = self._clock() + timedelta(seconds=self._decision_timeout_seconds)
+        self._timer_task = asyncio.create_task(
+            self._run_action_timer(
+                self._require_hand_id(),
+                self._state_version,
+            ),
+            name="dokerface-action-timer",
+        )
+
+    def _cancel_action_timer(self) -> None:
+        task = self._timer_task
+        self._timer_task = None
+        if task is not None and task is not asyncio.current_task():
+            task.cancel()
+
+    async def _run_action_timer(self, hand_id: UUID, state_version: int) -> None:
+        try:
+            await self._sleeper(self._decision_timeout_seconds or 0)
+            await self.submit_timeout(
+                uuid4(),
+                match_id=self._match_id,
+                hand_id=hand_id,
+                state_version=state_version,
+            )
+        except (MatchActorStateError, MatchCommandConflictError, ValueError):
+            return
 
 
 __all__ = [
