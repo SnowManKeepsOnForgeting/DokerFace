@@ -7,6 +7,7 @@ import pytest
 from app.accounts.models import Account, AccountRole, AccountStatus
 from app.config import Settings
 from app.main import create_app
+from app.matches.registry import MatchRegistry
 
 
 def make_account() -> Account:
@@ -24,6 +25,15 @@ Handler = Callable[..., Awaitable[Any]]
 
 def get_handler(server: Any, event: str) -> Handler:
     return cast(Handler, server.handlers["/"][event])
+
+
+def test_socketio_server_registers_match_runtime_registry() -> None:
+    app = create_app(Settings(database_url="sqlite+aiosqlite:///:memory:"))
+
+    assert isinstance(app.state.match_registry, MatchRegistry)
+    assert get_handler(app.state.socketio, "room:start")
+    assert get_handler(app.state.socketio, "game:action")
+    assert get_handler(app.state.socketio, "game:request-snapshot")
 
 
 @pytest.mark.asyncio

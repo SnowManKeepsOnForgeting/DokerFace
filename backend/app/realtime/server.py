@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from app.auth.sessions import SessionService
 from app.config import Settings
 from app.db.session import Database
+from app.matches.registry import MatchRegistry
 from app.realtime.auth import extract_session_token, is_allowed_origin
 from app.realtime.connections import ConnectionRegistry
 from app.realtime.room_handlers import register_room_handlers
@@ -23,9 +24,11 @@ def create_socketio_server(app: FastAPI, settings: Settings) -> socketio.AsyncSe
     )
     registry = ConnectionRegistry()
     room_registry = RoomRegistry()
+    match_registry = MatchRegistry()
     app.state.connection_registry = registry
     app.state.room_registry = room_registry
-    register_room_handlers(server, app, settings, room_registry)
+    app.state.match_registry = match_registry
+    register_room_handlers(server, app, settings, room_registry, match_registry)
 
     @server.event
     async def connect(
