@@ -1,6 +1,7 @@
 """HTTP endpoints for administrator account management."""
 
 from typing import Annotated, Never
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -17,6 +18,7 @@ from app.admin.accounts import (
 from app.auth.api import CurrentUserResponse, to_current_user
 from app.auth.dependencies import require_administrator
 from app.db.dependencies import get_db_session
+from app.matches.persistence import MatchHistoryPersistenceService
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -35,6 +37,16 @@ class UpdateAccountRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     password: str
+
+
+class VoidMatchRequest(BaseModel):
+    reason: str
+
+
+class VoidMatchResponse(BaseModel):
+    match_id: UUID
+    status: str
+    void_reason: str
 
 
 def raise_account_http_error(error: AccountManagementError) -> Never:
@@ -130,3 +142,38 @@ async def reset_password(
     except AccountManagementError as error:
         raise_account_http_error(error)
     return to_current_user(account)
+
+
+@router.post(
+    "/matches/{match_id}/void",
+    response_model=VoidMatchResponse,
+)
+async def void_match(
+    match_id: UUID,
+    payload: VoidMatchRequest,
+    _: Annotated[Account, Depends(require_administrator)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> VoidMatchResponse:
+    if not payload.reason.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Void reason is required",
+        )
+    try:
+        match = await MatchHistoryPersistenceService().void_match(
+            db_session,
+            match_id=match_id,
+            reason=payload.reason.strip(),
+        )
+    except ValueError as error:
+        detail = str(error)
+        error_status = (
+            status.HTTP_404_NOT_FOUND if "not found" in detail else status.HTTP_409_CONFLICT
+        )
+        raise HTTPException(status_code=error_status, detail=detail) from error
+    await db_session.commit()
+    return VoidMatchResponse(
+        match_id=match.match_id,
+        status=match.status,
+        void_reason=match.void_reason or payload.reason.strip(),
+    )

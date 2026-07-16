@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
 from typing import cast
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
@@ -12,6 +13,7 @@ from app.auth.dependencies import get_current_account
 from app.config import Settings
 from app.db.dependencies import get_db_session
 from app.main import create_app
+from app.matches.models import MatchRecord
 
 
 def make_account(
@@ -123,6 +125,31 @@ async def test_admin_api_rejects_player() -> None:
 
     assert response.status_code == 403
     session.scalar.assert_not_awaited()
+
+
+async def test_admin_api_can_void_a_match_with_a_reason() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    admin = make_account(account_id=1, login_name="admin", role=AccountRole.ADMINISTRATOR)
+    match = MatchRecord(
+        match_id=uuid4(),
+        room_id=uuid4(),
+        rules_snapshot={},
+        end_mode="winner_takes_all",
+        status="complete",
+    )
+    session.scalar.return_value = match
+    app = build_app(session, admin)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            f"/api/v1/admin/matches/{match.match_id}/void",
+            json={"reason": "manual review"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "void"
+    assert response.json()["void_reason"] == "manual review"
+    assert session.commit.await_count == 1
 
 
 @pytest.mark.asyncio

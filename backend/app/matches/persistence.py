@@ -249,6 +249,32 @@ class MatchHistoryPersistenceService:
         await _in_transaction(session, operation)
         return voided_count
 
+    async def void_match(
+        self,
+        session: AsyncSession,
+        *,
+        match_id: uuid.UUID,
+        reason: str,
+        voided_at: datetime | None = None,
+    ) -> MatchRecord:
+        async def operation() -> None:
+            match = await session.scalar(
+                select(MatchRecord).where(MatchRecord.match_id == match_id).with_for_update()
+            )
+            if match is None:
+                raise ValueError("Match history record was not found")
+            if match.status == "void":
+                raise ValueError("Match has already been voided")
+            match.status = "void"
+            match.void_reason = reason
+            match.completed_at = voided_at or datetime.now(UTC)
+
+        await _in_transaction(session, operation)
+        match = await session.scalar(select(MatchRecord).where(MatchRecord.match_id == match_id))
+        if match is None:
+            raise ValueError("Match history record disappeared after voiding")
+        return match
+
 
 __all__ = [
     "ActionHistory",
