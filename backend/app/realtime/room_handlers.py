@@ -455,6 +455,7 @@ def _public_snapshot_payload(
         pot_amounts=list(public.pot_amounts),
         complete=public.complete,
         players=players,
+        action_deadline_at=snapshot.action_deadline_at,
     ).model_dump(mode="json")
 
 

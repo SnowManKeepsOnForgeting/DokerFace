@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, replace
+from datetime import datetime
 from uuid import UUID, uuid4
 
 from app.game_engine.contracts import (
@@ -31,6 +32,7 @@ class MatchActorSnapshot:
     hand_number: int
     button_account_id: int
     public: PublicHandSnapshot
+    action_deadline_at: datetime | None = None
 
 
 @dataclass(frozen=True)

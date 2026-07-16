@@ -83,6 +83,7 @@ async def test_actor_exposes_initial_private_snapshot_and_validates_state_identi
     assert initial.match_id == match_id
     assert initial.hand_number == 1
     assert initial.public.state_version == 0
+    assert initial.action_deadline_at is None
     assert actor.private_snapshot(1).hole_cards
 
     with pytest.raises(MatchCommandConflictError):

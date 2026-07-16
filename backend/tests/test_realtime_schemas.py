@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -81,6 +82,7 @@ def test_game_action_rejects_unknown_fields_and_negative_amounts() -> None:
 
 
 def test_public_and_private_snapshot_shapes_keep_hole_cards_private() -> None:
+    deadline = datetime(2026, 7, 16, 12, 30, tzinfo=UTC)
     public = GamePublicSnapshot(
         match_id=uuid4(),
         hand_id=uuid4(),
@@ -92,6 +94,7 @@ def test_public_and_private_snapshot_shapes_keep_hole_cards_private() -> None:
         board=[],
         pot_amounts=[150],
         complete=False,
+        action_deadline_at=deadline,
         players=[
             GamePlayerSnapshot(
                 account_id=1,
@@ -113,3 +116,5 @@ def test_public_and_private_snapshot_shapes_keep_hole_cards_private() -> None:
 
     assert "hole_cards" not in public.model_dump()
     assert private.hole_cards == ["As", "Kd"]
+    assert private.action_deadline_at == deadline
+    assert public.model_dump(mode="json")["action_deadline_at"] == "2026-07-16T12:30:00Z"

@@ -1,5 +1,6 @@
 """Versioned payloads for Socket.IO room and game events."""
 
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -98,6 +99,7 @@ class GamePublicSnapshot(BaseModel):
     pot_amounts: list[int]
     complete: bool
     players: list[GamePlayerSnapshot]
+    action_deadline_at: datetime | None = None
 
 
 class GameLegalAction(BaseModel):
