@@ -78,7 +78,7 @@ export function Layout({ children }: { children: ReactNode }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold truncate">{user.display_name}</p>
-                <p className="text-xs text-slate-500 truncate capitalize">{user.role}</p>
+                <p className="text-xs text-slate-400 truncate capitalize">{user.role}</p>
               </div>
             </div>
             <button

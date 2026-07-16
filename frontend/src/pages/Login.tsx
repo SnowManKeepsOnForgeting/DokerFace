@@ -44,7 +44,7 @@ export function Login() {
       <div className="absolute top-1/4 left-1/4 h-72 w-72 rounded-full bg-purple-600/10 blur-[100px] pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 h-72 w-72 rounded-full bg-indigo-600/10 blur-[100px] pointer-events-none"></div>
 
-      <div className="w-full max-w-md bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-xl p-8 shadow-2xl shadow-purple-950/10 relative">
+      <main className="w-full max-w-md bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-xl p-8 shadow-2xl shadow-purple-950/10 relative">
         <div className="flex items-center gap-3 justify-center mb-8">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-600 text-white font-bold text-xl tracking-wider shadow-lg shadow-purple-900/40">
             D
@@ -54,7 +54,7 @@ export function Login() {
           </span>
         </div>
 
-        <h2 className="text-xl font-semibold text-center mb-6">Sign In to Play</h2>
+        <h1 className="text-xl font-semibold text-center mb-6">Sign In to Play</h1>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
@@ -106,7 +106,7 @@ export function Login() {
             )}
           </button>
         </form>
-      </div>
+      </main>
     </div>
   );
 }

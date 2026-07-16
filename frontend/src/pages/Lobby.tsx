@@ -252,7 +252,7 @@ export function Lobby() {
               className={`h-10 px-4 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all border ${
                 statusFilter === filter
                   ? 'bg-purple-600/10 text-purple-400 border-purple-500/30'
-                  : 'bg-slate-950/20 text-slate-500 border-slate-800 hover:text-slate-300'
+                  : 'bg-slate-950/20 text-slate-400 border-slate-800 hover:text-slate-200'
               }`}
             >
               {filter}
@@ -274,13 +274,13 @@ export function Lobby() {
       ) : roomsError ? (
         <div className="flex flex-col items-center justify-center p-12 bg-red-950/10 border border-red-900/20 rounded-xl text-center">
           <AlertCircle className="h-10 w-10 text-red-500 mb-3" />
-          <h3 className="font-semibold text-red-400">Failed to fetch rooms</h3>
+          <h2 className="font-semibold text-red-400 text-sm">Failed to fetch rooms</h2>
           <p className="text-slate-500 text-xs mt-1">Please check your connection and try again.</p>
         </div>
       ) : filteredRooms.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-16 bg-slate-900/10 border border-slate-800 border-dashed rounded-xl text-center">
           <Users className="h-12 w-12 text-slate-700 mb-4" />
-          <h3 className="font-semibold text-slate-300 text-sm">No active rooms found</h3>
+          <h2 className="font-semibold text-slate-300 text-sm">No active rooms found</h2>
           <p className="text-slate-500 text-xs mt-1 max-w-sm">
             {searchQuery
               ? 'No rooms match your filter criteria. Try adjusting your query.'
@@ -322,7 +322,7 @@ export function Lobby() {
               </div>
 
               {/* Title */}
-              <h3 className="font-bold text-slate-200 text-lg truncate mb-1">{room.name}</h3>
+              <h2 className="font-bold text-slate-200 text-lg truncate mb-1">{room.name}</h2>
 
               {/* Details List */}
               <div className="space-y-1.5 text-xs text-slate-400 my-4 flex-1">
@@ -459,7 +459,7 @@ export function Lobby() {
                       className={`flex-1 rounded-lg border text-xs font-semibold transition-all ${
                         visibility === 'public'
                           ? 'bg-purple-600/10 text-purple-400 border-purple-500/30'
-                          : 'bg-slate-950/20 text-slate-500 border-slate-800 hover:text-slate-300'
+                          : 'bg-slate-950/20 text-slate-400 border-slate-800 hover:text-slate-200'
                       }`}
                     >
                       Public
@@ -470,7 +470,7 @@ export function Lobby() {
                       className={`flex-1 rounded-lg border text-xs font-semibold transition-all ${
                         visibility === 'password'
                           ? 'bg-purple-600/10 text-purple-400 border-purple-500/30'
-                          : 'bg-slate-950/20 text-slate-500 border-slate-800 hover:text-slate-300'
+                          : 'bg-slate-950/20 text-slate-400 border-slate-800 hover:text-slate-200'
                       }`}
                     >
                       Password Protected
