@@ -1,0 +1,12 @@
+{
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "title": "LobbyRoomsUpdatedEvent",
+  "type": "object"
+}

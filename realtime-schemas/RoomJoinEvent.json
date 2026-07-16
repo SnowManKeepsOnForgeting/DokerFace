@@ -1,0 +1,34 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "room_id": {
+      "format": "uuid",
+      "title": "Room Id",
+      "type": "string"
+    },
+    "password": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Password"
+    }
+  },
+  "required": [
+    "room_id"
+  ],
+  "title": "RoomJoinEvent",
+  "type": "object"
+}

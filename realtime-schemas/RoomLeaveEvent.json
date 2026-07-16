@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "room_id": {
+      "format": "uuid",
+      "title": "Room Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "room_id"
+  ],
+  "title": "RoomLeaveEvent",
+  "type": "object"
+}

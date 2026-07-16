@@ -1,0 +1,218 @@
+{
+  "$defs": {
+    "ActionType": {
+      "enum": [
+        "fold",
+        "check_or_call",
+        "bet_or_raise",
+        "show",
+        "muck"
+      ],
+      "title": "ActionType",
+      "type": "string"
+    },
+    "GameLegalAction": {
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/ActionType"
+        },
+        "min_amount": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min Amount"
+        },
+        "max_amount": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Amount"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "title": "GameLegalAction",
+      "type": "object"
+    },
+    "GamePlayerSnapshot": {
+      "properties": {
+        "account_id": {
+          "title": "Account Id",
+          "type": "integer"
+        },
+        "seat": {
+          "title": "Seat",
+          "type": "integer"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "stack": {
+          "title": "Stack",
+          "type": "integer"
+        },
+        "bet": {
+          "title": "Bet",
+          "type": "integer"
+        },
+        "folded": {
+          "title": "Folded",
+          "type": "boolean"
+        },
+        "all_in": {
+          "title": "All In",
+          "type": "boolean"
+        },
+        "connected": {
+          "default": true,
+          "title": "Connected",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "account_id",
+        "seat",
+        "display_name",
+        "stack",
+        "bet",
+        "folded",
+        "all_in"
+      ],
+      "title": "GamePlayerSnapshot",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "match_id": {
+      "format": "uuid",
+      "title": "Match Id",
+      "type": "string"
+    },
+    "hand_id": {
+      "format": "uuid",
+      "title": "Hand Id",
+      "type": "string"
+    },
+    "hand_number": {
+      "title": "Hand Number",
+      "type": "integer"
+    },
+    "state_version": {
+      "title": "State Version",
+      "type": "integer"
+    },
+    "street": {
+      "title": "Street",
+      "type": "string"
+    },
+    "button_account_id": {
+      "title": "Button Account Id",
+      "type": "integer"
+    },
+    "actor_account_id": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Actor Account Id"
+    },
+    "board": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Board",
+      "type": "array"
+    },
+    "pot_amounts": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Pot Amounts",
+      "type": "array"
+    },
+    "complete": {
+      "title": "Complete",
+      "type": "boolean"
+    },
+    "players": {
+      "items": {
+        "$ref": "#/$defs/GamePlayerSnapshot"
+      },
+      "title": "Players",
+      "type": "array"
+    },
+    "action_deadline_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Action Deadline At"
+    },
+    "account_id": {
+      "title": "Account Id",
+      "type": "integer"
+    },
+    "hole_cards": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Hole Cards",
+      "type": "array"
+    },
+    "legal_actions": {
+      "items": {
+        "$ref": "#/$defs/GameLegalAction"
+      },
+      "title": "Legal Actions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "match_id",
+    "hand_id",
+    "hand_number",
+    "state_version",
+    "street",
+    "button_account_id",
+    "actor_account_id",
+    "board",
+    "pot_amounts",
+    "complete",
+    "players",
+    "account_id",
+    "hole_cards",
+    "legal_actions"
+  ],
+  "title": "GamePrivateSnapshot",
+  "type": "object"
+}

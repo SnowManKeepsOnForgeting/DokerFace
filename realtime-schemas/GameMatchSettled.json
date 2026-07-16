@@ -1,0 +1,46 @@
+{
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "match_id": {
+      "format": "uuid",
+      "title": "Match Id",
+      "type": "string"
+    },
+    "state_version": {
+      "title": "State Version",
+      "type": "integer"
+    },
+    "account_ids": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Account Ids",
+      "type": "array"
+    },
+    "final_stacks": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Final Stacks",
+      "type": "array"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "match_id",
+    "state_version",
+    "account_ids",
+    "final_stacks",
+    "status"
+  ],
+  "title": "GameMatchSettled",
+  "type": "object"
+}

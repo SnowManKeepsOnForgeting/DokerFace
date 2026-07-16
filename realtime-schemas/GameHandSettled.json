@@ -1,0 +1,60 @@
+{
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "match_id": {
+      "format": "uuid",
+      "title": "Match Id",
+      "type": "string"
+    },
+    "hand_id": {
+      "format": "uuid",
+      "title": "Hand Id",
+      "type": "string"
+    },
+    "hand_number": {
+      "title": "Hand Number",
+      "type": "integer"
+    },
+    "state_version": {
+      "title": "State Version",
+      "type": "integer"
+    },
+    "account_ids": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Account Ids",
+      "type": "array"
+    },
+    "final_stacks": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Final Stacks",
+      "type": "array"
+    },
+    "payoffs": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Payoffs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "match_id",
+    "hand_id",
+    "hand_number",
+    "state_version",
+    "account_ids",
+    "final_stacks",
+    "payoffs"
+  ],
+  "title": "GameHandSettled",
+  "type": "object"
+}

@@ -1,0 +1,96 @@
+{
+  "$defs": {
+    "RoomMemberSnapshot": {
+      "properties": {
+        "account_id": {
+          "title": "Account Id",
+          "type": "integer"
+        },
+        "ready": {
+          "title": "Ready",
+          "type": "boolean"
+        },
+        "seat": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seat"
+        },
+        "connected": {
+          "default": true,
+          "title": "Connected",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "account_id",
+        "ready"
+      ],
+      "title": "RoomMemberSnapshot",
+      "type": "object"
+    },
+    "RoomStatus": {
+      "enum": [
+        "waiting",
+        "active",
+        "closed"
+      ],
+      "title": "RoomStatus",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "room_id": {
+      "format": "uuid",
+      "title": "Room Id",
+      "type": "string"
+    },
+    "host_account_id": {
+      "title": "Host Account Id",
+      "type": "integer"
+    },
+    "status": {
+      "$ref": "#/$defs/RoomStatus",
+      "default": "waiting"
+    },
+    "members": {
+      "items": {
+        "$ref": "#/$defs/RoomMemberSnapshot"
+      },
+      "title": "Members",
+      "type": "array"
+    },
+    "match_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Match Id"
+    }
+  },
+  "required": [
+    "room_id",
+    "host_account_id",
+    "members"
+  ],
+  "title": "RoomSnapshot",
+  "type": "object"
+}
