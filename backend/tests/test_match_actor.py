@@ -8,6 +8,7 @@ from app.game_engine.actor import (
     MatchActorStateError,
     MatchCommand,
     MatchCommandConflictError,
+    MatchCommandSource,
 )
 from app.game_engine.contracts import ActionCommand, ActionType
 from app.game_engine.match import MatchCoordinator
@@ -110,4 +111,60 @@ async def test_actor_exposes_initial_private_snapshot_and_validates_state_identi
     assert response.result.hand_id != initial.hand_id
     assert response.result.settled_hand_id == initial.hand_id
     assert response.result.snapshot.street == "preflop"
+    await actor.close()
+
+
+@pytest.mark.asyncio
+async def test_timeout_command_requires_identity_and_folds_current_actor() -> None:
+    match_id = uuid4()
+    actor = MatchActor(MatchCoordinator((1, 2), make_rules()), match_id=match_id)
+    initial = await actor.start()
+
+    with pytest.raises(MatchCommandConflictError, match="Timeout command"):
+        await actor.submit(
+            MatchCommand(
+                uuid4(),
+                ActionCommand(1, ActionType.FOLD),
+                source=MatchCommandSource.TIMEOUT,
+            )
+        )
+
+    response = await actor.submit_timeout(
+        uuid4(),
+        match_id=match_id,
+        hand_id=initial.hand_id,
+        state_version=initial.public.state_version,
+    )
+
+    assert response.result.applied.action is ActionType.FOLD
+    assert response.result.applied.account_id == initial.public.actor_account_id
+    assert response.result.state_version == 1
+    await actor.close()
+
+
+@pytest.mark.asyncio
+async def test_player_and_disconnect_timeout_commands_are_serialized_by_version() -> None:
+    match_id = uuid4()
+    actor = MatchActor(MatchCoordinator((1, 2), make_rules()), match_id=match_id)
+    initial = await actor.start()
+    player_command = MatchCommand(
+        uuid4(),
+        ActionCommand(initial.public.actor_account_id or 1, ActionType.FOLD),
+        match_id=match_id,
+        hand_id=initial.hand_id,
+        state_version=0,
+    )
+    timeout_task = actor.submit_timeout(
+        uuid4(),
+        match_id=match_id,
+        hand_id=initial.hand_id,
+        state_version=0,
+        source=MatchCommandSource.DISCONNECT_TIMEOUT,
+    )
+    player_task = actor.submit(player_command)
+    results = await asyncio.gather(timeout_task, player_task, return_exceptions=True)
+
+    assert sum(not isinstance(result, Exception) for result in results) == 1
+    assert sum(isinstance(result, MatchCommandConflictError) for result in results) == 1
+    assert actor.state_version == 1
     await actor.close()

@@ -5,10 +5,12 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, replace
 from datetime import datetime
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 from app.game_engine.contracts import (
     ActionCommand,
+    ActionType,
     AppliedAction,
     HandSettlement,
     PrivateHandSnapshot,
@@ -23,6 +25,12 @@ class MatchActorStateError(RuntimeError):
 
 class MatchCommandConflictError(ValueError):
     """Raised when a command targets a stale or unrelated match state."""
+
+
+class MatchCommandSource(StrEnum):
+    PLAYER = "player"
+    TIMEOUT = "timeout"
+    DISCONNECT_TIMEOUT = "disconnect_timeout"
 
 
 @dataclass(frozen=True)
@@ -42,6 +50,7 @@ class MatchCommand:
     match_id: UUID | None = None
     hand_id: UUID | None = None
     state_version: int | None = None
+    source: MatchCommandSource = MatchCommandSource.PLAYER
 
 
 @dataclass(frozen=True)
@@ -109,6 +118,31 @@ class MatchActor:
         self._inflight[command.command_id] = (command, future)
         await self._queue.put(_QueuedCommand(command, future))
         return MatchCommandResponse(result=await future, replayed=False)
+
+    async def submit_timeout(
+        self,
+        command_id: UUID,
+        *,
+        match_id: UUID,
+        hand_id: UUID,
+        state_version: int,
+        source: MatchCommandSource = MatchCommandSource.TIMEOUT,
+    ) -> MatchCommandResponse:
+        if source is MatchCommandSource.PLAYER:
+            raise ValueError("Timeout command must use a timeout source")
+        actor_account_id = self.current_snapshot().public.actor_account_id
+        if actor_account_id is None:
+            raise MatchActorStateError("Match has no current actor")
+        return await self.submit(
+            MatchCommand(
+                command_id=command_id,
+                action=ActionCommand(actor_account_id, ActionType.FOLD),
+                match_id=match_id,
+                hand_id=hand_id,
+                state_version=state_version,
+                source=source,
+            )
+        )
 
     async def close(self) -> None:
         if self._task is None:
@@ -255,6 +289,12 @@ class MatchActor:
         )
 
     def _validate_current_command(self, command: MatchCommand) -> None:
+        if command.source is not MatchCommandSource.PLAYER and (
+            command.match_id is None or command.hand_id is None or command.state_version is None
+        ):
+            raise MatchCommandConflictError(
+                "Timeout command requires match, hand, and state version"
+            )
         if command.match_id is not None and command.match_id != self._match_id:
             raise MatchCommandConflictError("Command targets another match")
         if command.hand_id is not None and command.hand_id != self._require_hand_id():
@@ -281,4 +321,5 @@ __all__ = [
     "MatchCommandConflictError",
     "MatchCommandResponse",
     "MatchCommandResult",
+    "MatchCommandSource",
 ]
