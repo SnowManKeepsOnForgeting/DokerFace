@@ -16,6 +16,7 @@ Completed and committed:
 
 - Product functionality and poker rules in `Feature.md`.
 - Modular-monolith architecture and implementation route in `Architecture.md`.
+- Modern React frontend architecture and phased delivery plan in `Frontend.md`.
 - Python 3.12 backend project managed by uv, with a locked dependency graph.
 - FastAPI application factory and `/api/v1` API prefix.
 - Environment-based settings via Pydantic Settings.
@@ -394,7 +395,10 @@ curl -f http://localhost:8080/api/v1/health/ready
 - Poker rules: PokerKit behind a project-owned adapter. No other module may import PokerKit.
 - Persistence: PostgreSQL, SQLAlchemy 2 async, asyncpg, Alembic.
 - Passwords: pwdlib with Argon2; passwords must never be stored in plaintext.
-- Frontend: React, TypeScript, Vite, TanStack Query, Zustand, Radix UI, Tailwind CSS.
+- Frontend: React 19.2, React Compiler 1, TypeScript 6, Vite 8/Rolldown, React Router 8
+  Data Mode, TanStack Query 5, Zustand 5, Radix UI, selected shadcn/ui source components, and
+  Tailwind CSS 4. TypeScript 7 is excluded until every required quality and contract-generation
+  tool officially supports it.
 - Deployment: Caddy, one API process/worker, PostgreSQL, Docker Compose.
 - In-progress rooms and games live in API process memory. Redis, Celery, Kafka, and Kubernetes are
   intentionally excluded at the current scale.
