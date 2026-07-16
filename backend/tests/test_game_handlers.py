@@ -10,6 +10,7 @@ import pytest
 from app.accounts.models import Profile
 from app.config import Settings
 from app.main import create_app
+from app.matches.persistence import MatchHistoryPersistenceService
 from app.matches.registry import MatchRegistry
 from app.realtime.room_handlers import register_room_handlers
 from app.realtime.schemas import GamePrivateSnapshot, GamePublicSnapshot
@@ -79,6 +80,9 @@ def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
 
     db_session = AsyncMock()
     db_session.scalar = AsyncMock(return_value=room)
+    db_session.begin = MagicMock()
+    db_session.begin.return_value.__aenter__ = AsyncMock(return_value=db_session)
+    db_session.begin.return_value.__aexit__ = AsyncMock(return_value=None)
     profile_result = MagicMock()
     profile_result.all.return_value = profiles
     db_session.scalars = AsyncMock(return_value=profile_result)
@@ -88,6 +92,11 @@ def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
     app.state.database = database
 
     matches = MatchRegistry()
+    history = MagicMock(spec=MatchHistoryPersistenceService)
+    history.create_match = AsyncMock()
+    history.persist_hand = AsyncMock()
+    history.complete_match = AsyncMock()
+    history.void_match = AsyncMock()
     register_room_handlers(
         server,
         app,
@@ -95,6 +104,7 @@ def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
         RoomRegistry(),
         matches,
         Random(7),
+        history,
     )
     return server.handlers["/"], server, room, matches
 

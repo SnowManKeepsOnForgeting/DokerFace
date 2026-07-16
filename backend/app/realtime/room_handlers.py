@@ -23,6 +23,15 @@ from app.game_engine.actor import (
 )
 from app.game_engine.contracts import ActionCommand
 from app.game_engine.match import MatchCoordinator
+from app.matches.persistence import (
+    ActionHistory,
+    HandHistory,
+    HandPlayerHistory,
+    MatchHistoryPersistenceService,
+    MatchPlayerSeed,
+    MatchResult,
+    PotHistory,
+)
 from app.matches.registry import MatchPlayer, MatchRegistry, MatchRuntime, MatchRuntimeError
 from app.realtime.schemas import (
     ChatMessagePayload,
@@ -58,9 +67,11 @@ def register_room_handlers(
     registry: RoomRegistry,
     match_registry: MatchRegistry | None = None,
     random_source: Random | SystemRandom | None = None,
+    history_service: MatchHistoryPersistenceService | None = None,
 ) -> None:
     matches = match_registry or MatchRegistry()
     randomizer = random_source or SystemRandom()
+    history = history_service or MatchHistoryPersistenceService()
 
     @server.on("room:join")
     async def room_join(sid: str, data: Any) -> dict[str, Any]:
@@ -289,10 +300,28 @@ def register_room_handlers(
             runtime.members[player.account_id].seat = player.seat
         match = matches.add(MatchRuntime(event.room_id, match_id, actor, players))
         try:
+            await _persist_match_start(
+                app,
+                history,
+                room_id=event.room_id,
+                match_id=match_id,
+                rules_snapshot=room.rules,
+                end_mode=rules.end_mode.value,
+                players=tuple(
+                    MatchPlayerSeed(
+                        player.account_id,
+                        player.seat,
+                        player.display_name,
+                        rules.starting_chips,
+                    )
+                    for player in players
+                ),
+            )
             await _set_room_status(app, event.room_id, RoomStatus.ACTIVE)
         except Exception:
+            await _void_persistence_failure(app, history, match)
             await matches.remove(match)
-            raise
+            return _error("match_persistence_failed")
         await _broadcast_room_snapshot(
             server,
             runtime,
@@ -339,6 +368,16 @@ def register_room_handlers(
 
         result = response.result
         if not response.replayed:
+            if result.completed_hand is not None:
+                try:
+                    await _persist_completed_hand(app, history, match, result)
+                except Exception:
+                    await _void_persistence_failure(app, history, match)
+                    await matches.remove(match)
+                    registry.reset_waiting_state(match.room_id)
+                    await _set_room_status(app, match.room_id, RoomStatus.WAITING)
+                    await _broadcast_room_snapshot(server, room_runtime, RoomStatus.WAITING)
+                    return await _reject(server, sid, "match_persistence_failed", event)
             _schedule_disconnected_timeout(room_runtime, match)
             await _broadcast_game_snapshots(server, room_runtime, match)
             if result.settlement is not None and result.settled_hand_id is not None:
@@ -426,6 +465,156 @@ async def _persist_chat_message(
             message_type=message_type,
             content=content,
         )
+
+
+async def _persist_match_start(
+    app: FastAPI,
+    service: MatchHistoryPersistenceService,
+    *,
+    room_id: UUID,
+    match_id: UUID,
+    rules_snapshot: dict[str, object],
+    end_mode: str,
+    players: tuple[MatchPlayerSeed, ...],
+) -> None:
+    database = cast(Database, app.state.database)
+    async with database.session_factory() as db_session:
+        await service.create_match(
+            db_session,
+            match_id=match_id,
+            room_id=room_id,
+            rules_snapshot=rules_snapshot,
+            end_mode=end_mode,
+            players=players,
+        )
+
+
+async def _persist_completed_hand(
+    app: FastAPI,
+    service: MatchHistoryPersistenceService,
+    match: MatchRuntime,
+    result: Any,
+) -> None:
+    completed = result.completed_hand
+    if completed is None:
+        return
+    history = _hand_history(match, completed)
+    database = cast(Database, app.state.database)
+    async with database.session_factory() as db_session, db_session.begin():
+        await service.persist_hand(db_session, history)
+        if result.match_status.value == "complete":
+            await service.complete_match(
+                db_session,
+                match_id=match.match_id,
+                results=_match_results(match),
+            )
+
+
+def _hand_history(match: MatchRuntime, completed: Any) -> HandHistory:
+    public = completed.public
+    shown_accounts = {
+        action.account_id for action in completed.actions if action.action.value == "show"
+    }
+    players = tuple(
+        HandPlayerHistory(
+            account_id=account_id,
+            hole_cards=completed.private_snapshots[account_id].hole_cards,
+            folded=public.folded[index],
+            all_in=public.all_in[index],
+            shown=account_id in shown_accounts,
+            invested_chips=max(0, completed.starting_stacks[index] - public.stacks[index]),
+            won_chips=max(0, completed.settlement.payoffs[index]),
+        )
+        for index, account_id in enumerate(public.account_ids)
+    )
+    actions = tuple(
+        ActionHistory(
+            sequence_no=action.sequence_no,
+            state_version=action.state_version,
+            account_id=action.account_id,
+            street=action.street,
+            action=action.action.value,
+            amount=action.amount,
+        )
+        for action in completed.actions
+    )
+    eligible = tuple(
+        account_id
+        for index, account_id in enumerate(public.account_ids)
+        if not public.folded[index]
+    )
+    pots = tuple(
+        PotHistory(
+            pot_number=index + 1,
+            amount=amount,
+            eligible_account_ids=eligible,
+            winner_payouts=(
+                {
+                    str(account_id): payoff
+                    for account_id, payoff in zip(
+                        public.account_ids,
+                        completed.settlement.payoffs,
+                        strict=True,
+                    )
+                    if payoff > 0
+                }
+                if index == 0
+                else {}
+            ),
+        )
+        for index, amount in enumerate(public.pot_amounts)
+    )
+    return HandHistory(
+        hand_id=completed.hand_id,
+        match_id=match.match_id,
+        hand_number=completed.hand_number,
+        button_account_id=completed.button_account_id,
+        small_blind=completed.small_blind,
+        big_blind=completed.big_blind,
+        public_board=public.board,
+        settlement_summary={
+            "final_stacks": list(completed.settlement.final_stacks),
+            "payoffs": list(completed.settlement.payoffs),
+        },
+        players=players,
+        actions=actions,
+        pots=pots,
+    )
+
+
+def _match_results(match: MatchRuntime) -> tuple[MatchResult, ...]:
+    stacks = match.actor.coordinator.stacks
+    return tuple(
+        MatchResult(
+            account_id=player.account_id,
+            final_chips=stacks[player.account_id],
+            finishing_rank=1
+            + sum(
+                other_stack > stacks[player.account_id]
+                for account_id, other_stack in stacks.items()
+                if account_id != player.account_id
+            ),
+        )
+        for player in match.players
+    )
+
+
+async def _void_persistence_failure(
+    app: FastAPI,
+    service: MatchHistoryPersistenceService,
+    match: MatchRuntime,
+) -> None:
+    database = cast(Database, app.state.database)
+    try:
+        async with database.session_factory() as db_session:
+            await service.void_match(
+                db_session,
+                match_id=match.match_id,
+                reason="persistence_failure",
+            )
+            await db_session.commit()
+    except Exception:
+        return
 
 
 async def _set_room_host(app: FastAPI, room_id: UUID, host_account_id: int) -> None:
