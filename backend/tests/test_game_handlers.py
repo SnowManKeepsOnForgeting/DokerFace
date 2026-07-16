@@ -104,6 +104,9 @@ def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
     statistics = MagicMock(spec=StatisticsPersistenceService)
     statistics.apply_hand = AsyncMock()
     statistics.apply_profitable_matches = AsyncMock()
+    server.history_service = history
+    server.rating_service = ratings
+    server.statistics_service = statistics
     register_room_handlers(
         server,
         app,
@@ -271,3 +274,34 @@ async def test_match_completion_resets_room_to_waiting() -> None:
     waiting = emitted_payloads(server, "room:snapshot")[-1]
     assert waiting["status"] == "waiting"
     assert all(member["ready"] is False for member in waiting["members"])
+
+
+@pytest.mark.asyncio
+async def test_uncounted_match_skips_statistics_but_settles_history_and_ratings() -> None:
+    handlers, server, room, matches = make_handlers()
+    room.rules["counted_in_stats"] = False
+    await join_and_ready(handlers, room.room_id)
+    start = await handlers["room:start"]("sid-1", {"room_id": str(room.room_id)})
+
+    for _ in range(5):
+        public = GamePublicSnapshot.model_validate(
+            emitted_payloads(server, "game:public-snapshot")[-1]
+        )
+        actor_sid = "sid-1" if public.actor_account_id == 1 else "sid-2"
+        await handlers["game:action"](
+            actor_sid,
+            {
+                "command_id": str(uuid4()),
+                "match_id": start["match_id"],
+                "hand_id": str(public.hand_id),
+                "state_version": public.state_version,
+                "action": "fold",
+            },
+        )
+
+    assert matches.for_room(room.room_id) is None
+    server.statistics_service.apply_hand.assert_not_awaited()
+    server.statistics_service.apply_profitable_matches.assert_not_awaited()
+    assert server.history_service.persist_hand.await_count == 5
+    server.history_service.complete_match.assert_awaited_once()
+    server.rating_service.settle_match.assert_awaited_once()

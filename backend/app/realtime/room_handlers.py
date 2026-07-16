@@ -518,7 +518,8 @@ async def _persist_completed_hand(
     database = cast(Database, app.state.database)
     async with database.session_factory() as db_session, db_session.begin():
         await service.persist_hand(db_session, history)
-        await statistics_service.apply_hand(db_session, _statistics_hand(match, completed))
+        if match.actor.coordinator.rules.counted_in_stats:
+            await statistics_service.apply_hand(db_session, _statistics_hand(match, completed))
         if result.match_status.value == "complete":
             await service.complete_match(
                 db_session,
@@ -530,14 +531,15 @@ async def _persist_completed_hand(
                 match_id=match.match_id,
                 results=_rating_results(match),
             )
-            await statistics_service.apply_profitable_matches(
-                db_session,
-                {
-                    player.account_id: match.actor.coordinator.stacks[player.account_id]
-                    > match.actor.coordinator.rules.starting_chips
-                    for player in match.players
-                },
-            )
+            if match.actor.coordinator.rules.counted_in_stats:
+                await statistics_service.apply_profitable_matches(
+                    db_session,
+                    {
+                        player.account_id: match.actor.coordinator.stacks[player.account_id]
+                        > match.actor.coordinator.rules.starting_chips
+                        for player in match.players
+                    },
+                )
 
 
 def _hand_history(match: MatchRuntime, completed: Any) -> HandHistory:
