@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterator
 from typing import cast
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -127,7 +127,9 @@ async def test_admin_api_rejects_player() -> None:
     session.scalar.assert_not_awaited()
 
 
-async def test_admin_api_can_void_a_match_with_a_reason() -> None:
+async def test_admin_api_can_void_a_match_with_a_reason(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     session = AsyncMock(spec=AsyncSession)
     admin = make_account(account_id=1, login_name="admin", role=AccountRole.ADMINISTRATOR)
     match = MatchRecord(
@@ -138,6 +140,12 @@ async def test_admin_api_can_void_a_match_with_a_reason() -> None:
         status="complete",
     )
     session.scalar.return_value = match
+    session.begin = MagicMock()
+    session.begin.return_value.__aenter__ = AsyncMock(return_value=session)
+    session.begin.return_value.__aexit__ = AsyncMock(return_value=None)
+    rating_service = MagicMock()
+    rating_service.rebuild_current_batch = AsyncMock()
+    monkeypatch.setattr("app.admin.api.RatingService", lambda: rating_service)
     app = build_app(session, admin)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -149,7 +157,7 @@ async def test_admin_api_can_void_a_match_with_a_reason() -> None:
     assert response.status_code == 200
     assert response.json()["status"] == "void"
     assert response.json()["void_reason"] == "manual review"
-    assert session.commit.await_count == 1
+    rating_service.rebuild_current_batch.assert_awaited_once()
 
 
 @pytest.mark.asyncio

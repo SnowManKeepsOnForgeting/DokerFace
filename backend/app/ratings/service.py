@@ -8,10 +8,12 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.accounts.models import Account, AccountStatus
+from app.matches.models import MatchRecord
 from app.ratings.calculator import RatingParticipant, calculate_ratings
 from app.ratings.models import RatingBatch, RatingChangeRecord, RatingRecord
 
@@ -183,6 +185,72 @@ class RatingService:
             session.add(record)
             records.append(record)
         return tuple(records)
+
+    async def rebuild_current_batch(self, session: AsyncSession) -> None:
+        batch = await self.current_batch(session)
+        if batch is None:
+            return
+        await session.execute(
+            delete(RatingChangeRecord).where(RatingChangeRecord.batch_id == batch.batch_id)
+        )
+        ratings = {
+            rating.account_id: rating
+            for rating in await session.scalars(
+                select(RatingRecord)
+                .where(RatingRecord.batch_id == batch.batch_id)
+                .with_for_update()
+            )
+        }
+        for rating in ratings.values():
+            rating.rating = Decimal(INITIAL_RATING)
+            rating.highest_rating = Decimal(INITIAL_RATING)
+            rating.completed_matches = 0
+        matches = list(
+            (
+                await session.scalars(
+                    select(MatchRecord)
+                    .options(selectinload(MatchRecord.players))
+                    .where(MatchRecord.status == "complete")
+                    .order_by(MatchRecord.started_at, MatchRecord.match_id)
+                )
+            ).all()
+        )
+        for match in matches:
+            if any(player.finishing_rank is None for player in match.players):
+                continue
+            ranks = {player.account_id: player.finishing_rank or 1 for player in match.players}
+            participants: list[RatingParticipant] = []
+            for player in match.players:
+                rating = ratings.get(player.account_id)
+                if rating is None:
+                    rating = await self.initialize_account(session, player.account_id)
+                    ratings[player.account_id] = rating
+                participants.append(
+                    RatingParticipant(
+                        account_id=player.account_id,
+                        rating=float(rating.rating),
+                        finishing_rank=ranks[player.account_id],
+                    )
+                )
+            for change in calculate_ratings(tuple(participants)):
+                rating = ratings[change.account_id]
+                before = _quantize(Decimal(str(change.before_rating)))
+                delta = _quantize(Decimal(str(change.delta)))
+                after = _quantize(Decimal(str(change.after_rating)))
+                rating.rating = after
+                rating.highest_rating = max(rating.highest_rating, after)
+                rating.completed_matches += 1
+                session.add(
+                    RatingChangeRecord(
+                        batch_id=batch.batch_id,
+                        match_id=match.match_id,
+                        account_id=change.account_id,
+                        before_rating=before,
+                        delta=delta,
+                        after_rating=after,
+                        finishing_rank=ranks[change.account_id],
+                    )
+                )
 
 
 def _quantize(value: Decimal) -> Decimal:

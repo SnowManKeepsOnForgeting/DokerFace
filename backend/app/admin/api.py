@@ -19,6 +19,7 @@ from app.auth.api import CurrentUserResponse, to_current_user
 from app.auth.dependencies import require_administrator
 from app.db.dependencies import get_db_session
 from app.matches.persistence import MatchHistoryPersistenceService
+from app.ratings.service import RatingService
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -160,18 +161,19 @@ async def void_match(
             detail="Void reason is required",
         )
     try:
-        match = await MatchHistoryPersistenceService().void_match(
-            db_session,
-            match_id=match_id,
-            reason=payload.reason.strip(),
-        )
+        async with db_session.begin():
+            match = await MatchHistoryPersistenceService().void_match(
+                db_session,
+                match_id=match_id,
+                reason=payload.reason.strip(),
+            )
+            await RatingService().rebuild_current_batch(db_session)
     except ValueError as error:
         detail = str(error)
         error_status = (
             status.HTTP_404_NOT_FOUND if "not found" in detail else status.HTTP_409_CONFLICT
         )
         raise HTTPException(status_code=error_status, detail=detail) from error
-    await db_session.commit()
     return VoidMatchResponse(
         match_id=match.match_id,
         status=match.status,
