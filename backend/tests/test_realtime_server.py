@@ -79,7 +79,8 @@ async def test_socketio_connect_authenticates_and_replaces_old_sid(
     app.state.room_registry.ensure_room(room_id, host_account_id=7, max_players=2)
     app.state.room_registry.join(room_id, account_id=7, sid="sid-old")
     match_id = uuid4()
-    app.state.match_registry.add(MatchRuntime(room_id, match_id, MagicMock(), ()))
+    actor = MagicMock()
+    app.state.match_registry.add(MatchRuntime(room_id, match_id, actor, ()))
     first_handler = get_handler(server, "connect")
     disconnect_handler = get_handler(server, "disconnect")
     assert callable(first_handler)
@@ -114,5 +115,7 @@ async def test_socketio_connect_authenticates_and_replaces_old_sid(
     await disconnect_handler("sid-old")
     assert app.state.connection_registry.sid_for_account(7) == "sid-new"
     assert runtime.members[7].connected is True
+    actor.schedule_disconnect_timeout.assert_not_called()
     await disconnect_handler("sid-new")
     assert runtime.members[7].connected is False
+    actor.schedule_disconnect_timeout.assert_called_once_with(7)

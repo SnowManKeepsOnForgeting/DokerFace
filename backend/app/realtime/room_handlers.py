@@ -237,6 +237,7 @@ def register_room_handlers(
 
         result = response.result
         if not response.replayed:
+            _schedule_disconnected_timeout(room_runtime, match)
             await _broadcast_game_snapshots(server, room_runtime, match)
             if result.settlement is not None and result.settled_hand_id is not None:
                 await _emit_hand_settled(server, match, result)
@@ -363,6 +364,8 @@ async def restore_account_connection(
     if runtime is None:
         return
     match = matches.for_room(room_id)
+    if match is not None:
+        match.actor.cancel_disconnect_timeout(account_id)
     await server.emit(
         "room:snapshot",
         room_snapshot_payload(
@@ -379,6 +382,7 @@ async def mark_account_disconnected(
     registry: RoomRegistry,
     matches: MatchRegistry,
     sid: str,
+    account_id: int,
 ) -> None:
     room_id = registry.disconnect_sid(sid)
     if room_id is None:
@@ -387,6 +391,8 @@ async def mark_account_disconnected(
     if runtime is None:
         return
     match = matches.for_room(room_id)
+    if match is not None:
+        match.actor.schedule_disconnect_timeout(account_id)
     await server.emit(
         "room:snapshot",
         room_snapshot_payload(
@@ -479,6 +485,15 @@ def _private_snapshot_payload(
         hole_cards=list(private.hole_cards),
         legal_actions=[GameLegalAction.from_domain(action) for action in private.legal_actions],
     ).model_dump(mode="json")
+
+
+def _schedule_disconnected_timeout(room_runtime: RoomRuntime, match: MatchRuntime) -> None:
+    account_id = match.actor.current_snapshot().public.actor_account_id
+    if account_id is None:
+        return
+    member = room_runtime.members.get(account_id)
+    if member is not None and not member.connected:
+        match.actor.schedule_disconnect_timeout(account_id)
 
 
 async def _emit_hand_settled(server: Any, match: MatchRuntime, result: Any) -> None:

@@ -69,7 +69,13 @@ def create_socketio_server(app: FastAPI, settings: Settings) -> socketio.AsyncSe
     async def disconnect(sid: str) -> None:
         account_id = registry.release(sid)
         if account_id is not None:
-            await mark_account_disconnected(server, room_registry, match_registry, sid)
+            await mark_account_disconnected(
+                server,
+                room_registry,
+                match_registry,
+                sid,
+                account_id,
+            )
 
     return server
 

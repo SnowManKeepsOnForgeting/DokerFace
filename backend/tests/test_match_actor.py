@@ -218,3 +218,47 @@ async def test_unlimited_action_time_does_not_create_a_deadline() -> None:
 
     assert initial.action_deadline_at is None
     await actor.close()
+
+
+@pytest.mark.asyncio
+async def test_disconnected_current_actor_gets_a_cancellable_fallback() -> None:
+    release = asyncio.Event()
+    sleeper_calls = 0
+
+    async def sleeper(seconds: float) -> object:
+        nonlocal sleeper_calls
+        assert seconds == 1
+        sleeper_calls += 1
+        await release.wait()
+        return None
+
+    fixed_now = datetime(2026, 7, 16, 12, 30, tzinfo=UTC)
+    actor = MatchActor(
+        MatchCoordinator((1, 2), make_rules()),
+        disconnect_timeout_seconds=1,
+        clock=lambda: fixed_now,
+        sleeper=sleeper,
+    )
+    initial = await actor.start()
+
+    assert actor.schedule_disconnect_timeout(1) is True
+    assert initial.action_deadline_at is None
+    assert actor.current_snapshot().action_deadline_at == datetime(
+        2026, 7, 16, 12, 30, 1, tzinfo=UTC
+    )
+    actor.cancel_disconnect_timeout(1)
+    assert actor.current_snapshot().action_deadline_at is None
+    assert sleeper_calls == 0
+
+    assert actor.schedule_disconnect_timeout(1) is True
+    await asyncio.sleep(0)
+    assert sleeper_calls == 1
+    release.set()
+    for _ in range(10):
+        await asyncio.sleep(0)
+        if actor.state_version == 1:
+            break
+
+    assert actor.state_version == 1
+    assert actor.current_snapshot().public.actor_account_id == 2
+    await actor.close()

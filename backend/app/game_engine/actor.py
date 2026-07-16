@@ -86,17 +86,21 @@ class MatchActor:
         coordinator: MatchCoordinator,
         match_id: UUID | None = None,
         decision_timeout_seconds: int | None = None,
+        disconnect_timeout_seconds: int = 60,
         clock: Callable[[], datetime] | None = None,
         sleeper: Callable[[float], Awaitable[object]] | None = None,
     ) -> None:
         self._coordinator = coordinator
         self._match_id = match_id or uuid4()
         self._decision_timeout_seconds = decision_timeout_seconds
+        self._disconnect_timeout_seconds = disconnect_timeout_seconds
         self._clock = clock or (lambda: datetime.now(UTC))
         self._sleeper = sleeper or asyncio.sleep
         self._hand_id: UUID | None = None
         self._action_deadline_at: datetime | None = None
         self._timer_task: asyncio.Task[object] | None = None
+        self._disconnect_timer_task: asyncio.Task[object] | None = None
+        self._disconnect_timer_account_id: int | None = None
         self._terminal_snapshot: MatchActorSnapshot | None = None
         self._terminal_private: dict[int, PrivateHandSnapshot] = {}
         self._queue: asyncio.Queue[_QueuedCommand | None] = asyncio.Queue()
@@ -158,10 +162,37 @@ class MatchActor:
             )
         )
 
+    def schedule_disconnect_timeout(self, account_id: int) -> bool:
+        if self._decision_timeout_seconds is not None:
+            return False
+        snapshot = self.current_snapshot()
+        if snapshot.public.actor_account_id != account_id:
+            return False
+        self._cancel_disconnect_timeout()
+        self._disconnect_timer_account_id = account_id
+        self._action_deadline_at = self._clock() + timedelta(
+            seconds=self._disconnect_timeout_seconds
+        )
+        self._disconnect_timer_task = asyncio.create_task(
+            self._run_disconnect_timeout(
+                account_id,
+                snapshot.hand_id,
+                snapshot.public.state_version,
+            ),
+            name="dokerface-disconnect-action-timer",
+        )
+        return True
+
+    def cancel_disconnect_timeout(self, account_id: int) -> None:
+        if self._disconnect_timer_account_id == account_id:
+            self._cancel_disconnect_timeout()
+            self._action_deadline_at = None
+
     async def close(self) -> None:
         if self._task is None:
             return
         self._cancel_action_timer()
+        self._cancel_disconnect_timeout()
         await self._queue.put(None)
         await self._task
         self._task = None
@@ -286,6 +317,7 @@ class MatchActor:
             self._terminal_private = terminal_private
             self._action_deadline_at = None
             self._cancel_action_timer()
+            self._cancel_disconnect_timeout()
             return MatchCommandResult(
                 command_id=command.command_id,
                 applied=applied,
@@ -335,6 +367,7 @@ class MatchActor:
 
     def _schedule_action_timer(self) -> None:
         self._cancel_action_timer()
+        self._cancel_disconnect_timeout()
         snapshot = self._coordinator.public_snapshot()
         if self._decision_timeout_seconds is None or snapshot.actor_account_id is None:
             self._action_deadline_at = None
@@ -354,6 +387,13 @@ class MatchActor:
         if task is not None and task is not asyncio.current_task():
             task.cancel()
 
+    def _cancel_disconnect_timeout(self) -> None:
+        task = self._disconnect_timer_task
+        self._disconnect_timer_task = None
+        self._disconnect_timer_account_id = None
+        if task is not None and task is not asyncio.current_task():
+            task.cancel()
+
     async def _run_action_timer(self, hand_id: UUID, state_version: int) -> None:
         try:
             await self._sleeper(self._decision_timeout_seconds or 0)
@@ -362,6 +402,27 @@ class MatchActor:
                 match_id=self._match_id,
                 hand_id=hand_id,
                 state_version=state_version,
+            )
+        except (MatchActorStateError, MatchCommandConflictError, ValueError):
+            return
+
+    async def _run_disconnect_timeout(
+        self,
+        account_id: int,
+        hand_id: UUID,
+        state_version: int,
+    ) -> None:
+        try:
+            await self._sleeper(self._disconnect_timeout_seconds)
+            snapshot = self.current_snapshot()
+            if snapshot.public.actor_account_id != account_id:
+                return
+            await self.submit_timeout(
+                uuid4(),
+                match_id=self._match_id,
+                hand_id=hand_id,
+                state_version=state_version,
+                source=MatchCommandSource.DISCONNECT_TIMEOUT,
             )
         except (MatchActorStateError, MatchCommandConflictError, ValueError):
             return
