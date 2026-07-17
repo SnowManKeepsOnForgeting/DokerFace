@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi import FastAPI
@@ -14,6 +14,9 @@ from app.config import Settings
 from app.db.dependencies import get_db_session
 from app.main import create_app
 from app.matches.models import MatchRecord
+from app.rooms.config import RoomVisibility
+from app.rooms.models import Room, RoomStatus
+from app.rooms.registry import RoomRegistry
 
 
 def make_account(
@@ -45,6 +48,11 @@ def build_app(session: AsyncSession, current_account: Account) -> FastAPI:
     app.dependency_overrides[get_db_session] = override_db_session
     app.dependency_overrides[get_current_account] = override_current_account
     return app
+
+
+class StaleRoomRegistry(RoomRegistry):
+    def seed_stale_membership(self, account_id: int, room_id: UUID) -> None:
+        self._account_to_room[account_id] = room_id
 
 
 async def test_admin_api_creates_account() -> None:
@@ -170,3 +178,70 @@ async def test_admin_api_rejects_empty_update() -> None:
         response = await client.patch("/api/v1/admin/accounts/2", json={})
 
     assert response.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_admin_api_close_room_clears_realtime_membership() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    admin = make_account(account_id=1, login_name="admin", role=AccountRole.ADMINISTRATOR)
+    room = Room(
+        room_id=uuid4(),
+        host_account_id=1,
+        name="Open table",
+        visibility=RoomVisibility.PUBLIC,
+        rules={},
+    )
+    session.scalar.return_value = room
+    app = build_app(session, admin)
+
+    room_registry = RoomRegistry()
+    room_registry.ensure_room(room.room_id, host_account_id=1, max_players=2)
+    room_registry.join(room.room_id, account_id=2, sid="sid-player")
+    app.state.room_registry = room_registry
+
+    socketio_server = MagicMock()
+    socketio_server.emit = AsyncMock()
+    socketio_server.leave_room = AsyncMock()
+    app.state.socketio = socketio_server
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(f"/api/v1/admin/rooms/{room.room_id}/close")
+
+    assert response.status_code == 204
+    assert room.status is RoomStatus.CLOSED
+    assert room_registry.get(room.room_id) is None
+    assert room_registry.room_for_account(2) is None
+    socketio_server.leave_room.assert_awaited_once_with("sid-player", str(room.room_id))
+
+    replacement_room_id = uuid4()
+    room_registry.ensure_room(replacement_room_id, host_account_id=2, max_players=2)
+    room_registry.join(replacement_room_id, account_id=2, sid="sid-player-new")
+
+
+@pytest.mark.asyncio
+async def test_admin_api_close_room_clears_stale_index_without_runtime() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    admin = make_account(account_id=1, login_name="admin", role=AccountRole.ADMINISTRATOR)
+    room = Room(
+        room_id=uuid4(),
+        host_account_id=1,
+        name="Stale table",
+        visibility=RoomVisibility.PUBLIC,
+        rules={},
+    )
+    session.scalar.return_value = room
+    app = build_app(session, admin)
+
+    room_registry = StaleRoomRegistry()
+    room_registry.seed_stale_membership(2, room.room_id)
+    app.state.room_registry = room_registry
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(f"/api/v1/admin/rooms/{room.room_id}/close")
+
+    assert response.status_code == 204
+    assert room_registry.room_for_account(2) is None
+
+    replacement_room_id = uuid4()
+    room_registry.ensure_room(replacement_room_id, host_account_id=2, max_players=2)
+    room_registry.join(replacement_room_id, account_id=2, sid="sid-player-new")

@@ -27,6 +27,7 @@ from app.matches.persistence import MatchHistoryPersistenceService
 from app.ratings.service import RatingService
 from app.rooms.api import RoomResponse, to_room_response
 from app.rooms.models import Room, RoomStatus
+from app.rooms.registry import RoomMember
 
 
 class AdminAccountResponse(BaseModel):
@@ -411,27 +412,25 @@ async def close_room_admin(
     match_registry = getattr(request.app.state, "match_registry", None)
     socketio_server = getattr(request.app.state, "socketio", None)
 
+    members: tuple[RoomMember, ...] = ()
     if room_registry is not None:
         runtime = room_registry.get(room_id)
-        if runtime is not None:
-            if match_registry is not None:
-                match = match_registry.for_room(room_id)
-                if match is not None:
-                    await match.actor.stop()
-                    await match_registry.remove(match)
+        if runtime is not None and match_registry is not None:
+            match = match_registry.for_room(room_id)
+            if match is not None:
+                await match.actor.stop()
+                await match_registry.remove(match)
 
-            if socketio_server is not None:
-                await socketio_server.emit(
-                    "room:kicked",
-                    {"room_id": str(room_id), "reason": "admin_closed"},
-                    room=str(room_id),
-                )
-                for member in list(runtime.members.values()):
-                    await socketio_server.leave_room(member.sid, str(room_id))
+        members = room_registry.close(room_id)
 
-            room_registry._rooms.pop(room_id, None)
-            for acc_id in list(runtime.members):
-                room_registry._account_to_room.pop(acc_id, None)
+    if socketio_server is not None:
+        await socketio_server.emit(
+            "room:kicked",
+            {"room_id": str(room_id), "reason": "admin_closed"},
+            room=str(room_id),
+        )
+        for member in members:
+            await socketio_server.leave_room(member.sid, str(room_id))
 
     if socketio_server is not None:
         await socketio_server.emit("lobby:rooms-updated", {"schema_version": 1})
