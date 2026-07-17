@@ -418,7 +418,6 @@ async def close_room_admin(
         if runtime is not None and match_registry is not None:
             match = match_registry.for_room(room_id)
             if match is not None:
-                await match.actor.stop()
                 await match_registry.remove(match)
 
         members = room_registry.close(room_id)

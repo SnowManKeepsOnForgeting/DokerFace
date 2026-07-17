@@ -14,6 +14,7 @@ from app.config import Settings
 from app.db.dependencies import get_db_session
 from app.main import create_app
 from app.matches.models import MatchRecord
+from app.matches.registry import MatchRuntime
 from app.rooms.config import RoomVisibility
 from app.rooms.models import Room, RoomStatus
 from app.rooms.registry import RoomRegistry
@@ -199,6 +200,11 @@ async def test_admin_api_close_room_clears_realtime_membership() -> None:
     room_registry.join(room.room_id, account_id=2, sid="sid-player")
     app.state.room_registry = room_registry
 
+    actor = MagicMock()
+    actor.close = AsyncMock()
+    match = MatchRuntime(room.room_id, uuid4(), actor, ())
+    app.state.match_registry.add(match)
+
     socketio_server = MagicMock()
     socketio_server.emit = AsyncMock()
     socketio_server.leave_room = AsyncMock()
@@ -211,6 +217,8 @@ async def test_admin_api_close_room_clears_realtime_membership() -> None:
     assert room.status is RoomStatus.CLOSED
     assert room_registry.get(room.room_id) is None
     assert room_registry.room_for_account(2) is None
+    assert app.state.match_registry.for_room(room.room_id) is None
+    actor.close.assert_awaited_once()
     socketio_server.leave_room.assert_awaited_once_with("sid-player", str(room.room_id))
 
     replacement_room_id = uuid4()
