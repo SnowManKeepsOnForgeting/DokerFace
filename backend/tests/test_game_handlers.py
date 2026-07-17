@@ -163,6 +163,8 @@ async def test_room_start_emits_public_and_private_initial_snapshots() -> None:
     assert len(private_payloads) == 2
     assert public.state_version == 0
     assert public.action_deadline_at is None
+    assert public.server_time.tzinfo is not None
+    assert public.actions == []
     assert all(
         "hole_cards" not in payload for payload in emitted_payloads(server, "game:public-snapshot")
     )

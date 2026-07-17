@@ -94,6 +94,7 @@ def test_public_and_private_snapshot_shapes_keep_hole_cards_private() -> None:
         board=[],
         pot_amounts=[150],
         complete=False,
+        server_time=deadline,
         action_deadline_at=deadline,
         players=[
             GamePlayerSnapshot(
@@ -118,3 +119,4 @@ def test_public_and_private_snapshot_shapes_keep_hole_cards_private() -> None:
     assert private.hole_cards == ["As", "Kd"]
     assert private.action_deadline_at == deadline
     assert public.model_dump(mode="json")["action_deadline_at"] == "2026-07-16T12:30:00Z"
+    assert public.server_time == deadline

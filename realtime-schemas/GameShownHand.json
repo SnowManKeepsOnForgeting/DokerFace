@@ -1,0 +1,21 @@
+{
+  "properties": {
+    "account_id": {
+      "title": "Account Id",
+      "type": "integer"
+    },
+    "hole_cards": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Hole Cards",
+      "type": "array"
+    }
+  },
+  "required": [
+    "account_id",
+    "hole_cards"
+  ],
+  "title": "GameShownHand",
+  "type": "object"
+}

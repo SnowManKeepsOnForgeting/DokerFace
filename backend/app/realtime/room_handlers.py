@@ -41,13 +41,16 @@ from app.realtime.schemas import (
     EmoteSendEvent,
     GameActionEvent,
     GameActionRejected,
+    GameHandActionSnapshot,
     GameHandSettled,
     GameLegalAction,
     GameMatchSettled,
     GamePlayerSnapshot,
+    GamePotSettlement,
     GamePrivateSnapshot,
     GamePublicSnapshot,
     GameRequestSnapshotEvent,
+    GameShownHand,
     LobbyRoomsUpdatedEvent,
     RoomJoinEvent,
     RoomKickedEvent,
@@ -911,6 +914,18 @@ def _public_snapshot_payload(
         pot_amounts=list(public.pot_amounts),
         complete=public.complete,
         players=players,
+        server_time=snapshot.server_time,
+        actions=[
+            GameHandActionSnapshot(
+                sequence_no=action.sequence_no,
+                state_version=action.state_version,
+                account_id=action.account_id,
+                street=action.street,
+                action=action.action,
+                amount=action.amount,
+            )
+            for action in snapshot.actions
+        ],
         action_deadline_at=snapshot.action_deadline_at,
     ).model_dump(mode="json")
 
@@ -944,16 +959,50 @@ def _schedule_disconnected_timeout(room_runtime: RoomRuntime, match: MatchRuntim
 
 async def _emit_hand_settled(server: Any, match: MatchRuntime, result: Any) -> None:
     settlement = result.settlement
-    if settlement is None or result.settled_hand_id is None or result.settled_hand_number is None:
+    completed = result.completed_hand
+    if (
+        settlement is None
+        or completed is None
+        or result.settled_hand_id is None
+        or result.settled_hand_number is None
+    ):
         return
+    account_ids = list(match.actor.coordinator.player_ids)
+    pots = [
+        GamePotSettlement(
+            pot_number=index + 1,
+            amount=pot.amount,
+            eligible_account_ids=[
+                account_ids[player_index] for player_index in pot.eligible_indices
+            ],
+            winner_payouts={
+                str(account_ids[player_index]): payout
+                for player_index, payout in enumerate(pot.payouts)
+                if payout
+            },
+        )
+        for index, pot in enumerate(settlement.pots)
+    ]
+    shown_accounts = {
+        action.account_id for action in completed.actions if action.action.value == "show"
+    }
     payload = GameHandSettled(
         match_id=match.match_id,
         hand_id=result.settled_hand_id,
         hand_number=result.settled_hand_number,
         state_version=result.state_version,
-        account_ids=list(match.actor.coordinator.player_ids),
+        account_ids=account_ids,
         final_stacks=list(settlement.final_stacks),
         payoffs=list(settlement.payoffs),
+        pots=pots,
+        shown_hands=[
+            GameShownHand(
+                account_id=account_id,
+                hole_cards=list(completed.private_snapshots[account_id].hole_cards),
+            )
+            for account_id in account_ids
+            if account_id in shown_accounts and account_id in completed.private_snapshots
+        ],
     ).model_dump(mode="json")
     await server.emit("game:hand-settled", payload, room=str(match.room_id))
 

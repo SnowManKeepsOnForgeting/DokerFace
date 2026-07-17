@@ -141,6 +141,15 @@ class GamePlayerSnapshot(BaseModel):
     connected: bool = True
 
 
+class GameHandActionSnapshot(BaseModel):
+    sequence_no: int
+    state_version: int
+    account_id: int
+    street: str
+    action: ActionType
+    amount: int | None = None
+
+
 class GamePublicSnapshot(BaseModel):
     schema_version: Literal[1] = 1
     match_id: UUID
@@ -154,6 +163,8 @@ class GamePublicSnapshot(BaseModel):
     pot_amounts: list[int]
     complete: bool
     players: list[GamePlayerSnapshot]
+    server_time: datetime
+    actions: list[GameHandActionSnapshot] = []
     action_deadline_at: datetime | None = None
 
 
@@ -195,6 +206,20 @@ class GameHandSettled(BaseModel):
     account_ids: list[int]
     final_stacks: list[int]
     payoffs: list[int]
+    pots: list["GamePotSettlement"] = []
+    shown_hands: list["GameShownHand"] = []
+
+
+class GamePotSettlement(BaseModel):
+    pot_number: int
+    amount: int
+    eligible_account_ids: list[int]
+    winner_payouts: dict[str, int]
+
+
+class GameShownHand(BaseModel):
+    account_id: int
+    hole_cards: list[str]
 
 
 class GameMatchSettled(BaseModel):
@@ -209,13 +234,16 @@ class GameMatchSettled(BaseModel):
 __all__ = [
     "GameActionEvent",
     "GameActionRejected",
+    "GameHandActionSnapshot",
     "GameHandSettled",
     "GameLegalAction",
     "GameMatchSettled",
     "GamePlayerSnapshot",
+    "GamePotSettlement",
     "GamePrivateSnapshot",
     "GamePublicSnapshot",
     "GameRequestSnapshotEvent",
+    "GameShownHand",
     "LobbyRoomsUpdatedEvent",
     "RoomJoinEvent",
     "RoomKickedEvent",

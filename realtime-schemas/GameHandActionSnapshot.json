@@ -1,0 +1,57 @@
+{
+  "$defs": {
+    "ActionType": {
+      "enum": [
+        "fold",
+        "check_or_call",
+        "bet_or_raise",
+        "show",
+        "muck"
+      ],
+      "title": "ActionType",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "sequence_no": {
+      "title": "Sequence No",
+      "type": "integer"
+    },
+    "state_version": {
+      "title": "State Version",
+      "type": "integer"
+    },
+    "account_id": {
+      "title": "Account Id",
+      "type": "integer"
+    },
+    "street": {
+      "title": "Street",
+      "type": "string"
+    },
+    "action": {
+      "$ref": "#/$defs/ActionType"
+    },
+    "amount": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Amount"
+    }
+  },
+  "required": [
+    "sequence_no",
+    "state_version",
+    "account_id",
+    "street",
+    "action"
+  ],
+  "title": "GameHandActionSnapshot",
+  "type": "object"
+}

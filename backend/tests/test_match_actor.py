@@ -59,6 +59,9 @@ async def test_actor_requires_start_and_serializes_duplicate_commands() -> None:
     assert first.result.state_version == 1
     assert first.result.snapshot.state_version == 1
     assert actor.state_version == 1
+    assert first.result.completed_hand is not None
+    assert first.result.completed_hand.actions[0].sequence_no == 1
+    assert first.result.completed_hand.actions[0].account_id == 1
     assert actor.coordinator.hand_number == 2
     await actor.close()
 

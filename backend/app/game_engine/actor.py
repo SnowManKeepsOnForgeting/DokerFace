@@ -41,6 +41,8 @@ class MatchActorSnapshot:
     hand_number: int
     button_account_id: int
     public: PublicHandSnapshot
+    server_time: datetime
+    actions: tuple[HandActionSnapshot, ...] = ()
     action_deadline_at: datetime | None = None
 
 
@@ -248,6 +250,8 @@ class MatchActor:
             hand_id=self._hand_id,
             hand_number=self._coordinator.hand_number,
             button_account_id=self._coordinator.button_account_id,
+            server_time=self._clock(),
+            actions=tuple(self._hand_actions),
             action_deadline_at=self._action_deadline_at,
             public=replace(
                 self._coordinator.public_snapshot(),
@@ -368,6 +372,8 @@ class MatchActor:
                 hand_number=hand_number,
                 button_account_id=button_account_id,
                 public=terminal_public,
+                server_time=self._clock(),
+                actions=tuple(self._hand_actions),
                 action_deadline_at=None,
             )
             self._terminal_private = terminal_private
