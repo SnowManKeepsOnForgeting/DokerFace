@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router';
-import { useAuth } from '../api/auth';
+import { useAuth } from '../api/auth-context';
 import { LayoutDashboard, Trophy, User, LogOut, ShieldAlert } from 'lucide-react';
 
 export function Layout({ children }: { children: ReactNode }) {

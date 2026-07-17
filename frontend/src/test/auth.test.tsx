@@ -3,7 +3,8 @@ import { describe, beforeAll, afterEach, afterAll, expect, it } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from '../api/auth';
+import { AuthProvider } from '../api/auth';
+import { useAuth } from '../api/auth-context';
 import userEvent from '@testing-library/user-event';
 import '../api/client'; // Init client
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../api/auth';
+import { useAuth } from '../api/auth-context';
 import { ApiError } from '../api/client';
 import {
   getPlayerApiV1PlayersAccountIdGet,
@@ -11,7 +11,13 @@ import {
   listPlayerMatchesApiV1PlayersAccountIdMatchesGet,
   getMatchHistoryApiV1MatchesMatchIdGet,
 } from '../contracts/rest';
-import type { PublicPlayerResponse } from '../contracts/rest/types.gen';
+import type {
+  ActionHistoryResponse,
+  HandHistoryResponse,
+  PlayerRatingHistoryEntry,
+  ProfileUpdateRequest,
+  PublicPlayerResponse,
+} from '../contracts/rest/types.gen';
 import {
   Edit2,
   Check,
@@ -89,7 +95,7 @@ export function PlayerProfile() {
   });
 
   // Edit Profile Mutation
-  const updateProfileMutation = useMutation<PublicPlayerResponse, ApiError, any>({
+  const updateProfileMutation = useMutation<PublicPlayerResponse, ApiError, ProfileUpdateRequest>({
     mutationFn: async (payload) => {
       return await updateMyProfileApiV1MeProfilePatch({
         body: payload,
@@ -511,9 +517,9 @@ export function PlayerProfile() {
             </div>
           ) : (
             <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl divide-y divide-slate-800 overflow-hidden">
-              {ratings.items.map((record: any, index: number) => (
+              {ratings.items.map((record: PlayerRatingHistoryEntry, index: number) => (
                 <div
-                  key={record.rating_id || index}
+                  key={`${record.match_id}-${index}`}
                   className="flex items-center justify-between p-4 hover:bg-slate-900/20 transition-colors"
                 >
                   <div className="flex flex-col gap-0.5">
@@ -528,16 +534,16 @@ export function PlayerProfile() {
 
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-bold text-slate-200">
-                      {record.rating.toFixed(0)}
+                      {record.after_rating.toFixed(0)}
                     </span>
-                    {record.rating_change !== undefined && (
+                    {record.delta !== 0 && (
                       <span
                         className={`text-xs font-bold ${
-                          record.rating_change >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                          record.delta >= 0 ? 'text-emerald-400' : 'text-rose-400'
                         }`}
                       >
-                        {record.rating_change >= 0 ? '+' : ''}
-                        {record.rating_change.toFixed(0)}
+                        {record.delta >= 0 ? '+' : ''}
+                        {record.delta.toFixed(0)}
                       </span>
                     )}
                   </div>
@@ -637,7 +643,7 @@ function MatchDetailModal({ matchId, onClose }: MatchDetailModalProps) {
   );
 }
 
-function HandRow({ hand }: { hand: any }) {
+function HandRow({ hand }: { hand: HandHistoryResponse }) {
   const [expanded, setExpanded] = useState(false);
 
   // Render cards helper
@@ -707,7 +713,7 @@ function HandRow({ hand }: { hand: any }) {
             </h5>
             <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
               {hand.actions && hand.actions.length > 0 ? (
-                hand.actions.map((act: any) => (
+                hand.actions.map((act: ActionHistoryResponse) => (
                   <div
                     key={act.sequence_no}
                     className="text-xs flex justify-between p-1 bg-slate-900/30 rounded border border-slate-900/40"
@@ -741,15 +747,18 @@ function HandRow({ hand }: { hand: any }) {
                 Hand settlement payouts
               </h5>
               <div className="space-y-1 text-xs">
-                {Object.entries(hand.settlement_summary).map(([accId, payout]: any) => (
-                  <div key={accId} className="flex justify-between items-center font-semibold">
-                    <span className="text-slate-400">Player #{accId}</span>
-                    <span className={payout >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                      {payout >= 0 ? '+' : ''}
-                      {payout.toLocaleString()} chips
-                    </span>
-                  </div>
-                ))}
+                {Object.entries(hand.settlement_summary).map(([accId, payout]) => {
+                  if (typeof payout !== 'number') return null;
+                  return (
+                    <div key={accId} className="flex justify-between items-center font-semibold">
+                      <span className="text-slate-400">Player #{accId}</span>
+                      <span className={payout >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                        {payout >= 0 ? '+' : ''}
+                        {payout.toLocaleString()} chips
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

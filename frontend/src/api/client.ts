@@ -43,20 +43,24 @@ client.interceptors.error.use((error, response) => {
 
   const status = response ? response.status : 0;
 
-  if (error && typeof error === 'object') {
-    const errObj = error as any;
-    if (typeof errObj.detail === 'string') {
-      message = errObj.detail;
-      code = errObj.detail.toUpperCase().replace(/\s+/g, '_');
-    } else if (Array.isArray(errObj.detail)) {
+  if (isRecord(error)) {
+    const detail = error.detail;
+    if (typeof detail === 'string') {
+      message = detail;
+      code = detail.toUpperCase().replace(/\s+/g, '_');
+    } else if (Array.isArray(detail)) {
       message = 'Validation failed';
       code = 'VALIDATION_ERROR';
-      validationErrors = errObj.detail.map((err: any) => ({
-        field: Array.isArray(err.loc) ? err.loc.slice(1).join('.') : 'unknown',
-        message: err.msg || 'invalid value',
-      }));
-    } else if (errObj.message) {
-      message = errObj.message;
+      validationErrors = detail.map((item) => {
+        const validation = isRecord(item) ? item : {};
+        const location = Array.isArray(validation.loc) ? validation.loc : [];
+        return {
+          field: location.slice(1).join('.') || 'unknown',
+          message: typeof validation.msg === 'string' ? validation.msg : 'invalid value',
+        };
+      });
+    } else if (typeof error.message === 'string') {
+      message = error.message;
     }
   } else if (typeof error === 'string') {
     message = error;
@@ -69,3 +73,7 @@ client.interceptors.error.use((error, response) => {
     validationErrors,
   });
 });
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}

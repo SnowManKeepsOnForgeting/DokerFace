@@ -212,7 +212,7 @@ class GameHandSettled(BaseModel):
 
 class GamePotSettlement(BaseModel):
     pot_number: int
-    amount: int
+    amount: int = Field(title="Pot Amount")
     eligible_account_ids: list[int]
     winner_payouts: dict[str, int]
 

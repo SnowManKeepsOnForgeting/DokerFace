@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useGameStore } from '../store/game';
-import { useAuth } from '../api/auth';
+import { useAuth } from '../api/auth-context';
 import { getPlayerApiV1PlayersAccountIdGet } from '../contracts/rest';
+import type { EmotePayload, RoomMemberSnapshot } from '../contracts/realtime';
 import {
   Crown,
   Play,
@@ -146,7 +147,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
                 hostAccountId={currentRoom.host_account_id}
                 isCurrentUserHost={isHost}
                 currentUserId={currentUser?.account_id}
-                onKick={(accId) => kickPlayer(roomId, accId, 'Kicked by host')}
+                onKick={(accId) => void kickPlayer(roomId, accId)}
                 activeEmotes={activeEmotes}
               />
             ))}
@@ -245,13 +246,13 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
 }
 
 interface MemberRowProps {
-  member: any;
+  member: RoomMemberSnapshot;
   roomId: string;
   hostAccountId: number;
   isCurrentUserHost: boolean;
   currentUserId?: number;
   onKick: (accId: number) => void;
-  activeEmotes: any[];
+  activeEmotes: EmotePayload[];
 }
 
 function MemberRow({

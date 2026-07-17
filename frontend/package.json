@@ -11,6 +11,7 @@
     "contracts:generate-rest": "openapi-ts",
     "contracts:generate-realtime": "node scripts/generate-realtime-contracts.cjs",
     "contracts:generate": "pnpm contracts:generate-rest && pnpm contracts:generate-realtime",
+    "contracts:check": "pnpm contracts:generate && git diff --exit-code -- src/contracts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

@@ -91,6 +91,20 @@ export interface GameActionRejected {
   [k: string]: unknown;
 }
 
+export type SequenceNo = number;
+
+export type Street = string;
+
+export interface GameHandActionSnapshot {
+  sequence_no: SequenceNo;
+  state_version: StateVersion;
+  account_id: AccountId;
+  street: Street;
+  action: ActionType;
+  amount?: Amount;
+  [k: string]: unknown;
+}
+
 export type HandNumber = number;
 
 export type AccountIds = number[];
@@ -98,6 +112,18 @@ export type AccountIds = number[];
 export type FinalStacks = number[];
 
 export type Payoffs = number[];
+
+export type PotNumber = number;
+
+export type PotAmount = number;
+
+export type EligibleAccountIds = number[];
+
+export type Pots = GamePotSettlement[];
+
+export type HoleCards = string[];
+
+export type ShownHands = GameShownHand[];
 
 
 export interface GameHandSettled {
@@ -109,6 +135,26 @@ export interface GameHandSettled {
   account_ids: AccountIds;
   final_stacks: FinalStacks;
   payoffs: Payoffs;
+  pots?: Pots;
+  shown_hands?: ShownHands;
+  [k: string]: unknown;
+}
+
+export interface GamePotSettlement {
+  pot_number: PotNumber;
+  amount: PotAmount;
+  eligible_account_ids: EligibleAccountIds;
+  winner_payouts: WinnerPayouts;
+  [k: string]: unknown;
+}
+
+export interface WinnerPayouts {
+  [k: string]: number;
+}
+
+export interface GameShownHand {
+  account_id: AccountId;
+  hole_cards: HoleCards;
   [k: string]: unknown;
 }
 
@@ -164,8 +210,6 @@ export interface GamePlayerSnapshot {
   [k: string]: unknown;
 }
 
-export type Street = string;
-
 export type ButtonAccountId = number;
 
 export type ActorAccountId = number | null;
@@ -178,11 +222,19 @@ export type Complete = boolean;
 
 export type Players = GamePlayerSnapshot[];
 
-export type ActionDeadlineAt = string | null;
+export type ServerTime = string;
+
+export type StateVersion1 = number;
 
 export type AccountId1 = number;
 
-export type HoleCards = string[];
+export type Street1 = string;
+
+export type Actions = GameHandActionSnapshot[];
+
+export type ActionDeadlineAt = string | null;
+
+export type AccountId2 = number;
 
 export type LegalActions = GameLegalAction[];
 
@@ -200,8 +252,10 @@ export interface GamePrivateSnapshot {
   pot_amounts: PotAmounts;
   complete: Complete;
   players: Players;
+  server_time: ServerTime;
+  actions?: Actions;
   action_deadline_at?: ActionDeadlineAt;
-  account_id: AccountId1;
+  account_id: AccountId2;
   hole_cards: HoleCards;
   legal_actions: LegalActions;
   [k: string]: unknown;
@@ -220,6 +274,8 @@ export interface GamePublicSnapshot {
   pot_amounts: PotAmounts;
   complete: Complete;
   players: Players;
+  server_time: ServerTime;
+  actions?: Actions;
   action_deadline_at?: ActionDeadlineAt;
   [k: string]: unknown;
 }

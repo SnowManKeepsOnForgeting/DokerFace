@@ -1,5 +1,5 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
-import { describe, beforeAll, afterEach, afterAll, expect, it } from 'vitest';
+import { describe, beforeAll, afterEach, afterAll, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -22,28 +22,53 @@ const mockPlayerInfo = {
   is_online: true,
 };
 
+const roomId = '00000000-0000-4000-8000-000000000001';
+
+type AckResponse = { ok: boolean; error?: string };
+
+const mockConnectedSocket = (joinResponse: AckResponse = { ok: true }) => {
+  const previousConnected = socket.connected;
+  const connect = vi.spyOn(socket, 'connect').mockImplementation(() => socket);
+  const disconnect = vi.spyOn(socket, 'disconnect').mockImplementation(() => socket);
+  const timeoutSocket = {
+    emitWithAck: vi.fn((event: string) =>
+      Promise.resolve(event === 'room:join' ? joinResponse : { ok: true }),
+    ),
+  };
+  const timeout = vi
+    .spyOn(socket, 'timeout')
+    .mockReturnValue(timeoutSocket as unknown as ReturnType<typeof socket.timeout>);
+  socket.connected = true;
+
+  return () => {
+    socket.connected = previousConnected;
+    connect.mockRestore();
+    disconnect.mockRestore();
+    timeout.mockRestore();
+  };
+};
+
 describe('WaitingRoom and PokerTable Flow', () => {
+  let restoreSocket: (() => void) | undefined;
+
   beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
   afterEach(() => {
+    restoreSocket?.();
+    restoreSocket = undefined;
     server.resetHandlers();
     useGameStore.getState().resetGame();
   });
   afterAll(() => server.close());
 
   it('renders password prompt on password_required acknowledgement', async () => {
-    const originalEmit = socket.emit;
-    socket.emit = ((event: string, _payload: any, ack: any) => {
-      if (event === 'room:join') {
-        ack({ ok: false, error: 'password_required' });
-      }
-    }) as any;
+    restoreSocket = mockConnectedSocket({ ok: false, error: 'password_required' });
 
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
 
     render(
-      <MemoryRouter initialEntries={['/rooms/room-id-123']}>
+      <MemoryRouter initialEntries={[`/rooms/${roomId}`]}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <Routes>
@@ -55,11 +80,10 @@ describe('WaitingRoom and PokerTable Flow', () => {
     );
 
     await waitFor(() => expect(screen.getByText('Password Required')).toBeInTheDocument());
-
-    socket.emit = originalEmit;
   });
 
   it('displays waiting room players and handles ready state toggles', async () => {
+    restoreSocket = mockConnectedSocket();
     server.use(
       http.get('http://localhost:8080/api/v1/players/1', () => {
         return HttpResponse.json(mockPlayerInfo, { status: 200 });
@@ -83,7 +107,7 @@ describe('WaitingRoom and PokerTable Flow', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/rooms/room-id-123']}>
+      <MemoryRouter initialEntries={[`/rooms/${roomId}`]}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <Routes>
@@ -95,15 +119,19 @@ describe('WaitingRoom and PokerTable Flow', () => {
     );
 
     const mockSnapshot = {
-      room_id: 'room-id-123',
+      schema_version: 1,
+      room_id: roomId,
       host_account_id: 1,
       status: 'waiting',
       members: [{ account_id: 1, ready: false, seat: null, connected: true }],
     };
 
-    const listeners = (socket as any).listeners ? (socket as any).listeners('room:snapshot') : [];
+    const socketForTest = socket as unknown as {
+      listeners: (event: string) => Array<(payload: unknown) => void>;
+    };
+    const listeners = socketForTest.listeners('room:snapshot');
     act(() => {
-      listeners.forEach((listener: any) => listener(mockSnapshot));
+      listeners.forEach((listener) => listener(mockSnapshot));
     });
 
     await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());

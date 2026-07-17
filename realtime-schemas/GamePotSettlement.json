@@ -5,7 +5,7 @@
       "type": "integer"
     },
     "amount": {
-      "title": "Amount",
+      "title": "Pot Amount",
       "type": "integer"
     },
     "eligible_account_ids": {

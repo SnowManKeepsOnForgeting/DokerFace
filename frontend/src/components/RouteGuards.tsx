@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router';
-import { useAuth } from '../api/auth';
+import { useAuth } from '../api/auth-context';
 
 export function AuthenticatedRoute() {
   const { user, isLoading } = useAuth();

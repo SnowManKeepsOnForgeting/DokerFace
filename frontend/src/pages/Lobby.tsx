@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import { useAuth } from '../api/auth';
+import { useAuth } from '../api/auth-context';
 import { socket } from '../api/socket';
 import { listRoomsApiV1RoomsGet, createRoomApiV1RoomsPost } from '../contracts/rest';
-import type { RoomResponse } from '../contracts/rest/types.gen';
+import type { CreateRoomRequest, RoomResponse } from '../contracts/rest/types.gen';
 import { ApiError } from '../api/client';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
@@ -77,15 +77,8 @@ export function Lobby() {
     };
   }, [queryClient]);
 
-  // Default room name helper
-  useEffect(() => {
-    if (user && isCreateOpen) {
-      setRoomName(`${user.display_name}'s Room`);
-    }
-  }, [user, isCreateOpen]);
-
   // Create Room mutation
-  const createRoomMutation = useMutation<RoomResponse, ApiError, any>({
+  const createRoomMutation = useMutation<RoomResponse, ApiError, CreateRoomRequest>({
     mutationFn: async (payload) => {
       return await createRoomApiV1RoomsPost({ body: payload, throwOnError: true });
     },
@@ -219,6 +212,7 @@ export function Lobby() {
         <button
           onClick={() => {
             setValidationError(null);
+            setRoomName(user ? `${user.display_name}'s Room` : '');
             setIsCreateOpen(true);
           }}
           className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-purple-600 px-5 text-sm font-semibold text-white hover:bg-purple-500 shadow-md shadow-purple-900/20 transition-colors cursor-pointer self-start sm:self-auto"

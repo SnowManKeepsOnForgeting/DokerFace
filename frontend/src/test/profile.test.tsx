@@ -53,11 +53,12 @@ const mockStats = {
 
 const mockRatings = [
   {
-    rating_id: 1,
     match_id: 'match-1',
+    before_rating: 1000,
+    delta: 50,
+    after_rating: 1050,
+    finishing_rank: 1,
     created_at: '2026-07-16T12:00:00Z',
-    rating: 1050,
-    rating_change: 50,
   },
 ];
 
@@ -227,7 +228,7 @@ describe('PlayerProfile View and Editing', () => {
 
     server.use(
       http.patch('http://localhost:8080/api/v1/me/profile', async ({ request }) => {
-        const body = (await request.json()) as any;
+        const body = (await request.json()) as Record<string, string | null>;
         currentMockPlayer = {
           ...currentMockPlayer,
           display_name: body.display_name || currentMockPlayer.display_name,

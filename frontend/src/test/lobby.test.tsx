@@ -98,14 +98,12 @@ describe('Lobby View and Interactions', () => {
     );
 
     // Trigger the registered socket listeners directly to simulate server broadcast
-    const listeners = (socket as any).listeners
-      ? (socket as any).listeners('lobby:rooms-updated')
-      : [];
-    if (listeners.length > 0) {
-      listeners.forEach((listener: any) => listener());
-    } else {
-      socket.emit('lobby:rooms-updated');
-    }
+    const socketForTest = socket as unknown as {
+      listeners: (event: string) => Array<(payload: unknown) => void>;
+    };
+    socketForTest
+      .listeners('lobby:rooms-updated')
+      .forEach((listener) => listener({ schema_version: 1 }));
 
     await waitFor(() => expect(screen.getByText('Updated Room Name')).toBeInTheDocument());
     expect(screen.getByText('4 / 8 players')).toBeInTheDocument();

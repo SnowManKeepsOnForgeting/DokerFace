@@ -106,9 +106,9 @@ describe('AdminConsole Page Interactions', () => {
   afterAll(() => server.close());
 
   it('renders accounts list and executes administration actions', async () => {
-    let capturedCreatePayload: any = null;
-    let capturedResetPayload: any = null;
-    let capturedPatchPayload: any = null;
+    let capturedCreatePayload: Record<string, unknown> | null = null;
+    let capturedResetPayload: Record<string, unknown> | null = null;
+    let capturedPatchPayload: Record<string, unknown> | null = null;
     let closedRoomId: string | null = null;
     let voidedMatchId: string | null = null;
 
@@ -129,18 +129,18 @@ describe('AdminConsole Page Interactions', () => {
         return HttpResponse.json(mockAccounts, { status: 200 });
       }),
       http.post('http://localhost:8080/api/v1/admin/accounts', async ({ request }) => {
-        capturedCreatePayload = await request.json();
+        capturedCreatePayload = (await request.json()) as Record<string, unknown>;
         return HttpResponse.json({ account_id: 99, login_name: 'newuser' }, { status: 201 });
       }),
       http.post(
         'http://localhost:8080/api/v1/admin/accounts/2/reset-password',
         async ({ request }) => {
-          capturedResetPayload = await request.json();
+          capturedResetPayload = (await request.json()) as Record<string, unknown>;
           return HttpResponse.json({ ok: true }, { status: 200 });
         },
       ),
       http.patch('http://localhost:8080/api/v1/admin/accounts/2', async ({ request }) => {
-        capturedPatchPayload = await request.json();
+        capturedPatchPayload = (await request.json()) as Record<string, unknown>;
         return HttpResponse.json({ ok: true }, { status: 200 });
       }),
       http.get('http://localhost:8080/api/v1/admin/rooms', () => {
@@ -202,9 +202,10 @@ describe('AdminConsole Page Interactions', () => {
     await userEvent.click(submitCreateBtn);
 
     await waitFor(() => expect(capturedCreatePayload).not.toBeNull());
-    expect(capturedCreatePayload.login_name).toBe('testuser');
-    expect(capturedCreatePayload.password).toBe('secretpwd');
-    expect(capturedCreatePayload.display_name).toBe('Tester display');
+    const createPayload = requirePayload(capturedCreatePayload);
+    expect(createPayload.login_name).toBe('testuser');
+    expect(createPayload.password).toBe('secretpwd');
+    expect(createPayload.display_name).toBe('Tester display');
 
     // 3. Reset password test
     const bobRowForReset = screen.getByText('Bob Player').closest('tr')!;
@@ -222,7 +223,8 @@ describe('AdminConsole Page Interactions', () => {
     await userEvent.click(submitResetBtn);
 
     await waitFor(() => expect(capturedResetPayload).not.toBeNull());
-    expect(capturedResetPayload.password).toBe('newsupersecret');
+    const resetPayload = requirePayload(capturedResetPayload);
+    expect(resetPayload.password).toBe('newsupersecret');
     expect(window.alert).toHaveBeenCalledWith('Password reset successful');
 
     // 4. Test Change Role select triggering patch
@@ -230,7 +232,8 @@ describe('AdminConsole Page Interactions', () => {
     const bobRoleSelect = bobRow.querySelector('select')!;
     await userEvent.selectOptions(bobRoleSelect, 'administrator');
     await waitFor(() => expect(capturedPatchPayload).not.toBeNull());
-    expect(capturedPatchPayload.role).toBe('administrator');
+    const patchPayload = requirePayload(capturedPatchPayload);
+    expect(patchPayload.role).toBe('administrator');
 
     // 5. Navigate to Active Rooms tab and Close room
     const roomsTab = screen.getByText('Active Rooms');
@@ -276,3 +279,8 @@ describe('AdminConsole Page Interactions', () => {
     window.confirm = originalConfirm;
   });
 });
+
+function requirePayload(payload: Record<string, unknown> | null): Record<string, unknown> {
+  if (!payload) throw new Error('Expected a captured request payload');
+  return payload;
+}

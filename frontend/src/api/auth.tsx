@@ -1,5 +1,4 @@
-import { createContext, useContext, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   currentUserApiV1MeGet,
@@ -9,18 +8,9 @@ import {
 import type { CurrentUserResponse, LoginApiV1AuthLoginPostData } from '../contracts/rest/types.gen';
 import { ApiError } from './client';
 import { socket } from './socket';
+import { AuthContext, type AuthProviderProps } from './auth-context';
 
-interface AuthContextType {
-  user: CurrentUserResponse | null;
-  isLoading: boolean;
-  login: (data: LoginApiV1AuthLoginPostData['body']) => Promise<CurrentUserResponse>;
-  logout: () => Promise<void>;
-  refetch: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: AuthProviderProps) {
   const queryClient = useQueryClient();
 
   const {
@@ -33,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const res = await currentUserApiV1MeGet({ throwOnError: true });
         return res;
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (err instanceof ApiError && err.status === 401) {
           return null; // Silent catch for unauthenticated state
         }
@@ -101,12 +91,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }

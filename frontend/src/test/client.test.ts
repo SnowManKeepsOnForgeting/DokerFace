@@ -22,8 +22,9 @@ describe('API Client Error Normalization', () => {
         body: { login_name: 'wrong', password: 'password' },
       });
       expect.fail('Should throw an ApiError');
-    } catch (err: any) {
+    } catch (err: unknown) {
       expect(err).toBeInstanceOf(ApiError);
+      if (!(err instanceof ApiError)) return;
       expect(err.status).toBe(401);
       expect(err.message).toBe('Invalid credentials');
       expect(err.code).toBe('INVALID_CREDENTIALS');

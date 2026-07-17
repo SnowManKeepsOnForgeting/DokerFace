@@ -13,6 +13,7 @@ import {
   listAuditLogsApiV1AdminAuditLogsGet,
 } from '../contracts/rest';
 import type { AccountRole, AccountStatus } from '../contracts/rest/types.gen';
+import type { AuditLogResponse } from '../contracts/rest/types.gen';
 import {
   Users,
   Shield,
@@ -26,6 +27,9 @@ import {
   EyeOff,
   Search,
 } from 'lucide-react';
+
+const errorMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error ? error.message : fallback;
 
 export function AdminConsole() {
   const [activeSubTab, setActiveSubTab] = useState<
@@ -105,8 +109,8 @@ export function AdminConsole() {
       setErrorMsg(null);
       queryClient.invalidateQueries({ queryKey: ['admin-accounts'] });
     },
-    onError: (err: any) => {
-      setErrorMsg(err.message || 'Failed to create account');
+    onError: (err: unknown) => {
+      setErrorMsg(errorMessage(err, 'Failed to create account'));
     },
   });
 
@@ -125,8 +129,8 @@ export function AdminConsole() {
       setErrorMsg(null);
       alert('Password reset successful');
     },
-    onError: (err: any) => {
-      setErrorMsg(err.message || 'Failed to reset password');
+    onError: (err: unknown) => {
+      setErrorMsg(errorMessage(err, 'Failed to reset password'));
     },
   });
 
@@ -145,8 +149,8 @@ export function AdminConsole() {
       queryClient.invalidateQueries({ queryKey: ['admin-accounts'] });
       queryClient.invalidateQueries({ queryKey: ['admin-audits'] });
     },
-    onError: (err: any) => {
-      alert(err.message || 'Failed to update account setting');
+    onError: (err: unknown) => {
+      alert(errorMessage(err, 'Failed to update account setting'));
     },
   });
 
@@ -176,8 +180,8 @@ export function AdminConsole() {
       queryClient.invalidateQueries({ queryKey: ['admin-audits'] });
       alert('Match voided successfully');
     },
-    onError: (err: any) => {
-      alert(err.message || 'Failed to void match');
+    onError: (err: unknown) => {
+      alert(errorMessage(err, 'Failed to void match'));
     },
   });
 
@@ -758,7 +762,7 @@ export function AdminConsole() {
   );
 }
 
-function AuditLogRow({ audit }: { audit: any }) {
+function AuditLogRow({ audit }: { audit: AuditLogResponse }) {
   const [showJson, setShowJson] = useState(false);
 
   return (

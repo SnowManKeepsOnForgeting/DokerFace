@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/game';
-import { useAuth } from '../api/auth';
+import { useAuth } from '../api/auth-context';
+import type { ActionType } from '../contracts/realtime';
 import { Coins, Shield, Smile, Clock } from 'lucide-react';
 
 interface PokerTableProps {
@@ -43,16 +44,11 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const myPlayer = activeSnapshot?.players.find((p) => p.account_id === user?.account_id);
   const mySeat = myPlayer?.seat ?? 0;
 
-  // Sync default bet amount when turn changes
-  useEffect(() => {
-    if (privateSnapshot && privateSnapshot.actor_account_id === user?.account_id) {
-      const activeActions = privateSnapshot.legal_actions || [];
-      const betAction = activeActions.find((a) => a.action === 'bet_or_raise');
-      if (betAction && betAction.min_amount) {
-        setBetAmount(betAction.min_amount);
-      }
-    }
-  }, [privateSnapshot, user]);
+  const defaultBetAmount =
+    privateSnapshot && privateSnapshot.actor_account_id === user?.account_id
+      ? (privateSnapshot.legal_actions.find((action) => action.action === 'bet_or_raise')
+          ?.min_amount ?? 0)
+      : 0;
 
   if (!activeSnapshot) {
     return (
@@ -331,7 +327,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                       min={min}
                       max={max}
                       step={10}
-                      value={betAmount}
+                      value={betAmount || defaultBetAmount}
                       onChange={(e) => setBetAmount(parseInt(e.target.value) || min)}
                       className="flex-1 accent-purple-500 bg-slate-950 h-2 rounded-lg cursor-pointer"
                     />
@@ -377,7 +373,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               return (
                 <button
                   key={act.action}
-                  onClick={() => handleAction(act.action as any)}
+                  onClick={() => handleAction(act.action as ActionType)}
                   className={`h-11 px-6 border rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-md ${btnTheme}`}
                 >
                   {actionLabel}

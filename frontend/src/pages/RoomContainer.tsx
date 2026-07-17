@@ -41,7 +41,7 @@ export function RoomContainer() {
         } else {
           setPasswordRequired(false);
         }
-      } catch (err) {
+      } catch {
         if (!active) return;
         setErrorMsg('Network error connecting to table.');
       } finally {
