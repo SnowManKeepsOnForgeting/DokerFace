@@ -10,6 +10,8 @@ export function RoomContainer() {
   const navigate = useNavigate();
   const { currentRoom, joinRoom, leaveRoom, status } = useGameStore();
 
+  const returnToLobby = () => navigate('/');
+
   const [password, setPassword] = useState('');
   const [passwordRequired, setPasswordRequired] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -112,7 +114,7 @@ export function RoomContainer() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => navigate('/lobby')}
+                onClick={returnToLobby}
                 className="flex-1 h-11 bg-slate-800/60 hover:bg-slate-800 text-slate-300 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
               >
                 Back to Lobby
@@ -158,7 +160,7 @@ export function RoomContainer() {
           <h3 className="text-lg font-bold text-slate-100 mb-1">Failed to Connect</h3>
           <p className="text-sm text-red-400 mb-6">{errorMsg}</p>
           <button
-            onClick={() => navigate('/lobby')}
+            onClick={returnToLobby}
             className="h-10 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors inline-flex items-center gap-2 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -182,9 +184,9 @@ export function RoomContainer() {
       )}
 
       {currentRoom?.status === 'active' ? (
-        <PokerTable roomId={roomId!} />
+        <PokerTable roomId={roomId!} onLeave={returnToLobby} />
       ) : (
-        <WaitingRoom roomId={roomId!} />
+        <WaitingRoom roomId={roomId!} onLeave={returnToLobby} />
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { Coins, Shield, Smile, Clock } from 'lucide-react';
 
 interface PokerTableProps {
   roomId: string;
+  onLeave: () => void;
 }
 
 const SEAT_POSITIONS = [
@@ -18,7 +19,7 @@ const SEAT_POSITIONS = [
   { top: '72%', left: '84%', transform: 'translate(-50%, -50%)' }, // Seat 7 (Bottom Right)
 ];
 
-export function PokerTable({ roomId }: PokerTableProps) {
+export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const { user } = useAuth();
   const {
     publicSnapshot,
@@ -145,7 +146,10 @@ export function PokerTable({ roomId }: PokerTableProps) {
             <Smile className="h-5 w-5" />
           </button>
           <button
-            onClick={() => leaveRoom(roomId)}
+            onClick={() => {
+              leaveRoom(roomId);
+              onLeave();
+            }}
             className="h-9 px-4 bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-400 border border-slate-700/60 hover:border-rose-900/60 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
           >
             Leave
@@ -469,6 +473,7 @@ export function PokerTable({ roomId }: PokerTableProps) {
                 onClick={() => {
                   resetGame();
                   leaveRoom(roomId);
+                  onLeave();
                 }}
                 className="flex-1 h-11 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-sm font-semibold uppercase tracking-wider transition-colors cursor-pointer"
               >

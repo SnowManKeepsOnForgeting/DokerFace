@@ -49,10 +49,7 @@ export function Lobby() {
   const [ante, setAnte] = useState(0);
   const [decisionTimeout, setDecisionTimeout] = useState(30);
   const [blindIncrease, setBlindIncrease] = useState(10);
-  const [showRemaining, setShowRemaining] = useState(true);
   const [winnerShow, setWinnerShow] = useState(true);
-  const [spectatorsAllowed, setSpectatorsAllowed] = useState(true);
-  const [autoStart, setAutoStart] = useState(true);
   const [countedInStats, setCountedInStats] = useState(true);
 
   // Form validation errors
@@ -161,14 +158,14 @@ export function Lobby() {
         ante,
         decision_timeout_seconds: decisionTimeout,
         blind_increase_every_hands: blindIncrease,
-        show_remaining_board: showRemaining,
+        show_remaining_board: false,
         winner_may_show_hand: winnerShow,
-        spectators_allowed: spectatorsAllowed,
-        auto_start: autoStart,
+        spectators_allowed: false,
+        auto_start: false,
         counted_in_stats: countedInStats,
         allow_mid_match_join: false,
         allow_rebuys: false,
-        allow_voluntary_leave: true,
+        allow_voluntary_leave: false,
       },
     });
   };
@@ -632,34 +629,6 @@ export function Lobby() {
                   <label className="flex items-center gap-3 bg-slate-950/40 p-3 rounded-lg border border-slate-800 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={spectatorsAllowed}
-                      onChange={(e) => setSpectatorsAllowed(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-purple-600 focus:ring-purple-500/30"
-                    />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-200">Allow Spectators</p>
-                      <p className="text-[10px] text-slate-500">Other users can watch the game</p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 bg-slate-950/40 p-3 rounded-lg border border-slate-800 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={autoStart}
-                      onChange={(e) => setAutoStart(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-purple-600 focus:ring-purple-500/30"
-                    />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-200">Auto Start Match</p>
-                      <p className="text-[10px] text-slate-500">
-                        Launch automatically when all seats ready
-                      </p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 bg-slate-950/40 p-3 rounded-lg border border-slate-800 cursor-pointer">
-                    <input
-                      type="checkbox"
                       checked={countedInStats}
                       onChange={(e) => setCountedInStats(e.target.checked)}
                       className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-purple-600 focus:ring-purple-500/30"
@@ -668,21 +637,6 @@ export function Lobby() {
                       <p className="text-xs font-semibold text-slate-200">Include in Stats & Elo</p>
                       <p className="text-[10px] text-slate-500">
                         Count this match toward player history rankings
-                      </p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 bg-slate-950/40 p-3 rounded-lg border border-slate-800 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={showRemaining}
-                      onChange={(e) => setShowRemaining(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-purple-600 focus:ring-purple-500/30"
-                    />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-200">Run Out Board</p>
-                      <p className="text-[10px] text-slate-500">
-                        Deal out remaining community cards on fold/all-in
                       </p>
                     </div>
                   </label>

@@ -17,9 +17,10 @@ import {
 
 interface WaitingRoomProps {
   roomId: string;
+  onLeave: () => void;
 }
 
-export function WaitingRoom({ roomId }: WaitingRoomProps) {
+export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
   const { user: currentUser } = useAuth();
   const {
     currentRoom,
@@ -87,7 +88,10 @@ export function WaitingRoom({ roomId }: WaitingRoomProps) {
 
           <div className="flex gap-3">
             <button
-              onClick={() => leaveRoom(roomId)}
+              onClick={() => {
+                leaveRoom(roomId);
+                onLeave();
+              }}
               className="h-10 px-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-slate-100 transition-all flex items-center gap-2 cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
