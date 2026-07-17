@@ -45,7 +45,7 @@ export interface GameState {
   connect: () => void;
   disconnect: () => void;
   joinRoom: (roomId: string, password?: string) => Promise<RoomJoinAck>;
-  leaveRoom: (roomId: string) => void;
+  leaveRoom: (roomId: string) => Promise<RealtimeAck>;
   toggleReady: (roomId: string, ready: boolean) => Promise<RealtimeAck>;
   startMatch: (roomId: string) => Promise<RealtimeAck>;
   kickPlayer: (roomId: string, targetAccountId: number) => Promise<RealtimeAck>;
@@ -200,6 +200,11 @@ export const useGameStore = create<GameState>((set, get) => {
       return {
         publicSnapshot: snapshot,
         privateSnapshot: nextPrivate,
+        handSettled:
+          state.handSettled?.match_id === snapshot.match_id &&
+          state.handSettled.hand_id === snapshot.hand_id
+            ? state.handSettled
+            : null,
         pendingAction,
       };
     });
@@ -237,6 +242,11 @@ export const useGameStore = create<GameState>((set, get) => {
       return {
         publicSnapshot: snapshot,
         privateSnapshot: snapshot,
+        handSettled:
+          state.handSettled?.match_id === snapshot.match_id &&
+          state.handSettled.hand_id === snapshot.hand_id
+            ? state.handSettled
+            : null,
         pendingAction,
       };
     });
@@ -315,9 +325,12 @@ export const useGameStore = create<GameState>((set, get) => {
       return response;
     },
 
-    leaveRoom: (roomId) => {
-      void runCommand('room:leave', { schema_version: 1, room_id: roomId });
-      set({ ...resetTransientState(), roomKicked: null, lastCommandError: null });
+    leaveRoom: async (roomId) => {
+      const response = await runCommand('room:leave', { schema_version: 1, room_id: roomId });
+      if (response.ok) {
+        set({ ...resetTransientState(), roomKicked: null, lastCommandError: null });
+      }
+      return response;
     },
 
     toggleReady: (roomId, ready) =>

@@ -285,6 +285,36 @@ async def test_match_completion_resets_room_to_waiting() -> None:
 
 
 @pytest.mark.asyncio
+async def test_hand_settlement_is_emitted_before_the_next_hand_snapshot() -> None:
+    handlers, server, room, _ = make_handlers()
+    await join_and_ready(handlers, room.room_id)
+    start = await handlers["room:start"]("sid-1", {"room_id": str(room.room_id)})
+    public = GamePublicSnapshot.model_validate(
+        emitted_payloads(server, "game:public-snapshot")[-1]
+    )
+    server.emit.reset_mock()
+    actor_sid = "sid-1" if public.actor_account_id == 1 else "sid-2"
+    response = await handlers["game:action"](
+        actor_sid,
+        {
+            "command_id": str(uuid4()),
+            "match_id": start["match_id"],
+            "hand_id": str(public.hand_id),
+            "state_version": public.state_version,
+            "action": "fold",
+        },
+    )
+
+    assert response["ok"] is True
+    assert [call.args[0] for call in server.emit.await_args_list] == [
+        "game:hand-settled",
+        "game:public-snapshot",
+        "game:private-snapshot",
+        "game:private-snapshot",
+    ]
+
+
+@pytest.mark.asyncio
 async def test_uncounted_match_skips_statistics_but_settles_history_and_ratings() -> None:
     handlers, server, room, matches = make_handlers()
     room.rules["counted_in_stats"] = False

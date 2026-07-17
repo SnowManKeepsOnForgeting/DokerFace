@@ -26,13 +26,22 @@ const roomId = '00000000-0000-4000-8000-000000000001';
 
 type AckResponse = { ok: boolean; error?: string };
 
-const mockConnectedSocket = (joinResponse: AckResponse = { ok: true }) => {
+const mockConnectedSocket = (
+  joinResponse: AckResponse = { ok: true },
+  leaveResponse: AckResponse = { ok: true },
+) => {
   const previousConnected = socket.connected;
   const connect = vi.spyOn(socket, 'connect').mockImplementation(() => socket);
   const disconnect = vi.spyOn(socket, 'disconnect').mockImplementation(() => socket);
   const timeoutSocket = {
     emitWithAck: vi.fn((event: string) =>
-      Promise.resolve(event === 'room:join' ? joinResponse : { ok: true }),
+      Promise.resolve(
+        event === 'room:join'
+          ? joinResponse
+          : event === 'room:leave'
+            ? leaveResponse
+            : { ok: true },
+      ),
     ),
   };
   const timeout = vi
@@ -139,5 +148,139 @@ describe('WaitingRoom and PokerTable Flow', () => {
 
     const readyBtn = screen.getByText('Set Ready');
     await userEvent.click(readyBtn);
+  });
+
+  it('keeps the user in the room when leaving an active match is rejected', async () => {
+    restoreSocket = mockConnectedSocket({ ok: true }, { ok: false, error: 'room_active' });
+    server.use(
+      http.get('http://localhost:8080/api/v1/players/1', () => {
+        return HttpResponse.json(mockPlayerInfo, { status: 200 });
+      }),
+      http.get('http://localhost:8080/api/v1/me', () => {
+        return HttpResponse.json(
+          {
+            account_id: 1,
+            login_name: 'alice',
+            role: 'player',
+            status: 'active',
+            display_name: 'Alice',
+          },
+          { status: 200 },
+        );
+      }),
+    );
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <MemoryRouter initialEntries={[`/rooms/${roomId}`]}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Routes>
+              <Route path="/rooms/:roomId" element={<RoomContainer />} />
+              <Route path="/" element={<p>Lobby</p>} />
+            </Routes>
+          </AuthProvider>
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    const socketForTest = socket as unknown as {
+      listeners: (event: string) => Array<(payload: unknown) => void>;
+    };
+    act(() => {
+      socketForTest.listeners('room:snapshot').forEach((listener) =>
+        listener({
+          schema_version: 1,
+          room_id: roomId,
+          host_account_id: 1,
+          status: 'waiting',
+          members: [{ account_id: 1, ready: false, seat: null, connected: true }],
+        }),
+      );
+    });
+
+    await waitFor(() => expect(screen.getByText('Waiting Room')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: /leave room/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'You cannot leave while a match is active.',
+    );
+    expect(screen.queryByText('Lobby')).not.toBeInTheDocument();
+  });
+
+  it('clears a hand settlement when the next hand snapshot arrives', () => {
+    const matchId = '00000000-0000-4000-8000-000000000002';
+    const settledHandId = '00000000-0000-4000-8000-000000000003';
+    const nextHandId = '00000000-0000-4000-8000-000000000004';
+    const socketForTest = socket as unknown as {
+      listeners: (event: string) => Array<(payload: unknown) => void>;
+    };
+
+    act(() => {
+      socketForTest.listeners('game:hand-settled').forEach((listener) =>
+        listener({
+          schema_version: 1,
+          match_id: matchId,
+          hand_id: settledHandId,
+          hand_number: 1,
+          state_version: 1,
+          account_ids: [1, 2],
+          final_stacks: [1100, 900],
+          payoffs: [100, -100],
+        }),
+      );
+    });
+    expect(useGameStore.getState().handSettled?.hand_id).toBe(settledHandId);
+
+    act(() => {
+      socketForTest.listeners('game:private-snapshot').forEach((listener) =>
+        listener({
+          schema_version: 1,
+          match_id: matchId,
+          hand_id: nextHandId,
+          hand_number: 2,
+          state_version: 2,
+          street: 'preflop',
+          button_account_id: 1,
+          actor_account_id: 2,
+          board: [],
+          pot_amounts: [0],
+          complete: false,
+          players: [
+            {
+              account_id: 1,
+              seat: 0,
+              display_name: 'Alice',
+              stack: 1100,
+              bet: 0,
+              folded: false,
+              all_in: false,
+              connected: true,
+            },
+            {
+              account_id: 2,
+              seat: 1,
+              display_name: 'Bob',
+              stack: 900,
+              bet: 0,
+              folded: false,
+              all_in: false,
+              connected: true,
+            },
+          ],
+          server_time: '2026-07-17T00:00:00Z',
+          actions: [],
+          action_deadline_at: null,
+          account_id: 1,
+          hole_cards: ['As', 'Kd'],
+          legal_actions: [],
+        }),
+      );
+    });
+
+    expect(useGameStore.getState().handSettled).toBeNull();
   });
 });

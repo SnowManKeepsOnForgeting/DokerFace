@@ -36,6 +36,26 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
   const [betAmount, setBetAmount] = useState<number>(0);
   const [showEmotesMenu, setShowEmotesMenu] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  const handleLeave = async (resetAfterSuccess = false) => {
+    if (isLeaving) return;
+    setIsLeaving(true);
+    setLeaveError(null);
+    const response = await leaveRoom(roomId);
+    if (response.ok) {
+      if (resetAfterSuccess) resetGame();
+      onLeave();
+    } else {
+      setLeaveError(
+        response.error === 'room_active'
+          ? 'You cannot leave while a match is active.'
+          : `Unable to leave room: ${response.error ?? 'realtime_error'}`,
+      );
+    }
+    setIsLeaving(false);
+  };
 
   // Active snapshot choice (Hero private state takes precedence)
   const activeSnapshot = privateSnapshot || publicSnapshot;
@@ -142,16 +162,23 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
             <Smile className="h-5 w-5" />
           </button>
           <button
-            onClick={() => {
-              leaveRoom(roomId);
-              onLeave();
-            }}
-            className="h-9 px-4 bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-400 border border-slate-700/60 hover:border-rose-900/60 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
+            onClick={() => void handleLeave()}
+            disabled={isLeaving}
+            className="h-9 px-4 bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-400 border border-slate-700/60 hover:border-rose-900/60 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer disabled:cursor-wait disabled:opacity-60"
           >
-            Leave
+            {isLeaving ? 'Leaving...' : 'Leave'}
           </button>
         </div>
       </header>
+
+      {leaveError && (
+        <div
+          role="alert"
+          className="border-b border-rose-500/20 bg-rose-500/10 px-6 py-3 text-center text-xs font-semibold text-rose-300"
+        >
+          {leaveError}
+        </div>
+      )}
 
       {/* Floating Emote panel */}
       {showEmotesMenu && (
@@ -466,14 +493,11 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
             <div className="flex gap-3">
               <button
-                onClick={() => {
-                  resetGame();
-                  leaveRoom(roomId);
-                  onLeave();
-                }}
-                className="flex-1 h-11 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-sm font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                onClick={() => void handleLeave(true)}
+                disabled={isLeaving}
+                className="flex-1 h-11 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-sm font-semibold uppercase tracking-wider transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-60"
               >
-                Back to Lobby
+                {isLeaving ? 'Leaving...' : 'Back to Lobby'}
               </button>
             </div>
           </div>

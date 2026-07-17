@@ -36,7 +36,26 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
   } = useGameStore();
 
   const [chatInput, setChatInput] = useState('');
+  const [leaveError, setLeaveError] = useState<string | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  const handleLeave = async () => {
+    if (isLeaving) return;
+    setIsLeaving(true);
+    setLeaveError(null);
+    const response = await leaveRoom(roomId);
+    if (response.ok) {
+      onLeave();
+    } else {
+      setLeaveError(
+        response.error === 'room_active'
+          ? 'You cannot leave while a match is active.'
+          : `Unable to leave room: ${response.error ?? 'realtime_error'}`,
+      );
+    }
+    setIsLeaving(false);
+  };
 
   // Auto scroll chat list
   useEffect(() => {
@@ -89,14 +108,12 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
 
           <div className="flex gap-3">
             <button
-              onClick={() => {
-                leaveRoom(roomId);
-                onLeave();
-              }}
-              className="h-10 px-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-slate-100 transition-all flex items-center gap-2 cursor-pointer"
+              onClick={() => void handleLeave()}
+              disabled={isLeaving}
+              className="h-10 px-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-slate-100 transition-all flex items-center gap-2 cursor-pointer disabled:cursor-wait disabled:opacity-60"
             >
               <LogOut className="h-4 w-4" />
-              Leave Room
+              {isLeaving ? 'Leaving...' : 'Leave Room'}
             </button>
 
             <button
@@ -131,6 +148,15 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
             )}
           </div>
         </section>
+
+        {leaveError && (
+          <div
+            role="alert"
+            className="-mt-4 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-xs font-semibold text-rose-300"
+          >
+            {leaveError}
+          </div>
+        )}
 
         {/* Players list card */}
         <section className="flex-1 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col overflow-hidden min-h-0">

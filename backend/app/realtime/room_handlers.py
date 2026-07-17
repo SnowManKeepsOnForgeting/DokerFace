@@ -406,9 +406,9 @@ def register_room_handlers(
                     await _broadcast_room_snapshot(server, room_runtime, RoomStatus.WAITING)
                     return await _reject(server, sid, "match_persistence_failed", event)
             _schedule_disconnected_timeout(room_runtime, match)
-            await _broadcast_game_snapshots(server, room_runtime, match)
             if result.settlement is not None and result.settled_hand_id is not None:
                 await _emit_hand_settled(server, match, result)
+            await _broadcast_game_snapshots(server, room_runtime, match)
             if result.match_status.value == "complete":
                 await _emit_match_settled(server, match, result)
                 await matches.remove(match)
