@@ -25,6 +25,9 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const {
     publicSnapshot,
     privateSnapshot,
+    connected,
+    pendingAction,
+    lastCommandError,
     submitAction,
     activeEmotes,
     sendEmote,
@@ -339,6 +342,16 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       {/* Action Decision Control Bar */}
       {isMyTurn && privateSnapshot && (
         <section className="bg-slate-900 border-t border-slate-800 p-4 shrink-0 flex flex-col gap-4 z-10 animate-slideUp">
+          {lastCommandError && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="mx-auto w-full max-w-2xl rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-center text-xs font-semibold text-rose-300"
+            >
+              Action failed: {lastCommandError}
+            </div>
+          )}
+
           {/* Bet slider */}
           {betAction && (
             <div className="flex items-center gap-4 max-w-2xl mx-auto w-full">
@@ -410,7 +423,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                 <button
                   key={act.action}
                   onClick={() => handleAction(act.action as ActionType)}
-                  className={`h-11 px-6 border rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-md ${btnTheme}`}
+                  disabled={!connected || Boolean(pendingAction)}
+                  className={`h-11 px-6 border rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-md disabled:cursor-not-allowed disabled:opacity-50 ${btnTheme}`}
                 >
                   {actionLabel}
                   {(actionLabel === 'call' || act.action === 'bet_or_raise') && (

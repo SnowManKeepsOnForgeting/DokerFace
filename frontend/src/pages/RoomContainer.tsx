@@ -8,7 +8,7 @@ import { KeyRound, AlertTriangle, ArrowLeft } from 'lucide-react';
 export function RoomContainer() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const { currentRoom, joinRoom, leaveRoom, status } = useGameStore();
+  const { currentRoom, joinRoom, leaveRoom, status, lastCommandError } = useGameStore();
 
   const returnToLobby = () => navigate('/');
 
@@ -171,15 +171,35 @@ export function RoomContainer() {
     );
   }
 
-  // Socket disconnected banner
-  const isDisconnected = status === 'disconnected';
+  const connectionMessage =
+    status === 'replaced'
+      ? 'This account is connected in another browser. Use a different account for each player.'
+      : status === 'failed'
+        ? 'Realtime connection failed. Refresh the page and sign in again.'
+        : status === 'disconnected'
+          ? 'Realtime sync disconnected. Attempting to reconnect...'
+          : null;
 
   return (
     <div className="flex-1 flex flex-col relative w-full h-full">
-      {isDisconnected && (
-        <div className="bg-amber-600 text-white text-xs font-bold text-center py-2 px-4 flex items-center justify-center gap-2 animate-slideDown shrink-0">
+      {connectionMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-amber-600 text-white text-xs font-bold text-center py-2 px-4 flex items-center justify-center gap-2 animate-slideDown shrink-0"
+        >
           <div className="h-3 w-3 animate-ping rounded-full bg-white opacity-75 shrink-0" />
-          Realtime sync disconnected. Attempting to reconnect...
+          {connectionMessage}
+        </div>
+      )}
+
+      {lastCommandError && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="border-b border-rose-500/20 bg-rose-500/10 px-6 py-2 text-center text-xs font-semibold text-rose-300"
+        >
+          Realtime command failed: {lastCommandError}
         </div>
       )}
 
