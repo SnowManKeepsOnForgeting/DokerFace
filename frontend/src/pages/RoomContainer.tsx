@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useGameStore } from '../store/game';
 import { WaitingRoom } from './WaitingRoom';
@@ -16,17 +16,26 @@ export function RoomContainer() {
   const [passwordRequired, setPasswordRequired] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const joinedRoomRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!roomId) return;
 
     let active = true;
+    joinedRoomRef.current = null;
 
     const attemptJoin = async (passVal?: string) => {
       setLoading(true);
       setErrorMsg(null);
       try {
         const res = await joinRoom(roomId, passVal);
+        if (res?.ok) {
+          if (!active) {
+            void leaveRoom(roomId);
+            return;
+          }
+          joinedRoomRef.current = roomId;
+        }
         if (!active) return;
 
         if (res && res.ok === false) {
@@ -53,7 +62,10 @@ export function RoomContainer() {
 
     return () => {
       active = false;
-      leaveRoom(roomId);
+      if (joinedRoomRef.current === roomId) {
+        joinedRoomRef.current = null;
+        void leaveRoom(roomId);
+      }
     };
   }, [roomId, joinRoom, leaveRoom]);
 
@@ -63,6 +75,7 @@ export function RoomContainer() {
     setLoading(true);
     setErrorMsg(null);
     joinRoom(roomId, password).then((res) => {
+      if (res?.ok) joinedRoomRef.current = roomId;
       setLoading(false);
       if (res && res.ok === false) {
         if (res.error === 'invalid_password') {

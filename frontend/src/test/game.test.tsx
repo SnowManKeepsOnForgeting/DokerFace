@@ -11,6 +11,7 @@ import { MemoryRouter, Routes, Route } from 'react-router';
 import userEvent from '@testing-library/user-event';
 import { socket } from '../api/socket';
 import { useGameStore } from '../store/game';
+import type { RoomSnapshot } from '../contracts/realtime';
 import '../api/client';
 
 const server = setupServer();
@@ -26,7 +27,7 @@ const mockPlayerInfo = {
 
 const roomId = '00000000-0000-4000-8000-000000000001';
 
-type AckResponse = { ok: boolean; error?: string };
+type AckResponse = { ok: boolean; error?: string; room?: RoomSnapshot };
 
 const mockConnectedSocket = (
   joinResponse: AckResponse = { ok: true },
@@ -91,6 +92,33 @@ describe('WaitingRoom and PokerTable Flow', () => {
     );
 
     await waitFor(() => expect(screen.getByText('Password Required')).toBeInTheDocument());
+  });
+
+  it('adopts the room snapshot from a successful join acknowledgement', async () => {
+    restoreSocket = mockConnectedSocket({
+      ok: true,
+      room: {
+        room_id: roomId,
+        host_account_id: 1,
+        status: 'waiting',
+        members: [],
+      },
+    });
+    useGameStore.setState({
+      currentRoom: {
+        room_id: 'old-room',
+        host_account_id: 1,
+        status: 'waiting',
+        members: [],
+      },
+      lastCommandError: 'room_not_joined',
+    });
+
+    const response = await useGameStore.getState().joinRoom(roomId);
+
+    expect(response.ok).toBe(true);
+    expect(useGameStore.getState().currentRoom?.room_id).toBe(roomId);
+    expect(useGameStore.getState().lastCommandError).toBeNull();
   });
 
   it('displays waiting room players and handles ready state toggles', async () => {

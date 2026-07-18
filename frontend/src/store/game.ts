@@ -315,19 +315,34 @@ export const useGameStore = create<GameState>((set, get) => {
     },
 
     joinRoom: async (roomId, password) => {
+      set({ ...resetTransientState(), roomKicked: null, lastCommandError: null });
       await waitForConnection();
       const response = await emitWithAck('room:join', {
         schema_version: 1,
         room_id: roomId,
         password: password ?? null,
       });
-      if (!response.ok) set({ lastCommandError: response.error ?? 'join_failed' });
+      if (response.ok) {
+        if (response.room) set({ currentRoom: response.room, lastCommandError: null });
+        return response;
+      }
+
+      const restoredRoom = get().currentRoom;
+      if (
+        response.error === 'room_not_waiting' &&
+        restoredRoom?.room_id === roomId &&
+        restoredRoom.status === 'active'
+      ) {
+        return { ...response, ok: true, room: restoredRoom };
+      }
+
+      set({ lastCommandError: response.error ?? 'join_failed' });
       return response;
     },
 
     leaveRoom: async (roomId) => {
       const response = await runCommand('room:leave', { schema_version: 1, room_id: roomId });
-      if (response.ok) {
+      if (response.ok && get().currentRoom?.room_id === roomId) {
         set({ ...resetTransientState(), roomKicked: null, lastCommandError: null });
       }
       return response;
