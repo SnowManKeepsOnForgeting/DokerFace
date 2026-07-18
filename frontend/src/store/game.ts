@@ -116,6 +116,8 @@ const actionVersion = (snapshot: GamePublicSnapshot | GamePrivateSnapshot | null
 export const useGameStore = create<GameState>((set, get) => {
   socket.on('connect', () => {
     set({ connected: true, status: 'connected' });
+    const roomId = get().currentRoom?.room_id;
+    if (roomId) void get().joinRoom(roomId);
   });
 
   socket.on('disconnect', (reason) => {
