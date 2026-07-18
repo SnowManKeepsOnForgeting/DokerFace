@@ -64,12 +64,6 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const myPlayer = activeSnapshot?.players.find((p) => p.account_id === user?.account_id);
   const mySeat = myPlayer?.seat ?? 0;
 
-  const defaultBetAmount =
-    privateSnapshot && privateSnapshot.actor_account_id === user?.account_id
-      ? (privateSnapshot.legal_actions.find((action) => action.action === 'bet_or_raise')
-          ?.min_amount ?? 0)
-      : 0;
-
   if (!activeSnapshot) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-4">
@@ -94,6 +88,16 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
   const totalPot = pot_amounts.reduce((sum, amt) => sum + amt, 0);
   const isMyTurn = actor_account_id === user?.account_id;
+
+  const betAction = privateSnapshot?.legal_actions.find(
+    (action) => action.action === 'bet_or_raise',
+  );
+  const minBetAmount = betAction?.min_amount ?? 10;
+  const maxBetAmount = betAction?.max_amount ?? myPlayer?.stack ?? 1000;
+  const effectiveBetAmount = Math.min(
+    maxBetAmount,
+    Math.max(minBetAmount, betAmount || minBetAmount),
+  );
 
   // Emote options
   const emotes = ['👍', '👎', '🔥', '😮', '😂', '😭', '💩', '🤡'];
@@ -129,7 +133,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
     let amount: number | undefined = undefined;
     if (actionName === 'bet_or_raise') {
-      amount = betAmount;
+      amount = effectiveBetAmount;
     }
 
     submitAction({
@@ -157,6 +161,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           {/* Quick emotes menu toggle */}
           <button
             onClick={() => setShowEmotesMenu(!showEmotesMenu)}
+            aria-label={showEmotesMenu ? 'Hide emotes' : 'Show emotes'}
             className="h-9 w-9 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg cursor-pointer transition-colors"
           >
             <Smile className="h-5 w-5" />
@@ -335,43 +340,47 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       {isMyTurn && privateSnapshot && (
         <section className="bg-slate-900 border-t border-slate-800 p-4 shrink-0 flex flex-col gap-4 z-10 animate-slideUp">
           {/* Bet slider */}
-          {privateSnapshot.legal_actions.some((a) => a.action === 'bet_or_raise') && (
+          {betAction && (
             <div className="flex items-center gap-4 max-w-2xl mx-auto w-full">
-              {(() => {
-                const betAction = privateSnapshot.legal_actions.find(
-                  (a) => a.action === 'bet_or_raise',
-                )!;
-                const min = betAction.min_amount ?? 10;
-                const max = betAction.max_amount ?? myPlayer?.stack ?? 1000;
-
-                return (
-                  <>
-                    <span className="text-xs text-slate-400 font-semibold w-12 text-right">
-                      {min.toLocaleString()}
-                    </span>
-                    <input
-                      type="range"
-                      min={min}
-                      max={max}
-                      step={10}
-                      value={betAmount || defaultBetAmount}
-                      onChange={(e) => setBetAmount(parseInt(e.target.value) || min)}
-                      className="flex-1 accent-purple-500 bg-slate-950 h-2 rounded-lg cursor-pointer"
-                    />
-                    <span className="text-xs text-slate-400 font-semibold w-12">
-                      {max.toLocaleString()}
-                    </span>
-                    <input
-                      type="number"
-                      min={min}
-                      max={max}
-                      value={betAmount}
-                      onChange={(e) => setBetAmount(parseInt(e.target.value) || min)}
-                      className="w-20 h-8 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-lg text-xs font-bold text-center text-purple-400 outline-none"
-                    />
-                  </>
-                );
-              })()}
+              <span className="text-xs text-slate-400 font-semibold w-12 text-right">
+                {minBetAmount.toLocaleString()}
+              </span>
+              <input
+                type="range"
+                aria-label="Bet or raise amount"
+                min={minBetAmount}
+                max={maxBetAmount}
+                step={10}
+                value={effectiveBetAmount}
+                onChange={(e) =>
+                  setBetAmount(
+                    Math.min(
+                      maxBetAmount,
+                      Math.max(minBetAmount, parseInt(e.target.value, 10) || minBetAmount),
+                    ),
+                  )
+                }
+                className="flex-1 accent-purple-500 bg-slate-950 h-2 rounded-lg cursor-pointer"
+              />
+              <span className="text-xs text-slate-400 font-semibold w-12">
+                {maxBetAmount.toLocaleString()}
+              </span>
+              <input
+                type="number"
+                aria-label="Bet or raise amount"
+                min={minBetAmount}
+                max={maxBetAmount}
+                value={effectiveBetAmount}
+                onChange={(e) =>
+                  setBetAmount(
+                    Math.min(
+                      maxBetAmount,
+                      Math.max(minBetAmount, parseInt(e.target.value, 10) || minBetAmount),
+                    ),
+                  )
+                }
+                className="w-20 h-8 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-lg text-xs font-bold text-center text-purple-400 outline-none"
+              />
             </div>
           )}
 
@@ -411,7 +420,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                             ? Math.min(myPlayer.stack, act.min_amount ?? 0)
                             : 0
                           ).toLocaleString()
-                        : betAmount.toLocaleString()}
+                        : effectiveBetAmount.toLocaleString()}
                     </span>
                   )}
                 </button>

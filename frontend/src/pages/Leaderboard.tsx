@@ -175,7 +175,7 @@ export function Leaderboard() {
                     2ND
                   </div>
                   <div
-                    className="h-16 w-16 rounded-full flex items-center justify-center text-white font-black text-2xl border-2 border-slate-400 shadow-md"
+                    className="h-16 w-16 min-w-0 rounded-full flex items-center justify-center overflow-hidden px-1 text-center break-all whitespace-pre-wrap leading-tight text-white font-black text-2xl border-2 border-slate-400 shadow-md"
                     style={{ backgroundColor: topThree[1].avatar_background_color || '#4f46e5' }}
                   >
                     {topThree[1].avatar_text || topThree[1].display_name.slice(0, 2)}
@@ -207,7 +207,7 @@ export function Leaderboard() {
                     <Trophy className="h-3 w-3" /> CHAMP
                   </div>
                   <div
-                    className="h-20 w-20 rounded-full flex items-center justify-center text-white font-black text-3xl border-2 border-amber-400 shadow-lg shadow-purple-500/20"
+                    className="h-20 w-20 min-w-0 rounded-full flex items-center justify-center overflow-hidden px-1 text-center break-all whitespace-pre-wrap leading-tight text-white font-black text-2xl border-2 border-amber-400 shadow-lg shadow-purple-500/20"
                     style={{ backgroundColor: topThree[0].avatar_background_color || '#4f46e5' }}
                   >
                     {topThree[0].avatar_text || topThree[0].display_name.slice(0, 2)}
@@ -239,7 +239,7 @@ export function Leaderboard() {
                     3RD
                   </div>
                   <div
-                    className="h-14 w-14 rounded-full flex items-center justify-center text-white font-black text-xl border-2 border-amber-700 shadow-sm"
+                    className="h-14 w-14 min-w-0 rounded-full flex items-center justify-center overflow-hidden px-1 text-center break-all whitespace-pre-wrap leading-tight text-white font-black text-xl border-2 border-amber-700 shadow-sm"
                     style={{ backgroundColor: topThree[2].avatar_background_color || '#4f46e5' }}
                   >
                     {topThree[2].avatar_text || topThree[2].display_name.slice(0, 2)}
@@ -289,7 +289,7 @@ export function Leaderboard() {
                             className="flex items-center gap-3 group"
                           >
                             <div
-                              className="h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm"
+                              className="h-8 w-8 min-w-0 rounded-full flex items-center justify-center overflow-hidden px-0.5 text-center break-all whitespace-pre-wrap leading-tight text-white font-bold text-xs shrink-0 shadow-sm"
                               style={{ backgroundColor: p.avatar_background_color || '#4f46e5' }}
                             >
                               {p.avatar_text || p.display_name.slice(0, 2)}

@@ -4,7 +4,9 @@ import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RoomContainer } from '../pages/RoomContainer';
+import { PokerTable } from '../pages/PokerTable';
 import { AuthProvider } from '../api/auth';
+import { AuthContext } from '../api/auth-context';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import userEvent from '@testing-library/user-event';
 import { socket } from '../api/socket';
@@ -148,6 +150,98 @@ describe('WaitingRoom and PokerTable Flow', () => {
 
     const readyBtn = screen.getByText('Set Ready');
     await userEvent.click(readyBtn);
+  });
+
+  it('uses the minimum legal amount before the bet control is changed', async () => {
+    restoreSocket = mockConnectedSocket();
+
+    const matchId = '00000000-0000-4000-8000-000000000002';
+    const handId = '00000000-0000-4000-8000-000000000003';
+    useGameStore.setState({
+      privateSnapshot: {
+        schema_version: 1,
+        match_id: matchId,
+        hand_id: handId,
+        hand_number: 1,
+        state_version: 1,
+        street: 'preflop',
+        button_account_id: 2,
+        actor_account_id: 1,
+        board: [],
+        pot_amounts: [30],
+        complete: false,
+        players: [
+          {
+            account_id: 1,
+            seat: 0,
+            display_name: 'Alice',
+            stack: 990,
+            bet: 10,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+          {
+            account_id: 2,
+            seat: 1,
+            display_name: 'Bob',
+            stack: 980,
+            bet: 20,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+        ],
+        server_time: '2026-07-17T00:00:00Z',
+        actions: [],
+        action_deadline_at: null,
+        account_id: 1,
+        hole_cards: ['As', 'Kd'],
+        legal_actions: [
+          { action: 'fold' },
+          { action: 'check_or_call', min_amount: 10, max_amount: 10 },
+          { action: 'bet_or_raise', min_amount: 40, max_amount: 990 },
+        ],
+      },
+    });
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthContext.Provider
+          value={{
+            user: {
+              account_id: 1,
+              login_name: 'alice',
+              role: 'player',
+              status: 'active',
+              display_name: 'Alice',
+            },
+            isLoading: false,
+            login: async () => ({
+              account_id: 1,
+              login_name: 'alice',
+              role: 'player',
+              status: 'active',
+              display_name: 'Alice',
+            }),
+            logout: async () => {},
+            refetch: async () => {},
+          }}
+        >
+          <PokerTable roomId={roomId} onLeave={vi.fn()} />
+        </AuthContext.Provider>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'raise40' })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole('slider', { name: 'Bet or raise amount' })).toHaveValue('40');
+    expect(screen.getByRole('spinbutton', { name: 'Bet or raise amount' })).toHaveValue(40);
   });
 
   it('keeps the user in the room when leaving an active match is rejected', async () => {

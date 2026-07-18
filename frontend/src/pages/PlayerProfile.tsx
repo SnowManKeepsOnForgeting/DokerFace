@@ -131,9 +131,8 @@ export function PlayerProfile() {
       setValidationError('Display name is required');
       return;
     }
-    const avatarLen = editAvatarText.trim().length;
-    if (avatarLen < 1 || avatarLen > 2) {
-      setValidationError('Avatar text must be 1 or 2 characters');
+    if (!editAvatarText.trim()) {
+      setValidationError('Avatar text is required');
       return;
     }
     if (!/^#[0-9A-Fa-f]{6}$/.test(editAvatarColor)) {
@@ -181,7 +180,7 @@ export function PlayerProfile() {
         />
 
         <div
-          className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-white font-black text-4xl shadow-xl shadow-black/20 border border-white/10"
+          className="flex h-24 w-24 min-w-0 shrink-0 items-center justify-center overflow-hidden rounded-full px-2 text-center break-all whitespace-pre-wrap leading-tight text-white font-black text-2xl shadow-xl shadow-black/20 border border-white/10"
           style={{ backgroundColor: player.avatar_background_color || '#4f46e5' }}
         >
           {player.avatar_text || player.display_name.slice(0, 2).toUpperCase()}
@@ -253,14 +252,13 @@ export function PlayerProfile() {
 
             <div>
               <label className="block text-xs text-slate-400 font-semibold mb-2">
-                Avatar Initials/Emoji (1-2 chars)
+                Avatar Text / Emoji
               </label>
               <input
                 type="text"
-                maxLength={2}
                 value={editAvatarText}
                 onChange={(e) => setEditAvatarText(e.target.value)}
-                placeholder="Initials"
+                placeholder="Avatar text"
                 className="w-full h-10 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-lg px-3 text-sm"
               />
             </div>
@@ -290,6 +288,7 @@ export function PlayerProfile() {
               <div className="flex gap-2 shrink-0">
                 <button
                   type="submit"
+                  aria-label="Save profile"
                   disabled={updateProfileMutation.isPending}
                   className="h-10 w-10 flex items-center justify-center bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors cursor-pointer"
                 >
@@ -297,6 +296,7 @@ export function PlayerProfile() {
                 </button>
                 <button
                   type="button"
+                  aria-label="Cancel profile editing"
                   onClick={() => setIsEditing(false)}
                   className="h-10 w-10 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg transition-colors cursor-pointer"
                 >

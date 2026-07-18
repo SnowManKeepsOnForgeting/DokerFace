@@ -14,7 +14,7 @@ const server = setupServer();
 const mockPlayer = {
   account_id: 1,
   display_name: 'Alice',
-  avatar_text: 'A',
+  avatar_text: 'Alice Avatar',
   avatar_background_color: '#4f46e5',
   rank_badge_theme: 'Bronze',
   is_online: true,
@@ -224,7 +224,7 @@ describe('PlayerProfile View and Editing', () => {
     await userEvent.click(editBtn);
 
     expect(screen.getByPlaceholderText('Name')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Initials')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Avatar text')).toBeInTheDocument();
 
     server.use(
       http.patch('http://localhost:8080/api/v1/me/profile', async ({ request }) => {
@@ -252,5 +252,6 @@ describe('PlayerProfile View and Editing', () => {
     await userEvent.click(saveBtn!);
 
     await waitFor(() => expect(screen.getByText('Alice Updated')).toBeInTheDocument());
+    expect(screen.queryByText('Avatar text is required')).not.toBeInTheDocument();
   });
 });

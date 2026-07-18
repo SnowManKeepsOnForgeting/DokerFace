@@ -126,12 +126,11 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
             >
               {isReady ? (
                 <>
-                  <CheckCircle className="h-4 w-4" />I am Ready
+                  <XCircle className="h-4 w-4" /> Set Not Ready
                 </>
               ) : (
                 <>
-                  <XCircle className="h-4 w-4" />
-                  Set Ready
+                  <CheckCircle className="h-4 w-4" /> Set Ready
                 </>
               )}
             </button>
@@ -313,7 +312,7 @@ function MemberRow({
         {/* Avatar */}
         <div className="relative">
           <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white font-bold text-sm shadow-md"
+            className="flex h-10 w-10 min-w-0 shrink-0 items-center justify-center overflow-hidden rounded-full px-0.5 text-center break-all whitespace-pre-wrap leading-tight text-white font-bold text-sm shadow-md"
             style={{ backgroundColor: player?.avatar_background_color || '#4f46e5' }}
           >
             {player?.avatar_text || player?.display_name?.slice(0, 2).toUpperCase() || 'P'}
