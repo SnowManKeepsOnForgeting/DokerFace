@@ -353,76 +353,92 @@ describe('WaitingRoom and PokerTable Flow', () => {
     expect(screen.queryByText('Lobby')).not.toBeInTheDocument();
   });
 
-  it('clears a hand settlement when the next hand snapshot arrives', () => {
-    const matchId = '00000000-0000-4000-8000-000000000002';
-    const settledHandId = '00000000-0000-4000-8000-000000000003';
-    const nextHandId = '00000000-0000-4000-8000-000000000004';
-    const socketForTest = socket as unknown as {
-      listeners: (event: string) => Array<(payload: unknown) => void>;
-    };
+  it('keeps a hand settlement visible for three seconds after the next hand starts', () => {
+    vi.useFakeTimers();
 
-    act(() => {
-      socketForTest.listeners('game:hand-settled').forEach((listener) =>
-        listener({
-          schema_version: 1,
-          match_id: matchId,
-          hand_id: settledHandId,
-          hand_number: 1,
-          state_version: 1,
-          account_ids: [1, 2],
-          final_stacks: [1100, 900],
-          payoffs: [100, -100],
-        }),
-      );
-    });
-    expect(useGameStore.getState().handSettled?.hand_id).toBe(settledHandId);
+    try {
+      const matchId = '00000000-0000-4000-8000-000000000002';
+      const settledHandId = '00000000-0000-4000-8000-000000000003';
+      const nextHandId = '00000000-0000-4000-8000-000000000004';
+      const socketForTest = socket as unknown as {
+        listeners: (event: string) => Array<(payload: unknown) => void>;
+      };
 
-    act(() => {
-      socketForTest.listeners('game:private-snapshot').forEach((listener) =>
-        listener({
-          schema_version: 1,
-          match_id: matchId,
-          hand_id: nextHandId,
-          hand_number: 2,
-          state_version: 2,
-          street: 'preflop',
-          button_account_id: 1,
-          actor_account_id: 2,
-          board: [],
-          pot_amounts: [0],
-          complete: false,
-          players: [
-            {
-              account_id: 1,
-              seat: 0,
-              display_name: 'Alice',
-              stack: 1100,
-              bet: 0,
-              folded: false,
-              all_in: false,
-              connected: true,
-            },
-            {
-              account_id: 2,
-              seat: 1,
-              display_name: 'Bob',
-              stack: 900,
-              bet: 0,
-              folded: false,
-              all_in: false,
-              connected: true,
-            },
-          ],
-          server_time: '2026-07-17T00:00:00Z',
-          actions: [],
-          action_deadline_at: null,
-          account_id: 1,
-          hole_cards: ['As', 'Kd'],
-          legal_actions: [],
-        }),
-      );
-    });
+      act(() => {
+        socketForTest.listeners('game:hand-settled').forEach((listener) =>
+          listener({
+            schema_version: 1,
+            match_id: matchId,
+            hand_id: settledHandId,
+            hand_number: 1,
+            state_version: 1,
+            account_ids: [1, 2],
+            final_stacks: [1100, 900],
+            payoffs: [100, -100],
+          }),
+        );
+      });
+      expect(useGameStore.getState().handSettled?.hand_id).toBe(settledHandId);
 
-    expect(useGameStore.getState().handSettled).toBeNull();
+      act(() => {
+        socketForTest.listeners('game:private-snapshot').forEach((listener) =>
+          listener({
+            schema_version: 1,
+            match_id: matchId,
+            hand_id: nextHandId,
+            hand_number: 2,
+            state_version: 2,
+            street: 'preflop',
+            button_account_id: 1,
+            actor_account_id: 2,
+            board: [],
+            pot_amounts: [0],
+            complete: false,
+            players: [
+              {
+                account_id: 1,
+                seat: 0,
+                display_name: 'Alice',
+                stack: 1100,
+                bet: 0,
+                folded: false,
+                all_in: false,
+                connected: true,
+              },
+              {
+                account_id: 2,
+                seat: 1,
+                display_name: 'Bob',
+                stack: 900,
+                bet: 0,
+                folded: false,
+                all_in: false,
+                connected: true,
+              },
+            ],
+            server_time: '2026-07-17T00:00:00Z',
+            actions: [],
+            action_deadline_at: null,
+            account_id: 1,
+            hole_cards: ['As', 'Kd'],
+            legal_actions: [],
+          }),
+        );
+      });
+
+      expect(useGameStore.getState().handSettled?.hand_id).toBe(settledHandId);
+
+      act(() => {
+        vi.advanceTimersByTime(2_999);
+      });
+      expect(useGameStore.getState().handSettled?.hand_id).toBe(settledHandId);
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(useGameStore.getState().handSettled).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -24,6 +24,7 @@ import type {
 
 const MAX_CHAT_MESSAGES = 100;
 const ACTION_RETRY_LIMIT = 1;
+const HAND_SETTLEMENT_DISPLAY_MS = 3_000;
 
 export type ConnectionStatus =
   'idle' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'replaced' | 'failed';
@@ -114,6 +115,15 @@ const actionVersion = (snapshot: GamePublicSnapshot | GamePrivateSnapshot | null
   snapshot?.state_version ?? -1;
 
 export const useGameStore = create<GameState>((set, get) => {
+  let handSettlementTimer: number | undefined;
+
+  const clearHandSettlementTimer = () => {
+    if (handSettlementTimer !== undefined) {
+      window.clearTimeout(handSettlementTimer);
+      handSettlementTimer = undefined;
+    }
+  };
+
   socket.on('connect', () => {
     set({ connected: true, status: 'connected' });
     const roomId = get().currentRoom?.room_id;
@@ -202,11 +212,7 @@ export const useGameStore = create<GameState>((set, get) => {
       return {
         publicSnapshot: snapshot,
         privateSnapshot: nextPrivate,
-        handSettled:
-          state.handSettled?.match_id === snapshot.match_id &&
-          state.handSettled.hand_id === snapshot.hand_id
-            ? state.handSettled
-            : null,
+        handSettled: state.handSettled?.match_id === snapshot.match_id ? state.handSettled : null,
         pendingAction,
       };
     });
@@ -244,11 +250,7 @@ export const useGameStore = create<GameState>((set, get) => {
       return {
         publicSnapshot: snapshot,
         privateSnapshot: snapshot,
-        handSettled:
-          state.handSettled?.match_id === snapshot.match_id &&
-          state.handSettled.hand_id === snapshot.hand_id
-            ? state.handSettled
-            : null,
+        handSettled: state.handSettled?.match_id === snapshot.match_id ? state.handSettled : null,
         pendingAction,
       };
     });
@@ -256,7 +258,19 @@ export const useGameStore = create<GameState>((set, get) => {
 
   socket.on('game:hand-settled', (rawSettlement) => {
     const settlement = parseServerEvent('game:hand-settled', rawSettlement);
-    if (settlement) set({ handSettled: settlement });
+    if (!settlement) return;
+
+    clearHandSettlementTimer();
+    set({ handSettled: settlement });
+    handSettlementTimer = window.setTimeout(() => {
+      set((state) =>
+        state.handSettled?.match_id === settlement.match_id &&
+        state.handSettled.hand_id === settlement.hand_id
+          ? { handSettled: null }
+          : {},
+      );
+      handSettlementTimer = undefined;
+    }, HAND_SETTLEMENT_DISPLAY_MS);
   });
 
   socket.on('game:match-settled', (rawSettlement) => {
@@ -406,7 +420,8 @@ export const useGameStore = create<GameState>((set, get) => {
     requestSnapshot: (matchId) =>
       runCommand('game:request-snapshot', { schema_version: 1, match_id: matchId }),
 
-    resetGame: () =>
+    resetGame: () => {
+      clearHandSettlementTimer();
       set({
         publicSnapshot: null,
         privateSnapshot: null,
@@ -416,7 +431,8 @@ export const useGameStore = create<GameState>((set, get) => {
         activeEmotes: [],
         pendingAction: null,
         lastCommandError: null,
-      }),
+      });
+    },
   };
 });
 
