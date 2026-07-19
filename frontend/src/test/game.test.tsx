@@ -292,6 +292,98 @@ describe('WaitingRoom and PokerTable Flow', () => {
     expect(screen.getByRole('spinbutton', { name: 'Bet or raise amount' })).toHaveValue(40);
   });
 
+  it('quits the active match immediately and returns to the lobby', async () => {
+    restoreSocket = mockConnectedSocket();
+    const onLeave = vi.fn();
+    const matchId = '00000000-0000-4000-8000-000000000002';
+    const handId = '00000000-0000-4000-8000-000000000003';
+    useGameStore.setState({
+      currentRoom: {
+        room_id: roomId,
+        host_account_id: 1,
+        status: 'active',
+        members: [
+          { account_id: 1, ready: true, seat: 0, connected: true },
+          { account_id: 2, ready: true, seat: 1, connected: true },
+        ],
+        match_id: matchId,
+      },
+      connected: true,
+      privateSnapshot: {
+        schema_version: 1,
+        match_id: matchId,
+        hand_id: handId,
+        hand_number: 1,
+        state_version: 4,
+        street: 'preflop',
+        button_account_id: 2,
+        actor_account_id: 2,
+        board: [],
+        pot_amounts: [150],
+        complete: false,
+        players: [
+          {
+            account_id: 1,
+            seat: 0,
+            display_name: 'Alice',
+            stack: 950,
+            bet: 50,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+          {
+            account_id: 2,
+            seat: 1,
+            display_name: 'Bob',
+            stack: 900,
+            bet: 100,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+        ],
+        server_time: '2026-07-17T00:00:00Z',
+        actions: [],
+        action_deadline_at: null,
+        account_id: 1,
+        hole_cards: ['As', 'Kd'],
+        legal_actions: [],
+      },
+    });
+
+    render(
+      <AuthContext.Provider
+        value={{
+          user: {
+            account_id: 1,
+            login_name: 'alice',
+            role: 'player',
+            status: 'active',
+            display_name: 'Alice',
+          },
+          isLoading: false,
+          login: async () => ({
+            account_id: 1,
+            login_name: 'alice',
+            role: 'player',
+            status: 'active',
+            display_name: 'Alice',
+          }),
+          logout: async () => {},
+          refetch: async () => {},
+        }}
+      >
+        <PokerTable roomId={roomId} onLeave={onLeave} />
+      </AuthContext.Provider>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Quit' }));
+
+    await waitFor(() => expect(onLeave).toHaveBeenCalledOnce());
+    expect(useGameStore.getState().currentRoom).toBeNull();
+  });
+
   it('keeps the user in the room when leaving an active match is rejected', async () => {
     restoreSocket = mockConnectedSocket({ ok: true }, { ok: false, error: 'room_active' });
     server.use(

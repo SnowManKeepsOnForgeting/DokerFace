@@ -107,6 +107,16 @@ class GameActionEvent(BaseModel):
     amount: int | None = Field(default=None, ge=0)
 
 
+class GameQuitEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    command_id: UUID
+    match_id: UUID
+    hand_id: UUID
+    state_version: int = Field(ge=0)
+
+
 class GameRequestSnapshotEvent(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -242,6 +252,7 @@ __all__ = [
     "GamePotSettlement",
     "GamePrivateSnapshot",
     "GamePublicSnapshot",
+    "GameQuitEvent",
     "GameRequestSnapshotEvent",
     "GameShownHand",
     "LobbyRoomsUpdatedEvent",

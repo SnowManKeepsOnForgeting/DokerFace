@@ -280,6 +280,14 @@ export interface GamePublicSnapshot {
   [k: string]: unknown;
 }
 
+export interface GameQuitEvent {
+  schema_version?: SchemaVersion;
+  command_id: CommandId;
+  match_id: MatchId;
+  hand_id: HandId;
+  state_version: StateVersion;
+}
+
 export interface GameRequestSnapshotEvent {
   schema_version?: SchemaVersion;
   match_id: MatchId;

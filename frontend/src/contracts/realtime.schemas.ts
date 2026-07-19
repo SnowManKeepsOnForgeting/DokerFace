@@ -216,6 +216,14 @@ export const GamePublicSnapshotSchema = z.object({
     "action_deadline_at": z.union([z.string().datetime({ offset: true }), z.null()]).optional(),
   }).passthrough();
 
+export const GameQuitEventSchema = z.object({
+    "schema_version": z.literal(1).optional(),
+    "command_id": z.string().uuid(),
+    "match_id": z.string().uuid(),
+    "hand_id": z.string().uuid(),
+    "state_version": z.number().int(),
+  }).passthrough();
+
 export const GameRequestSnapshotEventSchema = z.object({
     "schema_version": z.literal(1).optional(),
     "match_id": z.string().uuid(),
@@ -304,6 +312,7 @@ export const realtimeSchemas = {
   GamePotSettlement: GamePotSettlementSchema,
   GamePrivateSnapshot: GamePrivateSnapshotSchema,
   GamePublicSnapshot: GamePublicSnapshotSchema,
+  GameQuitEvent: GameQuitEventSchema,
   GameRequestSnapshotEvent: GameRequestSnapshotEventSchema,
   GameShownHand: GameShownHandSchema,
   LobbyRoomsUpdatedEvent: LobbyRoomsUpdatedEventSchema,

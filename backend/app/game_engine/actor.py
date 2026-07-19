@@ -81,6 +81,7 @@ class MatchCommand:
     hand_id: UUID | None = None
     state_version: int | None = None
     source: MatchCommandSource = MatchCommandSource.PLAYER
+    quit: bool = False
 
 
 @dataclass(frozen=True)
@@ -96,6 +97,7 @@ class MatchCommandResult:
     settled_hand_number: int | None = None
     settlement: HandSettlement | None = None
     completed_hand: CompletedHandSnapshot | None = None
+    quit_account_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -326,7 +328,14 @@ class MatchActor:
         hand_number = self._coordinator.hand_number
         button_account_id = self._coordinator.button_account_id
         before_action = self._coordinator.public_snapshot()
-        applied = self._coordinator.apply_action(command.action)
+        quit_account_id = command.action.account_id if command.quit else None
+        if command.quit:
+            if command.action.action is not ActionType.FOLD or command.action.amount is not None:
+                raise ValueError("Quit command must use a fold action without an amount")
+            self._coordinator.quit_player(command.action.account_id)
+            applied = AppliedAction(command.action.account_id, ActionType.FOLD, None)
+        else:
+            applied = self._coordinator.apply_action(command.action)
         self._state_version += 1
         self._hand_actions.append(
             HandActionSnapshot(
@@ -343,9 +352,10 @@ class MatchActor:
             state_version=self._state_version,
         )
         if self._coordinator.hand.is_complete():
+            hand_player_ids = self._coordinator.hand_player_ids
             terminal_private = {
                 account_id: self._coordinator.hand.private_snapshot(account_id)
-                for account_id in self._coordinator.player_ids
+                for account_id in hand_player_ids
             }
             blinds = self._coordinator.hand_blinds
             settlement = self._coordinator.settle_hand()
@@ -391,6 +401,7 @@ class MatchActor:
                     settled_hand_number=hand_number,
                     settlement=settlement,
                     completed_hand=completed_hand,
+                    quit_account_id=quit_account_id,
                 )
             self._terminal_snapshot = MatchActorSnapshot(
                 match_id=self._match_id,
@@ -418,6 +429,7 @@ class MatchActor:
                 settled_hand_number=hand_number,
                 settlement=settlement,
                 completed_hand=completed_hand,
+                quit_account_id=quit_account_id,
             )
         self._schedule_action_timer()
         return MatchCommandResult(
@@ -428,9 +440,16 @@ class MatchActor:
             state_version=self._state_version,
             match_id=self._match_id,
             hand_id=hand_id,
+            quit_account_id=quit_account_id,
         )
 
     def _validate_current_command(self, command: MatchCommand) -> None:
+        if command.quit and command.source is not MatchCommandSource.PLAYER:
+            raise MatchCommandConflictError("Quit command must come from a player")
+        if command.quit and (
+            command.match_id is None or command.hand_id is None or command.state_version is None
+        ):
+            raise MatchCommandConflictError("Quit command requires match, hand, and state version")
         if command.source is not MatchCommandSource.PLAYER and (
             command.match_id is None or command.hand_id is None or command.state_version is None
         ):

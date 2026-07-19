@@ -21,7 +21,7 @@ from app.game_engine.actor import (
     MatchCommand,
     MatchCommandConflictError,
 )
-from app.game_engine.contracts import ActionCommand
+from app.game_engine.contracts import ActionCommand, ActionType
 from app.game_engine.match import MatchCoordinator
 from app.matches.persistence import (
     ActionHistory,
@@ -49,6 +49,7 @@ from app.realtime.schemas import (
     GamePotSettlement,
     GamePrivateSnapshot,
     GamePublicSnapshot,
+    GameQuitEvent,
     GameRequestSnapshotEvent,
     GameShownHand,
     LobbyRoomsUpdatedEvent,
@@ -439,6 +440,79 @@ def register_room_handlers(
             )
             if not processed:
                 return await _reject(server, sid, "match_persistence_failed", event)
+        return {
+            "ok": True,
+            "command_id": str(result.command_id),
+            "match_id": str(result.match_id),
+            "hand_id": str(result.hand_id),
+            "state_version": result.state_version,
+            "replayed": response.replayed,
+        }
+
+    @server.on("game:quit")
+    async def game_quit(sid: str, data: Any) -> dict[str, Any]:
+        event = _parse_event(GameQuitEvent, data)
+        if event is None:
+            return _error("invalid_payload")
+        account_id = await _account_id_for_sid(server, sid)
+        if account_id is None:
+            return _error("authentication_required")
+        match = matches.for_match(event.match_id)
+        if match is None:
+            return _error("match_not_found")
+        room_runtime = registry.get(match.room_id)
+        if room_runtime is None:
+            return _error("room_not_found")
+        member = room_runtime.members.get(account_id)
+        if member is None or member.sid != sid:
+            return _error("not_a_member")
+        try:
+            match.player(account_id)
+            response = await match.actor.submit(
+                MatchCommand(
+                    command_id=event.command_id,
+                    action=ActionCommand(account_id, ActionType.FOLD),
+                    match_id=event.match_id,
+                    hand_id=event.hand_id,
+                    state_version=event.state_version,
+                    quit=True,
+                )
+            )
+        except (MatchRuntimeError, MatchCommandConflictError, ValueError) as error:
+            return await _reject(server, sid, _game_error_code(error), event)
+
+        result = response.result
+        if not response.replayed:
+            processed = await _handle_match_result(
+                server,
+                app,
+                history,
+                ratings,
+                statistics,
+                registry,
+                matches,
+                match,
+                result,
+            )
+            if not processed:
+                return await _reject(server, sid, "match_persistence_failed", event)
+
+            try:
+                registry.leave(match.room_id, account_id)
+            except RoomRuntimeError as error:
+                return _error(_runtime_error_code(error))
+            await server.leave_room(sid, str(match.room_id))
+            room_status = (
+                RoomStatus.WAITING if result.match_status.value == "complete" else RoomStatus.ACTIVE
+            )
+            await _set_room_host(app, match.room_id, room_runtime.host_account_id)
+            await _broadcast_room_snapshot(
+                server,
+                room_runtime,
+                room_status,
+                match_id=match.match_id if room_status is RoomStatus.ACTIVE else None,
+            )
+
         return {
             "ok": True,
             "command_id": str(result.command_id),
@@ -936,7 +1010,10 @@ async def _broadcast_game_snapshots(
     else:
         await server.emit("game:public-snapshot", public_payload, to=target_sid)
 
+    active_account_ids = set(actor_snapshot.public.account_ids)
     for player in match.players:
+        if player.account_id not in active_account_ids:
+            continue
         member = room_runtime.members.get(player.account_id)
         if member is None or (target_sid is not None and member.sid != target_sid):
             continue
@@ -1042,7 +1119,7 @@ async def _emit_hand_settled(
         or result.settled_hand_number is None
     ):
         return
-    account_ids = list(match.actor.coordinator.player_ids)
+    account_ids = list(completed.public.account_ids)
     pots = [
         GamePotSettlement(
             pot_number=index + 1,
@@ -1096,7 +1173,10 @@ async def _emit_match_settled(
         match_id=match.match_id,
         state_version=result.state_version,
         account_ids=list(match.actor.coordinator.player_ids),
-        final_stacks=list(settlement.final_stacks),
+        final_stacks=[
+            match.actor.coordinator.stacks[account_id]
+            for account_id in match.actor.coordinator.player_ids
+        ],
         status=result.match_status.value,
     ).model_dump(mode="json")
     for member in room_runtime.members.values():
@@ -1107,7 +1187,7 @@ async def _reject(
     server: Any,
     sid: str,
     error: str,
-    event: GameActionEvent | None = None,
+    event: GameActionEvent | GameQuitEvent | None = None,
 ) -> dict[str, Any]:
     payload = GameActionRejected(
         command_id=event.command_id if event is not None else None,

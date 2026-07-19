@@ -64,7 +64,9 @@ export function RoomContainer() {
       active = false;
       if (joinedRoomRef.current === roomId) {
         joinedRoomRef.current = null;
-        void leaveRoom(roomId);
+        if (useGameStore.getState().currentRoom?.room_id === roomId) {
+          void leaveRoom(roomId);
+        }
       }
     };
   }, [roomId, joinRoom, leaveRoom]);

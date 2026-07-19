@@ -12,7 +12,7 @@ from app.game_engine.actor import (
     MatchCommandSource,
 )
 from app.game_engine.contracts import ActionCommand, ActionType
-from app.game_engine.match import MatchCoordinator
+from app.game_engine.match import MatchCoordinator, MatchStatus
 from app.rooms.config import MatchEndMode, RoomRules
 
 
@@ -124,6 +124,34 @@ async def test_actor_exposes_initial_private_snapshot_and_validates_state_identi
     assert completed.small_blind == 50
     assert completed.big_blind == 100
     assert set(completed.private_snapshots) == {1, 2}
+    await actor.close()
+
+
+@pytest.mark.asyncio
+async def test_quit_can_be_submitted_by_a_non_current_player_and_ends_the_match() -> None:
+    match_id = uuid4()
+    actor = MatchActor(MatchCoordinator((1, 2), make_rules()), match_id=match_id)
+    initial = await actor.start()
+
+    response = await actor.submit(
+        MatchCommand(
+            command_id=uuid4(),
+            action=ActionCommand(2, ActionType.FOLD),
+            match_id=match_id,
+            hand_id=initial.hand_id,
+            state_version=initial.public.state_version,
+            quit=True,
+        )
+    )
+
+    assert response.result.applied.account_id == 2
+    assert response.result.applied.action is ActionType.FOLD
+    assert response.result.quit_account_id == 2
+    assert response.result.match_status is MatchStatus.COMPLETE
+    assert response.result.settlement is not None
+    assert response.result.settlement.final_stacks == (2000, 0)
+    assert response.result.completed_hand is not None
+    assert response.result.completed_hand.public.folded == (False, True)
     await actor.close()
 
 

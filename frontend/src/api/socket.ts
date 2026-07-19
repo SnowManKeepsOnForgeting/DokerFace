@@ -24,6 +24,7 @@ import type {
   GameMatchSettled,
   GamePrivateSnapshot,
   GamePublicSnapshot,
+  GameQuitEvent,
   GameRequestSnapshotEvent,
   LobbyRoomsUpdatedEvent,
   RoomJoinEvent,
@@ -75,6 +76,7 @@ export interface ClientToServerEvents {
   'chat:send': (payload: ChatSendEvent, ack: (response: RealtimeAck) => void) => void;
   'emote:send': (payload: EmoteSendEvent, ack: (response: RealtimeAck) => void) => void;
   'game:action': (payload: GameActionEvent, ack: (response: GameActionAck) => void) => void;
+  'game:quit': (payload: GameQuitEvent, ack: (response: GameActionAck) => void) => void;
   'game:request-snapshot': (
     payload: GameRequestSnapshotEvent,
     ack: (response: RealtimeAck) => void,

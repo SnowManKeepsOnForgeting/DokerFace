@@ -11,6 +11,7 @@ from app.realtime.schemas import (
     GamePlayerSnapshot,
     GamePrivateSnapshot,
     GamePublicSnapshot,
+    GameQuitEvent,
     GameRequestSnapshotEvent,
     RoomJoinEvent,
     RoomMemberSnapshot,
@@ -63,6 +64,18 @@ def test_game_action_and_snapshot_events_validate_identifiers() -> None:
     assert event.action.value == "fold"
     assert event.amount is None
     assert request.match_id == match_id
+
+
+def test_game_quit_event_requires_current_match_identity() -> None:
+    event = GameQuitEvent(
+        command_id=uuid4(),
+        match_id=uuid4(),
+        hand_id=uuid4(),
+        state_version=3,
+    )
+
+    assert event.schema_version == 1
+    assert event.state_version == 3
 
 
 def test_game_action_rejects_unknown_fields_and_negative_amounts() -> None:

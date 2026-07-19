@@ -3,7 +3,7 @@ import { useGameStore } from '../store/game';
 import { useAuth } from '../api/auth-context';
 import { createCommandId } from '../api/command-id';
 import type { ActionType } from '../contracts/realtime';
-import { Coins, Shield, Smile, Clock } from 'lucide-react';
+import { Coins, DoorOpen, LogOut, Shield, Smile, Clock } from 'lucide-react';
 
 interface PokerTableProps {
   roomId: string;
@@ -36,12 +36,14 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
     matchSettled,
     resetGame,
     leaveRoom,
+    quitMatch,
   } = useGameStore();
 
   const [betAmount, setBetAmount] = useState<number>(0);
   const [showEmotesMenu, setShowEmotesMenu] = useState(false);
   const [leaveError, setLeaveError] = useState<string | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [isQuitting, setIsQuitting] = useState(false);
 
   const handleLeave = async (resetAfterSuccess = false) => {
     if (isLeaving) return;
@@ -59,6 +61,26 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       );
     }
     setIsLeaving(false);
+  };
+
+  const handleQuit = async () => {
+    if (isQuitting || !privateSnapshot) return;
+    setIsQuitting(true);
+    setLeaveError(null);
+    const response = await quitMatch({
+      schema_version: 1,
+      command_id: createCommandId(),
+      match_id: privateSnapshot.match_id,
+      hand_id: privateSnapshot.hand_id,
+      state_version: privateSnapshot.state_version,
+    });
+    if (response.ok) {
+      setIsQuitting(false);
+      onLeave();
+      return;
+    }
+    setLeaveError(`Unable to quit match: ${response.error ?? 'realtime_error'}`);
+    setIsQuitting(false);
   };
 
   // Active snapshot choice (Hero private state takes precedence)
@@ -171,10 +193,19 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
             <Smile className="h-5 w-5" />
           </button>
           <button
-            onClick={() => void handleLeave()}
-            disabled={isLeaving}
-            className="h-9 px-4 bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-400 border border-slate-700/60 hover:border-rose-900/60 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer disabled:cursor-wait disabled:opacity-60"
+            onClick={() => void handleQuit()}
+            disabled={isLeaving || isQuitting || !privateSnapshot}
+            className="h-9 px-4 bg-rose-950/70 hover:bg-rose-900 text-rose-200 hover:text-white border border-rose-800/70 hover:border-rose-600 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer disabled:cursor-wait disabled:opacity-60"
           >
+            <LogOut className="h-3.5 w-3.5" />
+            {isQuitting ? 'Quitting...' : 'Quit'}
+          </button>
+          <button
+            onClick={() => void handleLeave()}
+            disabled={isLeaving || isQuitting}
+            className="h-9 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer disabled:cursor-wait disabled:opacity-60"
+          >
+            <DoorOpen className="h-3.5 w-3.5" />
             {isLeaving ? 'Leaving...' : 'Leave'}
           </button>
         </div>

@@ -25,9 +25,9 @@ from app.rooms.registry import RoomRegistry
 from app.statistics.service import StatisticsPersistenceService
 
 
-def rules_payload() -> dict[str, object]:
+def rules_payload(max_players: int = 2) -> dict[str, object]:
     return {
-        "max_players": 2,
+        "max_players": max_players,
         "end_mode": "fixed_hands",
         "fixed_hand_count": 5,
         "starting_chips": 1000,
@@ -47,23 +47,24 @@ def rules_payload() -> dict[str, object]:
     }
 
 
-def make_room(room_id: UUID) -> Room:
+def make_room(room_id: UUID, max_players: int = 2) -> Room:
     return Room(
         room_id=room_id,
         host_account_id=1,
         name="Open table",
         visibility=RoomVisibility.PUBLIC,
-        rules=rules_payload(),
+        rules=rules_payload(max_players),
         status=RoomStatus.WAITING,
     )
 
 
-def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
+def make_handlers(max_players: int = 2) -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
     app = create_app(Settings(database_url="sqlite+aiosqlite:///:memory:"))
-    room = make_room(uuid4())
+    room = make_room(uuid4(), max_players)
     profiles = [
         Profile(account_id=1, display_name="Alice", avatar_text="A"),
         Profile(account_id=2, display_name="Bob", avatar_text="B"),
+        Profile(account_id=3, display_name="Carol", avatar_text="C"),
     ]
     server = MagicMock()
     server.handlers = {"/": {}}
@@ -323,6 +324,81 @@ async def test_game_action_deduplicates_and_rejects_stale_versions() -> None:
     }
     assert emitted_payloads(server, "game:action-rejected")[-1]["error"] == "stale_state_version"
     assert matches.for_room(room.room_id) is not None
+
+
+@pytest.mark.asyncio
+async def test_game_quit_splits_chips_and_removes_the_connection_from_the_room() -> None:
+    handlers, server, room, matches = make_handlers()
+    await join_and_ready(handlers, room.room_id)
+    start = await handlers["room:start"]("sid-1", {"room_id": str(room.room_id)})
+    initial = GamePublicSnapshot.model_validate(
+        emitted_payloads(server, "game:public-snapshot")[-1]
+    )
+
+    response = await handlers["game:quit"](
+        "sid-2",
+        {
+            "command_id": str(uuid4()),
+            "match_id": start["match_id"],
+            "hand_id": str(initial.hand_id),
+            "state_version": initial.state_version,
+        },
+    )
+
+    assert response["ok"] is True
+    assert response["replayed"] is False
+    assert matches.for_room(room.room_id) is None
+    assert room.status is RoomStatus.WAITING
+    runtime = server.room_registry.get(room.room_id)
+    assert runtime is not None
+    assert set(runtime.members) == {1}
+    server.leave_room.assert_awaited_with("sid-2", str(room.room_id))
+    settlement = emitted_payloads(server, "game:hand-settled")[-1]
+    final_stacks = dict(zip(settlement["account_ids"], settlement["final_stacks"], strict=True))
+    assert final_stacks[2] == 0
+    assert final_stacks[1] == 2000
+
+
+@pytest.mark.asyncio
+async def test_game_quit_broadcasts_only_the_next_hand_players() -> None:
+    handlers, server, room, matches = make_handlers(max_players=3)
+    await handlers["room:join"]("sid-1", {"room_id": str(room.room_id)})
+    await handlers["room:join"]("sid-2", {"room_id": str(room.room_id)})
+    await handlers["room:join"]("sid-3", {"room_id": str(room.room_id)})
+    await handlers["room:ready"]("sid-1", {"room_id": str(room.room_id), "ready": True})
+    await handlers["room:ready"]("sid-2", {"room_id": str(room.room_id), "ready": True})
+    await handlers["room:ready"]("sid-3", {"room_id": str(room.room_id), "ready": True})
+    start = await handlers["room:start"]("sid-1", {"room_id": str(room.room_id)})
+    initial = GamePublicSnapshot.model_validate(
+        emitted_payloads(server, "game:public-snapshot")[-1]
+    )
+    server.emit.reset_mock()
+
+    response = await handlers["game:quit"](
+        "sid-1",
+        {
+            "command_id": str(uuid4()),
+            "match_id": start["match_id"],
+            "hand_id": str(initial.hand_id),
+            "state_version": initial.state_version,
+        },
+    )
+
+    assert response["ok"] is True
+    assert matches.for_room(room.room_id) is not None
+    runtime = server.room_registry.get(room.room_id)
+    assert runtime is not None
+    assert set(runtime.members) == {2, 3}
+    next_public = GamePublicSnapshot.model_validate(
+        emitted_payloads(server, "game:public-snapshot")[-1]
+    )
+    assert {player.account_id for player in next_public.players} == {2, 3}
+    private_payloads = emitted_payloads(server, "game:private-snapshot")
+    assert {payload["account_id"] for payload in private_payloads} == {2, 3}
+
+    match = matches.for_room(room.room_id)
+    assert match is not None
+    await matches.remove(match)
 
 
 @pytest.mark.asyncio

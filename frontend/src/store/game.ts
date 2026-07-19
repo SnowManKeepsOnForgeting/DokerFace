@@ -18,6 +18,7 @@ import type {
   GameMatchSettled,
   GamePrivateSnapshot,
   GamePublicSnapshot,
+  GameQuitEvent,
   RoomKickedEvent,
   RoomSnapshot,
 } from '../contracts/realtime';
@@ -50,6 +51,7 @@ export interface GameState {
   toggleReady: (roomId: string, ready: boolean) => Promise<RealtimeAck>;
   startMatch: (roomId: string) => Promise<RealtimeAck>;
   kickPlayer: (roomId: string, targetAccountId: number) => Promise<RealtimeAck>;
+  quitMatch: (payload: GameQuitEvent) => Promise<RealtimeAck>;
   sendChat: (
     roomId: string,
     content: string,
@@ -375,6 +377,14 @@ export const useGameStore = create<GameState>((set, get) => {
         room_id: roomId,
         target_account_id: targetAccountId,
       }),
+
+    quitMatch: async (payload) => {
+      const response = await runCommand('game:quit', payload);
+      if (response.ok) {
+        set({ ...resetTransientState(), roomKicked: null, lastCommandError: null });
+      }
+      return response;
+    },
 
     sendChat: (roomId, content, type = 'text') =>
       runCommand('chat:send', {
