@@ -76,7 +76,7 @@ def make_handlers() -> tuple[dict[str, Any], Any, Room, MatchRegistry]:
         return decorator
 
     async def session_for_sid(sid: str) -> dict[str, int]:
-        return {"account_id": 1 if sid == "sid-1" else 2}
+        return {"account_id": {"sid-2": 2, "sid-3": 3}.get(sid, 1)}
 
     server.on.side_effect = register
     server.get_session = session_for_sid
@@ -206,6 +206,77 @@ async def test_game_request_snapshot_targets_only_requesting_connection() -> Non
 
 
 @pytest.mark.asyncio
+async def test_active_member_can_rejoin_and_receive_private_snapshot() -> None:
+    handlers, server, room, _ = make_handlers()
+    await join_and_ready(handlers, room.room_id)
+    start = await handlers["room:start"]("sid-1", {"room_id": str(room.room_id)})
+    server.emit.reset_mock()
+
+    response = await handlers["room:join"](
+        "sid-1-reconnected",
+        {"room_id": str(room.room_id)},
+    )
+
+    assert response["ok"] is True
+    assert response["room"]["status"] == "active"
+    assert response["room"]["match_id"] == start["match_id"]
+    runtime = server.room_registry.get(room.room_id)
+    assert runtime is not None
+    assert runtime.members[1].sid == "sid-1-reconnected"
+    assert runtime.members[1].connected is True
+    server.enter_room.assert_any_await("sid-1-reconnected", str(room.room_id))
+    assert [call.kwargs.get("to") for call in server.emit.await_args_list] == [
+        None,
+        None,
+        "sid-1-reconnected",
+        "sid-1-reconnected",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_automatic_timeout_persists_and_broadcasts_the_result() -> None:
+    handlers, server, room, matches = make_handlers()
+    await join_and_ready(handlers, room.room_id)
+    start = await handlers["room:start"]("sid-1", {"room_id": str(room.room_id)})
+    public = GamePublicSnapshot.model_validate(emitted_payloads(server, "game:public-snapshot")[-1])
+    match = matches.for_match(UUID(start["match_id"]))
+    assert match is not None
+    server.emit.reset_mock()
+
+    response = await match.actor.submit_timeout(
+        uuid4(),
+        match_id=UUID(start["match_id"]),
+        hand_id=public.hand_id,
+        state_version=public.state_version,
+    )
+
+    assert response.result.applied.action.value == "fold"
+    assert [call.args[0] for call in server.emit.await_args_list] == [
+        "game:hand-settled",
+        "game:hand-settled",
+        "game:public-snapshot",
+        "game:private-snapshot",
+        "game:private-snapshot",
+    ]
+    assert server.history_service.persist_hand.await_count == 1
+    await matches.remove(match)
+
+
+@pytest.mark.asyncio
+async def test_non_member_cannot_join_an_active_match() -> None:
+    handlers, _, room, _ = make_handlers()
+    await join_and_ready(handlers, room.room_id)
+    await handlers["room:start"]("sid-1", {"room_id": str(room.room_id)})
+
+    response = await handlers["room:join"](
+        "sid-3",
+        {"room_id": str(room.room_id)},
+    )
+
+    assert response == {"ok": False, "error": "room_not_waiting"}
+
+
+@pytest.mark.asyncio
 async def test_game_action_deduplicates_and_rejects_stale_versions() -> None:
     handlers, server, room, matches = make_handlers()
     await join_and_ready(handlers, room.room_id)
@@ -289,9 +360,7 @@ async def test_hand_settlement_is_emitted_before_the_next_hand_snapshot() -> Non
     handlers, server, room, _ = make_handlers()
     await join_and_ready(handlers, room.room_id)
     start = await handlers["room:start"]("sid-1", {"room_id": str(room.room_id)})
-    public = GamePublicSnapshot.model_validate(
-        emitted_payloads(server, "game:public-snapshot")[-1]
-    )
+    public = GamePublicSnapshot.model_validate(emitted_payloads(server, "game:public-snapshot")[-1])
     server.emit.reset_mock()
     actor_sid = "sid-1" if public.actor_account_id == 1 else "sid-2"
     response = await handlers["game:action"](
@@ -307,6 +376,7 @@ async def test_hand_settlement_is_emitted_before_the_next_hand_snapshot() -> Non
 
     assert response["ok"] is True
     assert [call.args[0] for call in server.emit.await_args_list] == [
+        "game:hand-settled",
         "game:hand-settled",
         "game:public-snapshot",
         "game:private-snapshot",
@@ -388,6 +458,6 @@ async def test_backend_match_flow_recovers_connection_and_settles_all_layers() -
     server.rating_service.settle_match.assert_awaited_once()
     assert server.statistics_service.apply_hand.await_count == 5
     server.statistics_service.apply_profitable_matches.assert_awaited_once()
-    assert len(emitted_payloads(server, "game:hand-settled")) == 5
+    assert len(emitted_payloads(server, "game:hand-settled")) == 10
     assert emitted_payloads(server, "game:match-settled")[-1]["status"] == "complete"
     assert emitted_payloads(server, "room:snapshot")[-1]["status"] == "waiting"
