@@ -11,8 +11,8 @@
 
 	handle {
 		root * /usr/share/caddy
+		header Cache-Control "no-cache, no-store, must-revalidate"
 		try_files {path} /index.html
 		file_server
 	}
 }
-
