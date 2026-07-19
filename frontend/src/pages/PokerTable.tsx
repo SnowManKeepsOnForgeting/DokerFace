@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/game';
 import { useAuth } from '../api/auth-context';
+import { createCommandId } from '../api/command-id';
 import type { ActionType } from '../contracts/realtime';
 import { Coins, Shield, Smile, Clock } from 'lucide-react';
 
@@ -145,7 +146,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       state_version: privateSnapshot.state_version,
       action: actionName,
       amount,
-      command_id: window.crypto.randomUUID(),
+      command_id: createCommandId(),
     });
   };
 

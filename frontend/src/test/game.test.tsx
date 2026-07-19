@@ -10,6 +10,7 @@ import { AuthContext } from '../api/auth-context';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import userEvent from '@testing-library/user-event';
 import { socket } from '../api/socket';
+import { createCommandId } from '../api/command-id';
 import { useGameStore } from '../store/game';
 import type { RoomSnapshot } from '../contracts/realtime';
 import '../api/client';
@@ -71,6 +72,25 @@ describe('WaitingRoom and PokerTable Flow', () => {
     useGameStore.getState().resetGame();
   });
   afterAll(() => server.close());
+
+  it('creates a command id when randomUUID is unavailable', () => {
+    const originalCrypto = globalThis.crypto;
+    Object.defineProperty(globalThis, 'crypto', {
+      configurable: true,
+      value: { getRandomValues: (bytes: Uint8Array) => bytes.fill(7) },
+    });
+
+    try {
+      expect(createCommandId()).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', {
+        configurable: true,
+        value: originalCrypto,
+      });
+    }
+  });
 
   it('renders password prompt on password_required acknowledgement', async () => {
     restoreSocket = mockConnectedSocket({ ok: false, error: 'password_required' });
