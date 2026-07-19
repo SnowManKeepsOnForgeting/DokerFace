@@ -132,6 +132,11 @@ class MatchCoordinator:
     def apply_action(self, command: ActionCommand) -> AppliedAction:
         return self.hand.apply_action(command)
 
+    def quit_player(self, account_id: int) -> HandSettlement:
+        if account_id not in self._hand_player_ids:
+            raise MatchStateError("Account is not seated in the current hand")
+        return self.hand.quit_player(account_id)
+
     def public_snapshot(self) -> PublicHandSnapshot:
         return self.hand.public_snapshot()
 
@@ -169,8 +174,10 @@ class MatchCoordinator:
 
     def _match_is_complete(self) -> bool:
         active_count = sum(stack > 0 for stack in self._stacks.values())
+        if active_count <= 1:
+            return True
         if self._rules.end_mode is MatchEndMode.WINNER_TAKES_ALL:
-            return active_count <= 1
+            return False
         return self._hand_number >= (self._rules.fixed_hand_count or 0)
 
 

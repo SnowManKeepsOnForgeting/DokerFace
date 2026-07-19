@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
@@ -18,6 +19,8 @@ from app.game_engine.contracts import (
     PublicHandSnapshot,
 )
 from app.game_engine.match import MatchCoordinator, MatchStatus
+
+logger = logging.getLogger(__name__)
 
 
 class MatchActorStateError(RuntimeError):
@@ -41,6 +44,8 @@ class MatchActorSnapshot:
     hand_number: int
     button_account_id: int
     public: PublicHandSnapshot
+    server_time: datetime
+    actions: tuple[HandActionSnapshot, ...] = ()
     action_deadline_at: datetime | None = None
 
 
@@ -76,6 +81,7 @@ class MatchCommand:
     hand_id: UUID | None = None
     state_version: int | None = None
     source: MatchCommandSource = MatchCommandSource.PLAYER
+    quit: bool = False
 
 
 @dataclass(frozen=True)
@@ -91,6 +97,7 @@ class MatchCommandResult:
     settled_hand_number: int | None = None
     settlement: HandSettlement | None = None
     completed_hand: CompletedHandSnapshot | None = None
+    quit_account_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -135,6 +142,9 @@ class MatchActor:
         self._inflight: dict[UUID, tuple[MatchCommand, asyncio.Future[MatchCommandResult]]] = {}
         self._processed: dict[UUID, tuple[MatchCommand, MatchCommandResult]] = {}
         self._state_version = 0
+        self._automatic_result_handler: Callable[[MatchCommandResult], Awaitable[None]] | None = (
+            None
+        )
 
     async def start(self) -> MatchActorSnapshot:
         if self._task is not None:
@@ -146,6 +156,12 @@ class MatchActor:
         self._task = asyncio.create_task(self._run(), name="dokerface-match-actor")
         self._schedule_action_timer()
         return self.current_snapshot()
+
+    def set_automatic_result_handler(
+        self,
+        handler: Callable[[MatchCommandResult], Awaitable[None]] | None,
+    ) -> None:
+        self._automatic_result_handler = handler
 
     async def submit(self, command: MatchCommand) -> MatchCommandResponse:
         if self._task is None or self._hand_id is None:
@@ -222,6 +238,9 @@ class MatchActor:
             return
         self._cancel_action_timer()
         self._cancel_disconnect_timeout()
+        if self._task is asyncio.current_task():
+            self._queue.put_nowait(None)
+            return
         await self._queue.put(None)
         await self._task
         self._task = None
@@ -248,6 +267,8 @@ class MatchActor:
             hand_id=self._hand_id,
             hand_number=self._coordinator.hand_number,
             button_account_id=self._coordinator.button_account_id,
+            server_time=self._clock(),
+            actions=tuple(self._hand_actions),
             action_deadline_at=self._action_deadline_at,
             public=replace(
                 self._coordinator.public_snapshot(),
@@ -287,6 +308,17 @@ class MatchActor:
             else:
                 self._inflight.pop(command.command_id, None)
                 self._processed[command.command_id] = (command, result)
+                if (
+                    command.source is not MatchCommandSource.PLAYER
+                    and self._automatic_result_handler is not None
+                ):
+                    try:
+                        await self._automatic_result_handler(result)
+                    except Exception:
+                        logger.exception(
+                            "Automatic match result handler failed",
+                            extra={"match_id": str(result.match_id)},
+                        )
                 if not queued.future.done():
                     queued.future.set_result(result)
 
@@ -296,7 +328,14 @@ class MatchActor:
         hand_number = self._coordinator.hand_number
         button_account_id = self._coordinator.button_account_id
         before_action = self._coordinator.public_snapshot()
-        applied = self._coordinator.apply_action(command.action)
+        quit_account_id = command.action.account_id if command.quit else None
+        if command.quit:
+            if command.action.action is not ActionType.FOLD or command.action.amount is not None:
+                raise ValueError("Quit command must use a fold action without an amount")
+            self._coordinator.quit_player(command.action.account_id)
+            applied = AppliedAction(command.action.account_id, ActionType.FOLD, None)
+        else:
+            applied = self._coordinator.apply_action(command.action)
         self._state_version += 1
         self._hand_actions.append(
             HandActionSnapshot(
@@ -313,9 +352,10 @@ class MatchActor:
             state_version=self._state_version,
         )
         if self._coordinator.hand.is_complete():
+            hand_player_ids = self._coordinator.hand_player_ids
             terminal_private = {
                 account_id: self._coordinator.hand.private_snapshot(account_id)
-                for account_id in self._coordinator.player_ids
+                for account_id in hand_player_ids
             }
             blinds = self._coordinator.hand_blinds
             settlement = self._coordinator.settle_hand()
@@ -361,6 +401,7 @@ class MatchActor:
                     settled_hand_number=hand_number,
                     settlement=settlement,
                     completed_hand=completed_hand,
+                    quit_account_id=quit_account_id,
                 )
             self._terminal_snapshot = MatchActorSnapshot(
                 match_id=self._match_id,
@@ -368,6 +409,8 @@ class MatchActor:
                 hand_number=hand_number,
                 button_account_id=button_account_id,
                 public=terminal_public,
+                server_time=self._clock(),
+                actions=tuple(self._hand_actions),
                 action_deadline_at=None,
             )
             self._terminal_private = terminal_private
@@ -386,6 +429,7 @@ class MatchActor:
                 settled_hand_number=hand_number,
                 settlement=settlement,
                 completed_hand=completed_hand,
+                quit_account_id=quit_account_id,
             )
         self._schedule_action_timer()
         return MatchCommandResult(
@@ -396,9 +440,16 @@ class MatchActor:
             state_version=self._state_version,
             match_id=self._match_id,
             hand_id=hand_id,
+            quit_account_id=quit_account_id,
         )
 
     def _validate_current_command(self, command: MatchCommand) -> None:
+        if command.quit and command.source is not MatchCommandSource.PLAYER:
+            raise MatchCommandConflictError("Quit command must come from a player")
+        if command.quit and (
+            command.match_id is None or command.hand_id is None or command.state_version is None
+        ):
+            raise MatchCommandConflictError("Quit command requires match, hand, and state version")
         if command.source is not MatchCommandSource.PLAYER and (
             command.match_id is None or command.hand_id is None or command.state_version is None
         ):

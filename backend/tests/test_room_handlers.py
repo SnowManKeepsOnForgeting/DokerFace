@@ -89,9 +89,9 @@ async def test_join_initializes_runtime_enters_socket_room_and_broadcasts_snapsh
         {"account_id": 1, "ready": False, "seat": None, "connected": True}
     ]
     server.enter_room.assert_awaited_once_with("sid-1", str(room_id))
-    emitted = server.emit.await_args.args
-    assert emitted[0] == "room:snapshot"
-    RoomSnapshot.model_validate(emitted[1])
+    emits = [call.args for call in server.emit.call_args_list]
+    room_snapshot_emit = next(emit for emit in emits if emit[0] == "room:snapshot")
+    RoomSnapshot.model_validate(room_snapshot_emit[1])
 
 
 @pytest.mark.asyncio

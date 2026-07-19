@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -63,11 +64,26 @@ async def test_leaderboard_uses_stable_rating_tiebreakers() -> None:
             completed_matches=1,
         ),
     ]
-    scalar_results = [batch, 2]
-    session.scalar.side_effect = scalar_results
-    result = MagicMock()
-    result.all.return_value = entries
-    session.scalars.return_value = result
+
+    def mock_scalar(statement: Any, *args: Any, **kwargs: Any) -> Any:
+        stmt_str = str(statement)
+        if "rating_batch" in stmt_str:
+            return batch
+        if "count" in stmt_str:
+            return 2
+        return None
+
+    def mock_scalars(statement: Any, *args: Any, **kwargs: Any) -> Any:
+        stmt_str = str(statement)
+        res = MagicMock()
+        if "profile" in stmt_str or "player_statistics" in stmt_str or "rating_change" in stmt_str:
+            res.all.return_value = []
+        else:
+            res.all.return_value = entries
+        return res
+
+    session.scalar.side_effect = mock_scalar
+    session.scalars.side_effect = mock_scalars
     app = build_app(session, make_account(1))
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

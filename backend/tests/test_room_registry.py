@@ -77,6 +77,22 @@ def test_host_leave_transfers_to_the_earliest_remaining_member() -> None:
     assert 1 not in room.members
 
 
+def test_close_removes_room_and_account_membership_indexes() -> None:
+    registry = RoomRegistry()
+    room_id = uuid4()
+    replacement_room_id = uuid4()
+    registry.ensure_room(room_id, host_account_id=1, max_players=2)
+    registry.ensure_room(replacement_room_id, host_account_id=2, max_players=2)
+    registry.join(room_id, account_id=1, sid="sid-1")
+
+    members = registry.close(room_id)
+
+    assert [member.account_id for member in members] == [1]
+    assert registry.get(room_id) is None
+    assert registry.room_for_account(1) is None
+    registry.join(replacement_room_id, account_id=1, sid="sid-1-new")
+
+
 def test_host_leave_removes_an_empty_runtime() -> None:
     registry = RoomRegistry()
     room_id = uuid4()

@@ -137,7 +137,16 @@ class RoomRegistry:
     def remove_if_empty(self, room_id: UUID) -> None:
         room = self._rooms.get(room_id)
         if room is not None and not room.members:
-            self._rooms.pop(room_id, None)
+            self.close(room_id)
+
+    def close(self, room_id: UUID) -> tuple[RoomMember, ...]:
+        """Remove a room and every account index pointing at it."""
+        room = self._rooms.pop(room_id, None)
+        members = tuple(room.members.values()) if room is not None else ()
+        for account_id, current_room_id in tuple(self._account_to_room.items()):
+            if current_room_id == room_id:
+                self._account_to_room.pop(account_id, None)
+        return members
 
     def reset_waiting_state(self, room_id: UUID) -> RoomRuntime:
         room = self._require_room(room_id)

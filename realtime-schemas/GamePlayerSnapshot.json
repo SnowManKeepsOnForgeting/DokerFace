@@ -1,0 +1,48 @@
+{
+  "properties": {
+    "account_id": {
+      "title": "Account Id",
+      "type": "integer"
+    },
+    "seat": {
+      "title": "Seat",
+      "type": "integer"
+    },
+    "display_name": {
+      "title": "Display Name",
+      "type": "string"
+    },
+    "stack": {
+      "title": "Stack",
+      "type": "integer"
+    },
+    "bet": {
+      "title": "Bet",
+      "type": "integer"
+    },
+    "folded": {
+      "title": "Folded",
+      "type": "boolean"
+    },
+    "all_in": {
+      "title": "All In",
+      "type": "boolean"
+    },
+    "connected": {
+      "default": true,
+      "title": "Connected",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "account_id",
+    "seat",
+    "display_name",
+    "stack",
+    "bet",
+    "folded",
+    "all_in"
+  ],
+  "title": "GamePlayerSnapshot",
+  "type": "object"
+}

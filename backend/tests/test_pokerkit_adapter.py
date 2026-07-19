@@ -63,6 +63,27 @@ def test_fold_completes_hand_and_preserves_chip_conservation() -> None:
     assert settlement.final_stacks == (950, 1050)
 
 
+def test_quit_splits_the_quitter_value_by_seat_order_and_returns_other_bets() -> None:
+    adapter = PokerKitAdapter.create_hand(
+        CONFIG,
+        account_ids=(101, 202, 303, 404),
+        starting_stacks=(1000, 1000, 1000, 1000),
+        button_account_id=101,
+    )
+
+    settlement = adapter.quit_player(101)
+
+    assert settlement.final_stacks == (0, 1334, 1333, 1333)
+    assert settlement.payoffs == (-1000, 334, 333, 333)
+    assert settlement.contributions == (0, 50, 100, 0)
+    assert settlement.pots[0].eligible_indices == (1, 2, 3)
+    assert settlement.pots[0].payouts == (0, 334, 333, 333)
+    assert sum(settlement.final_stacks) == 4000
+    assert adapter.public_snapshot().folded == (True, False, False, False)
+    assert adapter.public_snapshot().complete is True
+    assert adapter.private_snapshot(101).legal_actions == ()
+
+
 def test_non_actor_cannot_submit_action() -> None:
     adapter = make_heads_up()
 

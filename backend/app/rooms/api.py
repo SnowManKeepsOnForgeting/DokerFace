@@ -3,7 +3,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
@@ -15,6 +15,7 @@ from app.auth.passwords import PasswordService
 from app.db.dependencies import get_db_session
 from app.rooms.config import RoomRules, RoomVisibility
 from app.rooms.models import Room, RoomStatus
+from app.rooms.registry import RoomRegistry
 
 router = APIRouter(prefix="/api/v1/rooms", tags=["rooms"])
 
@@ -58,13 +59,15 @@ class RoomResponse(BaseModel):
     has_password: bool
     rules: RoomRules
     status: RoomStatus
+    player_count: int
+    spectator_count: int
 
 
 class RoomListResponse(BaseModel):
     items: list[RoomResponse]
 
 
-def to_room_response(room: Room) -> RoomResponse:
+def to_room_response(room: Room, room_registry: RoomRegistry | None = None) -> RoomResponse:
     try:
         rules = RoomRules.model_validate(room.rules)
     except ValueError as error:
@@ -72,6 +75,14 @@ def to_room_response(room: Room) -> RoomResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Stored room rules are invalid",
         ) from error
+
+    player_count = 0
+    spectator_count = 0
+    if room_registry is not None:
+        runtime = room_registry.get(room.room_id)
+        if runtime is not None:
+            player_count = len(runtime.members)
+
     return RoomResponse(
         room_id=room.room_id,
         host_account_id=room.host_account_id,
@@ -80,6 +91,8 @@ def to_room_response(room: Room) -> RoomResponse:
         has_password=room.password_hash is not None,
         rules=rules,
         status=room.status,
+        player_count=player_count,
+        spectator_count=spectator_count,
     )
 
 
@@ -88,6 +101,7 @@ async def create_room(
     payload: CreateRoomRequest,
     account: Annotated[Account, Depends(get_current_account)],
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    request: Request,
 ) -> RoomResponse:
     password_service = PasswordService()
     room = Room(
@@ -103,13 +117,21 @@ async def create_room(
     db_session.add(room)
     await db_session.flush()
     await db_session.commit()
-    return to_room_response(room)
+
+    # Broadcast lobby update
+    socketio_server = getattr(request.app.state, "socketio", None)
+    if socketio_server is not None:
+        await socketio_server.emit("lobby:rooms-updated", {"schema_version": 1})
+
+    room_registry = getattr(request.app.state, "room_registry", None)
+    return to_room_response(room, room_registry)
 
 
 @router.get("", response_model=RoomListResponse)
 async def list_rooms(
     _: Annotated[Account, Depends(get_current_account)],
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    request: Request,
 ) -> RoomListResponse:
     rooms = list(
         (
@@ -120,7 +142,8 @@ async def list_rooms(
             )
         ).all()
     )
-    return RoomListResponse(items=[to_room_response(room) for room in rooms])
+    room_registry = getattr(request.app.state, "room_registry", None)
+    return RoomListResponse(items=[to_room_response(room, room_registry) for room in rooms])
 
 
 @router.get("/{room_id}", response_model=RoomResponse)
@@ -128,6 +151,7 @@ async def get_room(
     room_id: UUID,
     _: Annotated[Account, Depends(get_current_account)],
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    request: Request,
 ) -> RoomResponse:
     try:
         room = await db_session.scalar(select(Room).where(Room.room_id == room_id))
@@ -135,7 +159,8 @@ async def get_room(
         room = None
     if room is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found")
-    return to_room_response(room)
+    room_registry = getattr(request.app.state, "room_registry", None)
+    return to_room_response(room, room_registry)
 
 
 __all__ = ["router"]

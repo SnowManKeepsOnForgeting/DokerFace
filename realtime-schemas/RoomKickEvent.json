@@ -1,0 +1,27 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "room_id": {
+      "format": "uuid",
+      "title": "Room Id",
+      "type": "string"
+    },
+    "target_account_id": {
+      "minimum": 1,
+      "title": "Target Account Id",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "room_id",
+    "target_account_id"
+  ],
+  "title": "RoomKickEvent",
+  "type": "object"
+}

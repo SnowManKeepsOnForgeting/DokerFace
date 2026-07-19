@@ -10,7 +10,8 @@
 	}
 
 	handle {
-		respond "DokerFace backend is running" 200
+		root * /usr/share/caddy
+		try_files {path} /index.html
+		file_server
 	}
 }
-

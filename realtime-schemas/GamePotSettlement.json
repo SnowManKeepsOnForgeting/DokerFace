@@ -1,0 +1,34 @@
+{
+  "properties": {
+    "pot_number": {
+      "title": "Pot Number",
+      "type": "integer"
+    },
+    "amount": {
+      "title": "Pot Amount",
+      "type": "integer"
+    },
+    "eligible_account_ids": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Eligible Account Ids",
+      "type": "array"
+    },
+    "winner_payouts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Winner Payouts",
+      "type": "object"
+    }
+  },
+  "required": [
+    "pot_number",
+    "amount",
+    "eligible_account_ids",
+    "winner_payouts"
+  ],
+  "title": "GamePotSettlement",
+  "type": "object"
+}

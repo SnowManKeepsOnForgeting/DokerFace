@@ -41,6 +41,16 @@ class RoomKickEvent(BaseModel):
     target_account_id: int = Field(ge=1)
 
 
+class RoomKickedEvent(BaseModel):
+    schema_version: Literal[1] = 1
+    room_id: UUID
+    reason: str = "kicked"
+
+
+class LobbyRoomsUpdatedEvent(BaseModel):
+    schema_version: Literal[1] = 1
+
+
 class ChatSendEvent(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -97,6 +107,16 @@ class GameActionEvent(BaseModel):
     amount: int | None = Field(default=None, ge=0)
 
 
+class GameQuitEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    command_id: UUID
+    match_id: UUID
+    hand_id: UUID
+    state_version: int = Field(ge=0)
+
+
 class GameRequestSnapshotEvent(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -131,6 +151,15 @@ class GamePlayerSnapshot(BaseModel):
     connected: bool = True
 
 
+class GameHandActionSnapshot(BaseModel):
+    sequence_no: int
+    state_version: int
+    account_id: int
+    street: str
+    action: ActionType
+    amount: int | None = None
+
+
 class GamePublicSnapshot(BaseModel):
     schema_version: Literal[1] = 1
     match_id: UUID
@@ -144,6 +173,8 @@ class GamePublicSnapshot(BaseModel):
     pot_amounts: list[int]
     complete: bool
     players: list[GamePlayerSnapshot]
+    server_time: datetime
+    actions: list[GameHandActionSnapshot] = []
     action_deadline_at: datetime | None = None
 
 
@@ -185,6 +216,20 @@ class GameHandSettled(BaseModel):
     account_ids: list[int]
     final_stacks: list[int]
     payoffs: list[int]
+    pots: list["GamePotSettlement"] = []
+    shown_hands: list["GameShownHand"] = []
+
+
+class GamePotSettlement(BaseModel):
+    pot_number: int
+    amount: int = Field(title="Pot Amount")
+    eligible_account_ids: list[int]
+    winner_payouts: dict[str, int]
+
+
+class GameShownHand(BaseModel):
+    account_id: int
+    hole_cards: list[str]
 
 
 class GameMatchSettled(BaseModel):
@@ -199,14 +244,20 @@ class GameMatchSettled(BaseModel):
 __all__ = [
     "GameActionEvent",
     "GameActionRejected",
+    "GameHandActionSnapshot",
     "GameHandSettled",
     "GameLegalAction",
     "GameMatchSettled",
     "GamePlayerSnapshot",
+    "GamePotSettlement",
     "GamePrivateSnapshot",
     "GamePublicSnapshot",
+    "GameQuitEvent",
     "GameRequestSnapshotEvent",
+    "GameShownHand",
+    "LobbyRoomsUpdatedEvent",
     "RoomJoinEvent",
+    "RoomKickedEvent",
     "RoomLeaveEvent",
     "RoomMemberSnapshot",
     "RoomReadyEvent",

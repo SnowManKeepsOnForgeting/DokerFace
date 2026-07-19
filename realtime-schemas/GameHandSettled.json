@@ -1,0 +1,133 @@
+{
+  "$defs": {
+    "GamePotSettlement": {
+      "properties": {
+        "pot_number": {
+          "title": "Pot Number",
+          "type": "integer"
+        },
+        "amount": {
+          "title": "Pot Amount",
+          "type": "integer"
+        },
+        "eligible_account_ids": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Eligible Account Ids",
+          "type": "array"
+        },
+        "winner_payouts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Winner Payouts",
+          "type": "object"
+        }
+      },
+      "required": [
+        "pot_number",
+        "amount",
+        "eligible_account_ids",
+        "winner_payouts"
+      ],
+      "title": "GamePotSettlement",
+      "type": "object"
+    },
+    "GameShownHand": {
+      "properties": {
+        "account_id": {
+          "title": "Account Id",
+          "type": "integer"
+        },
+        "hole_cards": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Hole Cards",
+          "type": "array"
+        }
+      },
+      "required": [
+        "account_id",
+        "hole_cards"
+      ],
+      "title": "GameShownHand",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "match_id": {
+      "format": "uuid",
+      "title": "Match Id",
+      "type": "string"
+    },
+    "hand_id": {
+      "format": "uuid",
+      "title": "Hand Id",
+      "type": "string"
+    },
+    "hand_number": {
+      "title": "Hand Number",
+      "type": "integer"
+    },
+    "state_version": {
+      "title": "State Version",
+      "type": "integer"
+    },
+    "account_ids": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Account Ids",
+      "type": "array"
+    },
+    "final_stacks": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Final Stacks",
+      "type": "array"
+    },
+    "payoffs": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Payoffs",
+      "type": "array"
+    },
+    "pots": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/GamePotSettlement"
+      },
+      "title": "Pots",
+      "type": "array"
+    },
+    "shown_hands": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/GameShownHand"
+      },
+      "title": "Shown Hands",
+      "type": "array"
+    }
+  },
+  "required": [
+    "match_id",
+    "hand_id",
+    "hand_number",
+    "state_version",
+    "account_ids",
+    "final_stacks",
+    "payoffs"
+  ],
+  "title": "GameHandSettled",
+  "type": "object"
+}

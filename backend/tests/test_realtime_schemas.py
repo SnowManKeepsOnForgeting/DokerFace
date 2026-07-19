@@ -11,6 +11,7 @@ from app.realtime.schemas import (
     GamePlayerSnapshot,
     GamePrivateSnapshot,
     GamePublicSnapshot,
+    GameQuitEvent,
     GameRequestSnapshotEvent,
     RoomJoinEvent,
     RoomMemberSnapshot,
@@ -65,6 +66,18 @@ def test_game_action_and_snapshot_events_validate_identifiers() -> None:
     assert request.match_id == match_id
 
 
+def test_game_quit_event_requires_current_match_identity() -> None:
+    event = GameQuitEvent(
+        command_id=uuid4(),
+        match_id=uuid4(),
+        hand_id=uuid4(),
+        state_version=3,
+    )
+
+    assert event.schema_version == 1
+    assert event.state_version == 3
+
+
 def test_game_action_rejects_unknown_fields_and_negative_amounts() -> None:
     payload = {
         "command_id": uuid4(),
@@ -94,6 +107,7 @@ def test_public_and_private_snapshot_shapes_keep_hole_cards_private() -> None:
         board=[],
         pot_amounts=[150],
         complete=False,
+        server_time=deadline,
         action_deadline_at=deadline,
         players=[
             GamePlayerSnapshot(
@@ -118,3 +132,4 @@ def test_public_and_private_snapshot_shapes_keep_hole_cards_private() -> None:
     assert private.hole_cards == ["As", "Kd"]
     assert private.action_deadline_at == deadline
     assert public.model_dump(mode="json")["action_deadline_at"] == "2026-07-16T12:30:00Z"
+    assert public.server_time == deadline

@@ -21,7 +21,7 @@ from app.game_engine.actor import (
     MatchCommand,
     MatchCommandConflictError,
 )
-from app.game_engine.contracts import ActionCommand
+from app.game_engine.contracts import ActionCommand, ActionType
 from app.game_engine.match import MatchCoordinator
 from app.matches.persistence import (
     ActionHistory,
@@ -41,14 +41,20 @@ from app.realtime.schemas import (
     EmoteSendEvent,
     GameActionEvent,
     GameActionRejected,
+    GameHandActionSnapshot,
     GameHandSettled,
     GameLegalAction,
     GameMatchSettled,
     GamePlayerSnapshot,
+    GamePotSettlement,
     GamePrivateSnapshot,
     GamePublicSnapshot,
+    GameQuitEvent,
     GameRequestSnapshotEvent,
+    GameShownHand,
+    LobbyRoomsUpdatedEvent,
     RoomJoinEvent,
+    RoomKickedEvent,
     RoomKickEvent,
     RoomLeaveEvent,
     RoomMemberSnapshot,
@@ -93,7 +99,30 @@ def register_room_handlers(
         if room is None or room.status is RoomStatus.CLOSED:
             return _error("room_not_found")
         if room.status is not RoomStatus.WAITING:
-            return _error("room_not_waiting")
+            runtime = registry.get(event.room_id)
+            match = matches.for_room(event.room_id)
+            if (
+                room.status is not RoomStatus.ACTIVE
+                or runtime is None
+                or match is None
+                or account_id not in runtime.members
+            ):
+                return _error("room_not_waiting")
+
+            try:
+                registry.join(event.room_id, account_id=account_id, sid=sid)
+            except RoomRuntimeError as error:
+                return _error(_runtime_error_code(error))
+
+            await server.enter_room(sid, str(event.room_id))
+            response = await _broadcast_room_snapshot(
+                server,
+                runtime,
+                RoomStatus.ACTIVE,
+                match_id=match.match_id,
+            )
+            await _broadcast_game_snapshots(server, runtime, match, target_sid=sid)
+            return response
         if room.visibility is RoomVisibility.INVITE:
             return _error("invitation_required")
         if room.visibility is RoomVisibility.PASSWORD:
@@ -160,6 +189,8 @@ def register_room_handlers(
         if was_last_member:
             await _set_room_status(app, event.room_id, RoomStatus.CLOSED)
             registry.remove_if_empty(event.room_id)
+            lobby_payload = LobbyRoomsUpdatedEvent().model_dump(mode="json")
+            await server.emit("lobby:rooms-updated", lobby_payload)
             return {
                 "ok": True,
                 "room": room_snapshot_payload(runtime, RoomStatus.CLOSED),
@@ -188,6 +219,12 @@ def register_room_handlers(
         if target.account_id == runtime.host_account_id:
             return _error("cannot_kick_host")
         try:
+            # Emit room:kicked event to the target before leaving
+            kicked_payload = RoomKickedEvent(room_id=event.room_id, reason="kicked").model_dump(
+                mode="json"
+            )
+            await server.emit("room:kicked", kicked_payload, to=target.sid)
+
             registry.leave(event.room_id, target.account_id)
         except RoomRuntimeError as error:
             return _error(_runtime_error_code(error))
@@ -294,7 +331,6 @@ def register_room_handlers(
             match_id=match_id,
             decision_timeout_seconds=rules.decision_timeout_seconds,
         )
-        await actor.start()
         players = tuple(
             MatchPlayer(
                 account_id=account_id,
@@ -306,6 +342,22 @@ def register_room_handlers(
         for player in players:
             runtime.members[player.account_id].seat = player.seat
         match = matches.add(MatchRuntime(event.room_id, match_id, actor, players))
+
+        async def handle_automatic_result(result: Any) -> None:
+            await _handle_match_result(
+                server,
+                app,
+                history,
+                ratings,
+                statistics,
+                registry,
+                matches,
+                match,
+                result,
+            )
+
+        actor.set_automatic_result_handler(handle_automatic_result)
+        await actor.start()
         try:
             await _persist_match_start(
                 app,
@@ -375,33 +427,92 @@ def register_room_handlers(
 
         result = response.result
         if not response.replayed:
-            if result.completed_hand is not None:
-                try:
-                    await _persist_completed_hand(
-                        app,
-                        history,
-                        ratings,
-                        statistics,
-                        match,
-                        result,
-                    )
-                except Exception:
-                    await _void_persistence_failure(app, history, match)
-                    await matches.remove(match)
-                    registry.reset_waiting_state(match.room_id)
-                    await _set_room_status(app, match.room_id, RoomStatus.WAITING)
-                    await _broadcast_room_snapshot(server, room_runtime, RoomStatus.WAITING)
-                    return await _reject(server, sid, "match_persistence_failed", event)
-            _schedule_disconnected_timeout(room_runtime, match)
-            await _broadcast_game_snapshots(server, room_runtime, match)
-            if result.settlement is not None and result.settled_hand_id is not None:
-                await _emit_hand_settled(server, match, result)
-            if result.match_status.value == "complete":
-                await _emit_match_settled(server, match, result)
-                await matches.remove(match)
-                registry.reset_waiting_state(match.room_id)
-                await _set_room_status(app, match.room_id, RoomStatus.WAITING)
-                await _broadcast_room_snapshot(server, room_runtime, RoomStatus.WAITING)
+            processed = await _handle_match_result(
+                server,
+                app,
+                history,
+                ratings,
+                statistics,
+                registry,
+                matches,
+                match,
+                result,
+            )
+            if not processed:
+                return await _reject(server, sid, "match_persistence_failed", event)
+        return {
+            "ok": True,
+            "command_id": str(result.command_id),
+            "match_id": str(result.match_id),
+            "hand_id": str(result.hand_id),
+            "state_version": result.state_version,
+            "replayed": response.replayed,
+        }
+
+    @server.on("game:quit")
+    async def game_quit(sid: str, data: Any) -> dict[str, Any]:
+        event = _parse_event(GameQuitEvent, data)
+        if event is None:
+            return _error("invalid_payload")
+        account_id = await _account_id_for_sid(server, sid)
+        if account_id is None:
+            return _error("authentication_required")
+        match = matches.for_match(event.match_id)
+        if match is None:
+            return _error("match_not_found")
+        room_runtime = registry.get(match.room_id)
+        if room_runtime is None:
+            return _error("room_not_found")
+        member = room_runtime.members.get(account_id)
+        if member is None or member.sid != sid:
+            return _error("not_a_member")
+        try:
+            match.player(account_id)
+            response = await match.actor.submit(
+                MatchCommand(
+                    command_id=event.command_id,
+                    action=ActionCommand(account_id, ActionType.FOLD),
+                    match_id=event.match_id,
+                    hand_id=event.hand_id,
+                    state_version=event.state_version,
+                    quit=True,
+                )
+            )
+        except (MatchRuntimeError, MatchCommandConflictError, ValueError) as error:
+            return await _reject(server, sid, _game_error_code(error), event)
+
+        result = response.result
+        if not response.replayed:
+            processed = await _handle_match_result(
+                server,
+                app,
+                history,
+                ratings,
+                statistics,
+                registry,
+                matches,
+                match,
+                result,
+            )
+            if not processed:
+                return await _reject(server, sid, "match_persistence_failed", event)
+
+            try:
+                registry.leave(match.room_id, account_id)
+            except RoomRuntimeError as error:
+                return _error(_runtime_error_code(error))
+            await server.leave_room(sid, str(match.room_id))
+            room_status = (
+                RoomStatus.WAITING if result.match_status.value == "complete" else RoomStatus.ACTIVE
+            )
+            await _set_room_host(app, match.room_id, room_runtime.host_account_id)
+            await _broadcast_room_snapshot(
+                server,
+                room_runtime,
+                room_status,
+                match_id=match.match_id if room_status is RoomStatus.ACTIVE else None,
+            )
+
         return {
             "ok": True,
             "command_id": str(result.command_id),
@@ -501,6 +612,52 @@ async def _persist_match_start(
             end_mode=end_mode,
             players=players,
         )
+
+
+async def _handle_match_result(
+    server: Any,
+    app: FastAPI,
+    history: MatchHistoryPersistenceService,
+    ratings: RatingService,
+    statistics: StatisticsPersistenceService,
+    registry: RoomRegistry,
+    matches: MatchRegistry,
+    match: MatchRuntime,
+    result: Any,
+) -> bool:
+    room_runtime = registry.get(match.room_id)
+    if room_runtime is None:
+        return False
+
+    if result.completed_hand is not None:
+        try:
+            await _persist_completed_hand(
+                app,
+                history,
+                ratings,
+                statistics,
+                match,
+                result,
+            )
+        except Exception:
+            await _void_persistence_failure(app, history, match)
+            await matches.remove(match)
+            registry.reset_waiting_state(match.room_id)
+            await _set_room_status(app, match.room_id, RoomStatus.WAITING)
+            await _broadcast_room_snapshot(server, room_runtime, RoomStatus.WAITING)
+            return False
+
+    _schedule_disconnected_timeout(room_runtime, match)
+    if result.settlement is not None and result.settled_hand_id is not None:
+        await _emit_hand_settled(server, room_runtime, match, result)
+    await _broadcast_game_snapshots(server, room_runtime, match)
+    if result.match_status.value == "complete":
+        await _emit_match_settled(server, room_runtime, match, result)
+        await matches.remove(match)
+        registry.reset_waiting_state(match.room_id)
+        await _set_room_status(app, match.room_id, RoomStatus.WAITING)
+        await _broadcast_room_snapshot(server, room_runtime, RoomStatus.WAITING)
+    return True
 
 
 async def _persist_completed_hand(
@@ -754,6 +911,11 @@ async def _broadcast_room_snapshot(
 ) -> dict[str, Any]:
     payload = room_snapshot_payload(runtime, status, match_id=match_id)
     await server.emit("room:snapshot", payload, room=str(runtime.room_id))
+
+    # Broadcast lobby update to all connected clients
+    lobby_payload = LobbyRoomsUpdatedEvent().model_dump(mode="json")
+    await server.emit("lobby:rooms-updated", lobby_payload)
+
     return {"ok": True, "room": payload}
 
 
@@ -848,7 +1010,10 @@ async def _broadcast_game_snapshots(
     else:
         await server.emit("game:public-snapshot", public_payload, to=target_sid)
 
+    active_account_ids = set(actor_snapshot.public.account_ids)
     for player in match.players:
+        if player.account_id not in active_account_ids:
+            continue
         member = room_runtime.members.get(player.account_id)
         if member is None or (target_sid is not None and member.sid != target_sid):
             continue
@@ -896,6 +1061,18 @@ def _public_snapshot_payload(
         pot_amounts=list(public.pot_amounts),
         complete=public.complete,
         players=players,
+        server_time=snapshot.server_time,
+        actions=[
+            GameHandActionSnapshot(
+                sequence_no=action.sequence_no,
+                state_version=action.state_version,
+                account_id=action.account_id,
+                street=action.street,
+                action=action.action,
+                amount=action.amount,
+            )
+            for action in snapshot.actions
+        ],
         action_deadline_at=snapshot.action_deadline_at,
     ).model_dump(mode="json")
 
@@ -927,23 +1104,68 @@ def _schedule_disconnected_timeout(room_runtime: RoomRuntime, match: MatchRuntim
         match.actor.schedule_disconnect_timeout(account_id)
 
 
-async def _emit_hand_settled(server: Any, match: MatchRuntime, result: Any) -> None:
+async def _emit_hand_settled(
+    server: Any,
+    room_runtime: RoomRuntime,
+    match: MatchRuntime,
+    result: Any,
+) -> None:
     settlement = result.settlement
-    if settlement is None or result.settled_hand_id is None or result.settled_hand_number is None:
+    completed = result.completed_hand
+    if (
+        settlement is None
+        or completed is None
+        or result.settled_hand_id is None
+        or result.settled_hand_number is None
+    ):
         return
+    account_ids = list(completed.public.account_ids)
+    pots = [
+        GamePotSettlement(
+            pot_number=index + 1,
+            amount=pot.amount,
+            eligible_account_ids=[
+                account_ids[player_index] for player_index in pot.eligible_indices
+            ],
+            winner_payouts={
+                str(account_ids[player_index]): payout
+                for player_index, payout in enumerate(pot.payouts)
+                if payout
+            },
+        )
+        for index, pot in enumerate(settlement.pots)
+    ]
+    shown_accounts = {
+        action.account_id for action in completed.actions if action.action.value == "show"
+    }
     payload = GameHandSettled(
         match_id=match.match_id,
         hand_id=result.settled_hand_id,
         hand_number=result.settled_hand_number,
         state_version=result.state_version,
-        account_ids=list(match.actor.coordinator.player_ids),
+        account_ids=account_ids,
         final_stacks=list(settlement.final_stacks),
         payoffs=list(settlement.payoffs),
+        pots=pots,
+        shown_hands=[
+            GameShownHand(
+                account_id=account_id,
+                hole_cards=list(completed.private_snapshots[account_id].hole_cards),
+            )
+            for account_id in account_ids
+            if account_id in shown_accounts and account_id in completed.private_snapshots
+        ],
     ).model_dump(mode="json")
-    await server.emit("game:hand-settled", payload, room=str(match.room_id))
+    for member in room_runtime.members.values():
+        await server.emit("game:hand-settled", payload, to=member.sid)
 
 
-async def _emit_match_settled(server: Any, match: MatchRuntime, result: Any) -> None:
+async def _emit_match_settled(
+    server: Any,
+    room_runtime: RoomRuntime,
+    match: MatchRuntime,
+    result: Any,
+) -> None:
     settlement = result.settlement
     if settlement is None:
         return
@@ -951,17 +1173,21 @@ async def _emit_match_settled(server: Any, match: MatchRuntime, result: Any) -> 
         match_id=match.match_id,
         state_version=result.state_version,
         account_ids=list(match.actor.coordinator.player_ids),
-        final_stacks=list(settlement.final_stacks),
+        final_stacks=[
+            match.actor.coordinator.stacks[account_id]
+            for account_id in match.actor.coordinator.player_ids
+        ],
         status=result.match_status.value,
     ).model_dump(mode="json")
-    await server.emit("game:match-settled", payload, room=str(match.room_id))
+    for member in room_runtime.members.values():
+        await server.emit("game:match-settled", payload, to=member.sid)
 
 
 async def _reject(
     server: Any,
     sid: str,
     error: str,
-    event: GameActionEvent | None = None,
+    event: GameActionEvent | GameQuitEvent | None = None,
 ) -> dict[str, Any]:
     payload = GameActionRejected(
         command_id=event.command_id if event is not None else None,

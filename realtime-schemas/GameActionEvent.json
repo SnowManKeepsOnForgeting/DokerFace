@@ -1,0 +1,69 @@
+{
+  "$defs": {
+    "ActionType": {
+      "enum": [
+        "fold",
+        "check_or_call",
+        "bet_or_raise",
+        "show",
+        "muck"
+      ],
+      "title": "ActionType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "command_id": {
+      "format": "uuid",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "match_id": {
+      "format": "uuid",
+      "title": "Match Id",
+      "type": "string"
+    },
+    "hand_id": {
+      "format": "uuid",
+      "title": "Hand Id",
+      "type": "string"
+    },
+    "state_version": {
+      "minimum": 0,
+      "title": "State Version",
+      "type": "integer"
+    },
+    "action": {
+      "$ref": "#/$defs/ActionType"
+    },
+    "amount": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Amount"
+    }
+  },
+  "required": [
+    "command_id",
+    "match_id",
+    "hand_id",
+    "state_version",
+    "action"
+  ],
+  "title": "GameActionEvent",
+  "type": "object"
+}

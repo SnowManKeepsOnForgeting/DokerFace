@@ -91,3 +91,21 @@ def test_hand_must_be_settled_before_starting_another() -> None:
 
     with pytest.raises(MatchStateError):
         coordinator.start_hand()
+
+
+def test_quit_removes_player_from_the_next_hand_and_preserves_chips() -> None:
+    config = rules().model_copy(update={"max_players": 3})
+    coordinator = MatchCoordinator((1, 2, 3), config)
+    coordinator.start_hand()
+
+    settlement = coordinator.quit_player(1)
+    assert sum(settlement.final_stacks) == 3000
+    coordinator.settle_hand()
+
+    assert coordinator.status is MatchStatus.ACTIVE
+    assert coordinator.stacks[1] == 0
+    coordinator.start_hand()
+    assert coordinator.hand_player_ids == (2, 3)
+    assert (
+        sum(coordinator.public_snapshot().stacks) + sum(coordinator.public_snapshot().bets) == 3000
+    )

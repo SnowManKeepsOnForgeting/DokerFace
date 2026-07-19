@@ -1,0 +1,64 @@
+{
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "message_id": {
+      "format": "uuid",
+      "title": "Message Id",
+      "type": "string"
+    },
+    "room_id": {
+      "format": "uuid",
+      "title": "Room Id",
+      "type": "string"
+    },
+    "account_id": {
+      "title": "Account Id",
+      "type": "integer"
+    },
+    "message_type": {
+      "enum": [
+        "text",
+        "quick",
+        "custom_quick"
+      ],
+      "title": "Message Type",
+      "type": "string"
+    },
+    "content": {
+      "title": "Content",
+      "type": "string"
+    },
+    "target_account_id": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target Account Id"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "message_id",
+    "room_id",
+    "account_id",
+    "message_type",
+    "content",
+    "created_at"
+  ],
+  "title": "ChatMessagePayload",
+  "type": "object"
+}

@@ -1,0 +1,35 @@
+{
+  "properties": {
+    "account_id": {
+      "title": "Account Id",
+      "type": "integer"
+    },
+    "ready": {
+      "title": "Ready",
+      "type": "boolean"
+    },
+    "seat": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Seat"
+    },
+    "connected": {
+      "default": true,
+      "title": "Connected",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "account_id",
+    "ready"
+  ],
+  "title": "RoomMemberSnapshot",
+  "type": "object"
+}

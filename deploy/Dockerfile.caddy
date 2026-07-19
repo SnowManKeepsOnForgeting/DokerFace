@@ -1,0 +1,20 @@
+# Stage 1: Build the frontend
+FROM node:20-slim AS frontend-builder
+WORKDIR /app
+
+# Enable corepack for pnpm
+RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+
+# Copy package lockfiles
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Copy source code and build
+COPY frontend/ ./
+RUN pnpm run build
+
+# Stage 2: Caddy server
+FROM caddy:2.10-alpine
+COPY --from=frontend-builder /app/dist /usr/share/caddy
+COPY deploy/Caddyfile /etc/caddy/Caddyfile
+EXPOSE 80

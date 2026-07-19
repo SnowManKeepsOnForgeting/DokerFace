@@ -71,6 +71,8 @@ class PokerKitAdapter:
         self._account_to_index = {account_id: index for index, account_id in enumerate(account_ids)}
         self._starting_stacks = starting_stacks
         self._manual_dealing = manual_dealing
+        self._quit_settlement: HandSettlement | None = None
+        self._quit_player_index: int | None = None
 
     @property
     def starting_stacks(self) -> tuple[int, ...]:
@@ -169,7 +171,9 @@ class PokerKitAdapter:
     def private_snapshot(self, account_id: int) -> PrivateHandSnapshot:
         player_index = self._player_index(account_id)
         legal_actions: tuple[LegalAction, ...] = ()
-        if self._state.actor_index == player_index or self._state.showdown_index == player_index:
+        if self._quit_settlement is None and (
+            self._state.actor_index == player_index or self._state.showdown_index == player_index
+        ):
             legal_actions = self.legal_actions(account_id)
         return PrivateHandSnapshot(
             public=self.public_snapshot(),
@@ -230,7 +234,60 @@ class PokerKitAdapter:
             return AppliedAction(command.account_id, command.action, command.amount)
         raise InvalidActionError(f"Unsupported action {command.action}")
 
+    def quit_player(self, account_id: int) -> HandSettlement:
+        """Forfeit one player's current table value and end the hand.
+
+        A quit is intentionally outside PokerKit's turn-based action API. The
+        quitter loses both the uncommitted stack and any chips already in the
+        current betting area. Other players' current bets are returned before
+        the forfeited value is split in seat order.
+        """
+        if self._quit_settlement is not None or self._state.status is False:
+            raise InvalidActionError("Hand is already complete")
+
+        player_index = self._player_index(account_id)
+        recipients = tuple(i for i in range(len(self._account_ids)) if i != player_index)
+        if not recipients:
+            raise InvalidActionError("A quit requires another seated player")
+
+        stacks = [
+            stack + bet for stack, bet in zip(self._state.stacks, self._state.bets, strict=True)
+        ]
+        forfeited_amount = stacks[player_index]
+        stacks[player_index] = 0
+        quotient, remainder = divmod(forfeited_amount, len(recipients))
+        payouts = [0] * len(self._account_ids)
+        for recipient_order, recipient_index in enumerate(recipients):
+            payouts[recipient_index] = quotient + int(recipient_order < remainder)
+            stacks[recipient_index] += payouts[recipient_index]
+
+        settlement = HandSettlement(
+            final_stacks=tuple(stacks),
+            payoffs=tuple(
+                final_stack - starting_stack
+                for final_stack, starting_stack in zip(
+                    stacks,
+                    self._starting_stacks,
+                    strict=True,
+                )
+            ),
+            contributions=tuple(self._state.bets),
+            pots=(
+                PotSettlement(
+                    amount=forfeited_amount,
+                    eligible_indices=recipients,
+                    payouts=tuple(payouts),
+                ),
+            ),
+        )
+        self._quit_settlement = settlement
+        self._quit_player_index = player_index
+        return settlement
+
     def public_snapshot(self) -> PublicHandSnapshot:
+        if self._quit_settlement is not None:
+            return self._quit_public_snapshot()
+
         actor_index = cast(int | None, self._state.turn_index)
         actor_account_id = self._account_ids[actor_index] if actor_index is not None else None
         street: str
@@ -260,9 +317,11 @@ class PokerKitAdapter:
         )
 
     def is_complete(self) -> bool:
-        return not self._state.status
+        return self._quit_settlement is not None or not self._state.status
 
     def settlement(self) -> HandSettlement:
+        if self._quit_settlement is not None:
+            return self._quit_settlement
         if not self.is_complete():
             raise ValueError("Hand is not complete")
         contributions = [0] * len(self._account_ids)
@@ -292,6 +351,32 @@ class PokerKitAdapter:
             payoffs=tuple(self._state.payoffs),
             contributions=tuple(contributions),
             pots=pots,
+        )
+
+    def _quit_public_snapshot(self) -> PublicHandSnapshot:
+        settlement = self._quit_settlement
+        player_index = self._quit_player_index
+        if settlement is None or player_index is None:
+            raise InvalidActionError("Quit settlement is not available")
+        return PublicHandSnapshot(
+            account_ids=self._account_ids,
+            stacks=settlement.final_stacks,
+            bets=(0,) * len(self._account_ids),
+            board=tuple(self._card_code(card) for card in self._state.get_board_cards(0)),
+            folded=tuple(
+                index == player_index or not status
+                for index, status in enumerate(self._state.statuses)
+            ),
+            all_in=tuple(
+                index != player_index and stack == 0 and status
+                for index, (stack, status) in enumerate(
+                    zip(self._state.stacks, self._state.statuses, strict=True)
+                )
+            ),
+            pot_amounts=(),
+            actor_account_id=None,
+            street="settlement",
+            complete=True,
         )
 
     def _player_index(self, account_id: int) -> int:

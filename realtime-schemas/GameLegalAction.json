@@ -1,0 +1,49 @@
+{
+  "$defs": {
+    "ActionType": {
+      "enum": [
+        "fold",
+        "check_or_call",
+        "bet_or_raise",
+        "show",
+        "muck"
+      ],
+      "title": "ActionType",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "action": {
+      "$ref": "#/$defs/ActionType"
+    },
+    "min_amount": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Min Amount"
+    },
+    "max_amount": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Amount"
+    }
+  },
+  "required": [
+    "action"
+  ],
+  "title": "GameLegalAction",
+  "type": "object"
+}

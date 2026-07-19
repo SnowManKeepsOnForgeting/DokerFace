@@ -110,7 +110,7 @@ def _visible_hole_cards(
     return list(player.hole_cards) if player.hole_cards is not None else None
 
 
-def _to_match_player_response(player: MatchPlayerRecord) -> MatchPlayerHistoryResponse:
+def to_match_player_response(player: MatchPlayerRecord) -> MatchPlayerHistoryResponse:
     return MatchPlayerHistoryResponse(
         account_id=player.account_id,
         seat=player.seat,
@@ -171,7 +171,7 @@ def _to_hand_response(hand: HandRecord, viewer_account_id: int) -> HandHistoryRe
     )
 
 
-def _to_match_summary(match: MatchRecord) -> MatchSummaryResponse:
+def to_match_summary(match: MatchRecord) -> MatchSummaryResponse:
     return MatchSummaryResponse(
         match_id=match.match_id,
         room_id=match.room_id,
@@ -180,7 +180,7 @@ def _to_match_summary(match: MatchRecord) -> MatchSummaryResponse:
         started_at=match.started_at,
         completed_at=match.completed_at,
         void_reason=match.void_reason,
-        players=[_to_match_player_response(player) for player in match.players],
+        players=[to_match_player_response(player) for player in match.players],
     )
 
 
@@ -225,7 +225,7 @@ async def list_player_matches(
         ).all()
     )
     return MatchListResponse(
-        items=[_to_match_summary(match) for match in matches],
+        items=[to_match_summary(match) for match in matches],
         total=int(total or 0),
         offset=offset,
         limit=limit,
@@ -243,7 +243,7 @@ async def get_match_history(
     )
     if match is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
-    summary = _to_match_summary(match)
+    summary = to_match_summary(match)
     return MatchHistoryResponse(
         **summary.model_dump(),
         hands=[_to_hand_response(hand, account.account_id) for hand in match.hands],
@@ -270,4 +270,10 @@ async def get_hand_history(
     return _to_hand_response(hand, account.account_id)
 
 
-__all__ = ["router"]
+__all__ = [
+    "MatchPlayerHistoryResponse",
+    "MatchSummaryResponse",
+    "router",
+    "to_match_player_response",
+    "to_match_summary",
+]
