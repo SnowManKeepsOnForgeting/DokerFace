@@ -1,1 +1,149 @@
 # DokerFace
+
+English | [中文](README_zh.md)
+
+DokerFace is a server-authoritative no-limit Texas Hold'em platform for 2-8 players. The project
+consists of a FastAPI/Socket.IO backend, React frontend, PostgreSQL database, and Caddy reverse
+proxy.
+
+## Repository Layout
+
+- `backend/`: Python 3.12 backend, Alembic migrations, and tests
+- `frontend/`: React + TypeScript + Vite frontend
+- `deploy/`: Docker Compose, Caddy, backup, and restore scripts
+- `Feature.md`, `Architecture.md`, `Frontend.md`: product and technical design documents
+
+## Deploy with Docker Compose
+
+### Prerequisites
+
+- Docker Engine and Docker Compose v2
+- A Linux host with 2 vCPUs and 4 GB RAM is recommended for production
+- An application port (default `8080`) available; PostgreSQL binds to `127.0.0.1:5432` by default
+
+### First Deployment
+
+From the repository root, create the environment file:
+
+```bash
+cp deploy/.env.example deploy/.env
+```
+
+Edit `deploy/.env` and replace at least these sensitive values:
+
+```dotenv
+POSTGRES_PASSWORD=use-a-strong-random-password
+DOKERFACE_BOOTSTRAP_ADMIN_LOGIN=admin
+DOKERFACE_BOOTSTRAP_ADMIN_PASSWORD=use-a-strong-random-password
+```
+
+Start PostgreSQL, wait for its health check, apply migrations, and start the API and Caddy:
+
+```bash
+docker compose --env-file deploy/.env -f deploy/compose.yml up -d postgres
+docker compose --env-file deploy/.env -f deploy/compose.yml run --build --rm api alembic upgrade head
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d api caddy
+```
+
+Endpoints:
+
+- Web/API entry point: <http://localhost:8080>
+- Liveness: <http://localhost:8080/api/v1/health/live>
+- Database readiness: <http://localhost:8080/api/v1/health/ready>
+
+On the first startup, the bootstrap credentials create an administrator only when no administrator
+exists in the database. They do not overwrite an existing administrator.
+
+### Updating a Deployment
+
+After pulling a version that includes new migrations, upgrade the database before starting the new
+images:
+
+```bash
+docker compose --env-file deploy/.env -f deploy/compose.yml run --build --rm api alembic upgrade head
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d api caddy
+```
+
+Inspect service status and logs:
+
+```bash
+docker compose --env-file deploy/.env -f deploy/compose.yml ps
+docker compose --env-file deploy/.env -f deploy/compose.yml logs -f api
+```
+
+Stop services while preserving database data:
+
+```bash
+docker compose --env-file deploy/.env -f deploy/compose.yml down
+```
+
+Do not use `down -v` unless you intend to delete the PostgreSQL data volume.
+
+### Backups and Restore
+
+The backup script creates a compressed PostgreSQL dump and SHA-256 sidecar file, retaining the
+newest 14 backups by default:
+
+```bash
+KEEP_COUNT=14 deploy/backup.sh
+sha256sum -c deploy/backups/*.sql.gz.sha256
+```
+
+Backups are written to `deploy/backups/`, which is ignored by Git. A typical nightly cron entry is:
+
+```cron
+15 3 * * * cd /srv/dokerface && /srv/dokerface/deploy/backup.sh >> /var/log/dokerface-backup.log 2>&1
+```
+
+Restore replaces the current database contents and requires explicit confirmation. Stop the API and
+Caddy first:
+
+```bash
+docker compose --env-file deploy/.env -f deploy/compose.yml stop api caddy
+CONFIRM_RESTORE=yes deploy/restore.sh deploy/backups/dokerface-YYYYMMDDTHHMMSSZ.sql.gz
+docker compose --env-file deploy/.env -f deploy/compose.yml start api caddy
+```
+
+### Production Notes
+
+- Never commit `deploy/.env` or use the example passwords.
+- Change the bootstrap administrator password after the first login.
+- Run only one API worker initially because active rooms and matches are held in API process memory.
+- Compose configures container log rotation (10 MiB per file, five files); host-level log shipping is
+  the deployment operator's responsibility.
+
+## Local Development
+
+The backend requires Python 3.12 and uv:
+
+```bash
+cd backend
+uv sync --dev
+uv run uvicorn app.main:app --reload
+```
+
+The API prefix is `/api/v1`. Run backend quality checks with:
+
+```bash
+uv run --locked ruff format .
+uv run --locked ruff check .
+uv run --locked pyright
+uv run --locked pytest -q
+```
+
+For frontend development:
+
+```bash
+cd frontend
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+The frontend dev server runs at <http://localhost:5173> by default. Include that origin in
+`DOKERFACE_CORS_ORIGINS` when connecting to a local API.
+
+## License and Product Documentation
+
+This is currently a private project. Product constraints, architecture boundaries, and the frontend
+roadmap are defined in `Feature.md`, `Architecture.md`, and `Frontend.md`.
