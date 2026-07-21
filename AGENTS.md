@@ -76,6 +76,7 @@ Completed and committed:
   rating reset, and current-batch replay after match voiding.
 - Waiting-room host transfer/kick policy, public chat/quick phrases/custom phrases, and emote events.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
+- One-command Compose startup with a one-shot Alembic migration dependency before the API.
 - PostgreSQL backup/restore scripts, container log rotation, and backend GitHub Actions quality checks.
 
 Backend implementation commit:
@@ -304,8 +305,8 @@ Deployment files:
 
 - `backend/Dockerfile`: production image using Python 3.12, uv, locked production dependencies,
   a non-root user, and one Uvicorn worker.
-- `deploy/compose.yml`: PostgreSQL, API, and Caddy services with health checks and persistent
-  volumes.
+- `deploy/compose.yml`: PostgreSQL, one-shot database migration, API, and Caddy services with
+  ordered health checks and persistent volumes.
 - `deploy/Caddyfile`: API and future Socket.IO reverse proxy.
 - `deploy/.env.example`: local Compose settings and bootstrap administrator placeholders.
 - `deploy/backup.sh` and `deploy/restore.sh`: compressed PostgreSQL backup and explicitly confirmed

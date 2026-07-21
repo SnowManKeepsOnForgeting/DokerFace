@@ -37,13 +37,14 @@ DOKERFACE_BOOTSTRAP_ADMIN_LOGIN=admin
 DOKERFACE_BOOTSTRAP_ADMIN_PASSWORD=use-a-strong-random-password
 ```
 
-Start PostgreSQL, wait for its health check, apply migrations, and start the API and Caddy:
+Build and start the stack:
 
 ```bash
-docker compose --env-file deploy/.env -f deploy/compose.yml up -d postgres
-docker compose --env-file deploy/.env -f deploy/compose.yml run --build --rm api alembic upgrade head
-docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d api caddy
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
 ```
+
+The one-shot `migrate` service waits for PostgreSQL and applies all pending Alembic migrations.
+The API starts only after the migration completes successfully.
 
 Endpoints:
 
@@ -56,20 +57,23 @@ exists in the database. They do not overwrite an existing administrator.
 
 ### Updating a Deployment
 
-After pulling a version that includes new migrations, upgrade the database before starting the new
-images:
+After pulling a new version, rebuild and start the stack with the same command. The migration step
+is safe when no migrations are pending:
 
 ```bash
-docker compose --env-file deploy/.env -f deploy/compose.yml run --build --rm api alembic upgrade head
-docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d api caddy
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
 ```
 
 Inspect service status and logs:
 
 ```bash
-docker compose --env-file deploy/.env -f deploy/compose.yml ps
+docker compose --env-file deploy/.env -f deploy/compose.yml ps -a
+docker compose --env-file deploy/.env -f deploy/compose.yml logs migrate
 docker compose --env-file deploy/.env -f deploy/compose.yml logs -f api
 ```
+
+The `migrate` container showing `Exited (0)` is expected; it is a one-shot task rather than a
+long-running service.
 
 Stop services while preserving database data:
 
@@ -101,7 +105,7 @@ Caddy first:
 ```bash
 docker compose --env-file deploy/.env -f deploy/compose.yml stop api caddy
 CONFIRM_RESTORE=yes deploy/restore.sh deploy/backups/dokerface-YYYYMMDDTHHMMSSZ.sql.gz
-docker compose --env-file deploy/.env -f deploy/compose.yml start api caddy
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
 ```
 
 ### Production Notes

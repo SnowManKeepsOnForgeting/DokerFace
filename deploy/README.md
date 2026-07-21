@@ -1,16 +1,19 @@
 # Docker deployment
 
-Create a local environment file, start PostgreSQL, apply migrations, and start the stack:
+Create a local environment file, then build and start the stack:
 
 ```bash
 cp deploy/.env.example deploy/.env
-docker compose --env-file deploy/.env -f deploy/compose.yml up -d postgres
-docker compose --env-file deploy/.env -f deploy/compose.yml run --build --rm api alembic upgrade head
-docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d api caddy
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
 ```
 
-Run `alembic upgrade head` again after pulling a commit that adds a database migration, before
-starting the API with the new image.
+The one-shot `migrate` service waits for PostgreSQL, applies all pending Alembic migrations, and
+must complete successfully before the API starts. Use the same command after pulling a new version;
+it is safe when no migrations are pending.
+
+Inspect the migration result with `docker compose --env-file deploy/.env -f deploy/compose.yml ps -a`
+and `docker compose --env-file deploy/.env -f deploy/compose.yml logs migrate`. An `Exited (0)`
+status is expected after a successful migration.
 
 The reverse proxy listens on <http://localhost:8080>. PostgreSQL is bound to
 `127.0.0.1:5432` for local development and is not exposed on external network interfaces.
@@ -44,7 +47,7 @@ To restore, stop the API and reverse proxy first, then explicitly confirm the de
 ```bash
 docker compose --env-file deploy/.env -f deploy/compose.yml stop api caddy
 CONFIRM_RESTORE=yes deploy/restore.sh deploy/backups/dokerface-20260716T030000Z.sql.gz
-docker compose --env-file deploy/.env -f deploy/compose.yml start api caddy
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
 ```
 
 The PostgreSQL, API, and Caddy containers use Docker's `json-file` log driver with a 10 MiB file

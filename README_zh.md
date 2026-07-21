@@ -36,13 +36,14 @@ DOKERFACE_BOOTSTRAP_ADMIN_LOGIN=admin
 DOKERFACE_BOOTSTRAP_ADMIN_PASSWORD=使用高强度随机密码
 ```
 
-启动数据库，等待数据库健康检查通过，然后执行迁移并启动 API 与 Caddy：
+构建并启动整个服务栈：
 
 ```bash
-docker compose --env-file deploy/.env -f deploy/compose.yml up -d postgres
-docker compose --env-file deploy/.env -f deploy/compose.yml run --build --rm api alembic upgrade head
-docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d api caddy
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
 ```
+
+一次性的 `migrate` 服务会等待 PostgreSQL 就绪并应用所有尚未执行的 Alembic 迁移。
+只有迁移成功后 API 才会启动。
 
 访问地址：
 
@@ -56,19 +57,21 @@ docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d api ca
 
 ### 更新部署
 
-拉取包含新迁移的版本后，先构建临时 API 容器并升级数据库，再启动新版本服务：
+拉取新版本后，使用同一条命令重新构建并启动服务。没有待执行迁移时，该迁移步骤也是安全的：
 
 ```bash
-docker compose --env-file deploy/.env -f deploy/compose.yml run --build --rm api alembic upgrade head
-docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d api caddy
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
 ```
 
 查看服务状态和日志：
 
 ```bash
-docker compose --env-file deploy/.env -f deploy/compose.yml ps
+docker compose --env-file deploy/.env -f deploy/compose.yml ps -a
+docker compose --env-file deploy/.env -f deploy/compose.yml logs migrate
 docker compose --env-file deploy/.env -f deploy/compose.yml logs -f api
 ```
+
+`migrate` 容器显示为 `Exited (0)` 属于正常情况；它是一次性任务，而不是常驻服务。
 
 停止服务但保留数据库数据：
 
@@ -99,7 +102,7 @@ sha256sum -c deploy/backups/*.sql.gz.sha256
 ```bash
 docker compose --env-file deploy/.env -f deploy/compose.yml stop api caddy
 CONFIRM_RESTORE=yes deploy/restore.sh deploy/backups/dokerface-YYYYMMDDTHHMMSSZ.sql.gz
-docker compose --env-file deploy/.env -f deploy/compose.yml start api caddy
+docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
 ```
 
 ### 生产环境注意事项

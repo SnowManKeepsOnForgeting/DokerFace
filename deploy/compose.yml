@@ -6,6 +6,21 @@ x-default-logging: &default-logging
     max-size: "10m"
     max-file: "5"
 
+x-api: &api
+  image: dokerface-api
+  build:
+    context: ../backend
+    dockerfile: Dockerfile
+  logging: *default-logging
+  environment:
+    DOKERFACE_ENVIRONMENT: ${DOKERFACE_ENVIRONMENT:-development}
+    DOKERFACE_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-dokerface}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dokerface}
+    DOKERFACE_CORS_ORIGINS: ${DOKERFACE_CORS_ORIGINS:-["http://localhost:5173","http://localhost:8080"]}
+    DOKERFACE_SESSION_COOKIE_NAME: ${DOKERFACE_SESSION_COOKIE_NAME:-dokerface_session}
+    DOKERFACE_SESSION_TTL_HOURS: ${DOKERFACE_SESSION_TTL_HOURS:-720}
+    DOKERFACE_BOOTSTRAP_ADMIN_LOGIN: ${DOKERFACE_BOOTSTRAP_ADMIN_LOGIN:-}
+    DOKERFACE_BOOTSTRAP_ADMIN_PASSWORD: ${DOKERFACE_BOOTSTRAP_ADMIN_PASSWORD:-}
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -26,23 +41,20 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  api:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    logging: *default-logging
-    environment:
-      DOKERFACE_ENVIRONMENT: ${DOKERFACE_ENVIRONMENT:-development}
-      DOKERFACE_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-dokerface}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dokerface}
-      DOKERFACE_CORS_ORIGINS: ${DOKERFACE_CORS_ORIGINS:-["http://localhost:5173","http://localhost:8080"]}
-      DOKERFACE_SESSION_COOKIE_NAME: ${DOKERFACE_SESSION_COOKIE_NAME:-dokerface_session}
-      DOKERFACE_SESSION_TTL_HOURS: ${DOKERFACE_SESSION_TTL_HOURS:-720}
-      DOKERFACE_BOOTSTRAP_ADMIN_LOGIN: ${DOKERFACE_BOOTSTRAP_ADMIN_LOGIN:-}
-      DOKERFACE_BOOTSTRAP_ADMIN_PASSWORD: ${DOKERFACE_BOOTSTRAP_ADMIN_PASSWORD:-}
+  migrate:
+    <<: *api
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
     depends_on:
       postgres:
         condition: service_healthy
+
+  api:
+    <<: *api
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
