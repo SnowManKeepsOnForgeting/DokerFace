@@ -13,7 +13,7 @@ import {
   listAuditLogsApiV1AdminAuditLogsGet,
 } from '../contracts/rest';
 import type { AccountRole, AccountStatus } from '../contracts/rest/types.gen';
-import type { AuditLogResponse } from '../contracts/rest/types.gen';
+import type { AdminAccountListResponse, AuditLogResponse } from '../contracts/rest/types.gen';
 import {
   Users,
   Shield,
@@ -26,6 +26,7 @@ import {
   Eye,
   EyeOff,
   Search,
+  Trash2,
 } from 'lucide-react';
 
 const errorMessage = (error: unknown, fallback: string): string =>
@@ -145,7 +146,20 @@ export function AdminConsole() {
         body: args.payload,
         throwOnError: true,
       }),
-    onSuccess: () => {
+    onSuccess: (_data, args) => {
+      if (args.payload.status === 'deleted') {
+        queryClient.setQueryData<AdminAccountListResponse | undefined>(
+          ['admin-accounts'],
+          (current) =>
+            current
+              ? {
+                  ...current,
+                  items: current.items.filter((account) => account.account_id !== args.accountId),
+                  total: Math.max(0, current.total - 1),
+                }
+              : current,
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ['admin-accounts'] });
       queryClient.invalidateQueries({ queryKey: ['admin-audits'] });
     },
@@ -366,7 +380,6 @@ export function AdminConsole() {
                             >
                               <option value="active">Active</option>
                               <option value="disabled">Disabled</option>
-                              <option value="deleted">Deleted</option>
                             </select>
                           </td>
                           <td className="py-3 px-4 text-right space-x-2">
@@ -379,6 +392,22 @@ export function AdminConsole() {
                               className="h-8 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700/50 text-[10px] font-bold uppercase transition-all cursor-pointer"
                             >
                               Reset Pass
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="Delete account"
+                              title="Delete account"
+                              onClick={() => {
+                                if (confirm(`Delete account ${acc.login_name}?`)) {
+                                  updateAccountMutation.mutate({
+                                    accountId: acc.account_id,
+                                    payload: { status: 'deleted' },
+                                  });
+                                }
+                              }}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded border border-rose-900/50 bg-rose-950/30 text-rose-400 transition-all hover:bg-rose-900/50 hover:text-rose-300 cursor-pointer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </td>
                         </tr>

@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
@@ -101,6 +102,27 @@ async def test_admin_api_disables_account() -> None:
     assert response.status_code == 200
     assert response.json()["status"] == "disabled"
     assert session.commit.await_count == 1
+
+
+async def test_admin_api_list_accounts_hides_deleted_accounts_by_default() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    admin = make_account(account_id=1, login_name="admin", role=AccountRole.ADMINISTRATOR)
+    active = make_account(account_id=2, login_name="alice", role=AccountRole.PLAYER)
+    active.created_at = datetime(2026, 7, 16, 12, 0, tzinfo=UTC)
+    result = MagicMock()
+    result.all.return_value = [active]
+    session.scalar.return_value = 1
+    session.scalars.return_value = result
+    app = build_app(session, admin)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/v1/admin/accounts")
+
+    assert response.status_code == 200
+    assert response.json()["total"] == 1
+    assert [item["account_id"] for item in response.json()["items"]] == [2]
+    assert "accounts.status !=" in str(session.scalar.call_args.args[0])
+    assert "accounts.status !=" in str(session.scalars.call_args.args[0])
 
 
 async def test_admin_api_resets_password() -> None:

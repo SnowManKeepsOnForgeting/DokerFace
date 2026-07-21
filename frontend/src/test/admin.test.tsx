@@ -109,6 +109,7 @@ describe('AdminConsole Page Interactions', () => {
     let capturedCreatePayload: Record<string, unknown> | null = null;
     let capturedResetPayload: Record<string, unknown> | null = null;
     let capturedPatchPayload: Record<string, unknown> | null = null;
+    let deletedAccountId: number | null = null;
     let closedRoomId: string | null = null;
     let voidedMatchId: string | null = null;
 
@@ -126,7 +127,13 @@ describe('AdminConsole Page Interactions', () => {
         );
       }),
       http.get('http://localhost:8080/api/v1/admin/accounts', () => {
-        return HttpResponse.json(mockAccounts, { status: 200 });
+        const visibleAccounts = mockAccounts.items.filter(
+          (account) => account.account_id !== deletedAccountId,
+        );
+        return HttpResponse.json(
+          { ...mockAccounts, items: visibleAccounts, total: visibleAccounts.length },
+          { status: 200 },
+        );
       }),
       http.post('http://localhost:8080/api/v1/admin/accounts', async ({ request }) => {
         capturedCreatePayload = (await request.json()) as Record<string, unknown>;
@@ -141,6 +148,9 @@ describe('AdminConsole Page Interactions', () => {
       ),
       http.patch('http://localhost:8080/api/v1/admin/accounts/2', async ({ request }) => {
         capturedPatchPayload = (await request.json()) as Record<string, unknown>;
+        if (capturedPatchPayload.status === 'deleted') {
+          deletedAccountId = 2;
+        }
         return HttpResponse.json({ ok: true }, { status: 200 });
       }),
       http.get('http://localhost:8080/api/v1/admin/rooms', () => {
@@ -232,23 +242,33 @@ describe('AdminConsole Page Interactions', () => {
     const bobRoleSelect = bobRow.querySelector('select')!;
     await userEvent.selectOptions(bobRoleSelect, 'administrator');
     await waitFor(() => expect(capturedPatchPayload).not.toBeNull());
-    const patchPayload = requirePayload(capturedPatchPayload);
-    expect(patchPayload.role).toBe('administrator');
+    const rolePatchPayload = requirePayload(capturedPatchPayload);
+    expect(rolePatchPayload.role).toBe('administrator');
 
-    // 5. Navigate to Active Rooms tab and Close room
+    // 5. Delete account and verify it leaves the console
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    const bobRowForDelete = screen.getByText('Bob Player').closest('tr')!;
+    const bobDeleteButton = bobRowForDelete.querySelector('button[aria-label="Delete account"]')!;
+    await userEvent.click(bobDeleteButton);
+    await waitFor(() => expect(deletedAccountId).toBe(2));
+    await waitFor(() => expect(screen.queryByText('Bob Player')).not.toBeInTheDocument());
+    const deletePatchPayload = requirePayload(capturedPatchPayload);
+    expect(deletePatchPayload.status).toBe('deleted');
+
+    // 6. Navigate to Active Rooms tab and Close room
     const roomsTab = screen.getByText('Active Rooms');
     await userEvent.click(roomsTab);
 
     await waitFor(() => expect(screen.getByText('Active Room 1')).toBeInTheDocument());
 
     const closeBtn = screen.getByText('Close Table');
-    const originalConfirm = window.confirm;
     window.confirm = () => true;
 
     await userEvent.click(closeBtn);
     await waitFor(() => expect(closedRoomId).toBe('room-1'));
 
-    // 6. Navigate to Match Logs tab and Void match
+    // 7. Navigate to Match Logs tab and Void match
     const matchesTab = screen.getByText('Match Logs');
     await userEvent.click(matchesTab);
 
@@ -258,13 +278,13 @@ describe('AdminConsole Page Interactions', () => {
     await userEvent.click(voidBtn);
     await waitFor(() => expect(voidedMatchId).toBe('match-1'));
 
-    // 7. Navigate to Chat Audits tab
+    // 8. Navigate to Chat Audits tab
     const chatsTab = screen.getByText('Chat Audits');
     await userEvent.click(chatsTab);
 
     await waitFor(() => expect(screen.getByText('Hello table')).toBeInTheDocument());
 
-    // 8. Navigate to Audit Logs tab and expand JSON viewer
+    // 9. Navigate to Audit Logs tab and expand JSON viewer
     const auditsTab = screen.getByText('Audit Logs');
     await userEvent.click(auditsTab);
 

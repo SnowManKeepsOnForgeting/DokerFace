@@ -308,6 +308,9 @@ async def list_accounts(
     if status is not None:
         query = query.where(Account.status == status)
         count_query = count_query.where(Account.status == status)
+    else:
+        query = query.where(Account.status != AccountStatus.DELETED)
+        count_query = count_query.where(Account.status != AccountStatus.DELETED)
 
     total = await db_session.scalar(count_query) or 0
     accounts = list(
