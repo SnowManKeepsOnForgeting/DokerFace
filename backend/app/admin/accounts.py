@@ -140,7 +140,12 @@ class AccountAdminService:
             raise AccountManagementError("Login name and password are required")
 
         existing_account = await db_session.scalar(
-            select(Account).where(Account.login_name == login_name).limit(1)
+            select(Account)
+            .where(
+                Account.login_name == login_name,
+                Account.status != AccountStatus.DELETED,
+            )
+            .limit(1)
         )
         if existing_account is not None:
             raise AccountAlreadyExistsError("Login name is already in use")

@@ -104,6 +104,32 @@ async def test_account_admin_service_rejects_duplicate_login_name() -> None:
     db_session.commit.assert_not_awaited()
 
 
+async def test_account_admin_service_reuses_deleted_login_name() -> None:
+    db_session = AsyncMock(spec=AsyncSession)
+
+    async def assign_identity() -> None:
+        assert db_session.add.call_args is not None
+        account = cast(Account, db_session.add.call_args.args[0])
+        account.account_id = 4
+        account.status = AccountStatus.ACTIVE
+
+    db_session.scalar.side_effect = [None, None, None]
+    db_session.flush.side_effect = assign_identity
+
+    account = await AccountAdminService().create_account(
+        db_session,
+        make_administrator(),
+        login_name="alice",
+        password="player password",
+    )
+
+    assert account.account_id == 4
+    assert account.login_name == "alice"
+    assert account.status is AccountStatus.ACTIVE
+    assert "accounts.status !=" in str(db_session.scalar.call_args_list[0].args[0])
+    db_session.commit.assert_awaited_once()
+
+
 async def test_account_admin_service_rejects_non_administrator() -> None:
     db_session = AsyncMock(spec=AsyncSession)
     player = make_administrator()

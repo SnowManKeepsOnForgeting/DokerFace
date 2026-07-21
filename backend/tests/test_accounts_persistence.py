@@ -420,5 +420,23 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             with pytest.raises(IntegrityError):
                 await session.commit()
             await session.rollback()
+
+            deleted_history = Account(
+                login_name="archived-login",
+                password_hash="deleted-hash",
+                status=AccountStatus.DELETED,
+                profile=Profile(display_name="Archived", avatar_text="Archived"),
+            )
+            session.add(deleted_history)
+            await session.commit()
+
+            replacement = Account(
+                login_name="archived-login",
+                password_hash="replacement-hash",
+                profile=Profile(display_name="Replacement", avatar_text="Replacement"),
+            )
+            session.add(replacement)
+            await session.commit()
+            assert replacement.account_id != deleted_history.account_id
     finally:
         await engine.dispose()

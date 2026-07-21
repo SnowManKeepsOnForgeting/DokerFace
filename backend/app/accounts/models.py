@@ -11,10 +11,12 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     String,
     Uuid,
     func,
+    text,
 )
 from sqlalchemy import (
     Enum as SqlEnum,
@@ -55,13 +57,21 @@ account_status_enum = SqlEnum(
 
 class Account(Base):
     __tablename__ = "accounts"
+    __table_args__ = (
+        Index(
+            "uq_accounts_login_name_non_deleted",
+            "login_name",
+            unique=True,
+            postgresql_where=text("status IN ('active', 'disabled')"),
+        ),
+    )
 
     account_id: Mapped[int] = mapped_column(
         Integer,
         Identity(start=1, increment=1),
         primary_key=True,
     )
-    login_name: Mapped[str] = mapped_column(String(), nullable=False, unique=True)
+    login_name: Mapped[str] = mapped_column(String(), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(), nullable=False)
     role: Mapped[AccountRole] = mapped_column(
         account_role_enum,

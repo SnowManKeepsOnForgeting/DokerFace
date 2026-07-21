@@ -72,13 +72,12 @@ async def login(
     account = await db_session.scalar(
         select(Account)
         .options(selectinload(Account.profile))
-        .where(Account.login_name == payload.login_name)
+        .where(
+            Account.login_name == payload.login_name,
+            Account.status == AccountStatus.ACTIVE,
+        )
     )
-    if (
-        account is None
-        or account.status is not AccountStatus.ACTIVE
-        or not PasswordService().verify(payload.password, account.password_hash)
-    ):
+    if account is None or not PasswordService().verify(payload.password, account.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     account.last_login_at = datetime.now(UTC)

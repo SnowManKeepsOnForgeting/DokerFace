@@ -309,7 +309,8 @@ emote:received
 ## 8. 身份与权限
 
 - `account_id` 使用 PostgreSQL identity/bigserial，从 1 递增且永久不变。
-- 登录名唯一，显示昵称可重复。
+- 未删除账户的登录名唯一，显示昵称可重复；软删除账户的登录名可由新账户重新使用，旧账户的
+  `account_id` 和历史关联保留。
 - 密码使用 Argon2 哈希，不设置额外复杂度规则。
 - 登录成功后签发随机不可预测的 opaque session token。
 - 浏览器只保存 `HttpOnly + Secure + SameSite=Lax` Cookie；数据库只保存 token 哈希。

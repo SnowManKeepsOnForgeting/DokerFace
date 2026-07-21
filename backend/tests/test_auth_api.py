@@ -91,7 +91,7 @@ async def test_login_rejects_bad_credentials(password: str) -> None:
 @pytest.mark.asyncio
 async def test_login_rejects_disabled_accounts() -> None:
     session = AsyncMock(spec=AsyncSession)
-    session.scalar.return_value = make_account(status=AccountStatus.DISABLED)
+    session.scalar.return_value = None
     app = build_app(session)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -101,6 +101,22 @@ async def test_login_rejects_disabled_accounts() -> None:
         )
 
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_login_query_targets_active_account_when_deleted_history_shares_login_name() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    session.scalar.return_value = make_account()
+    app = build_app(session)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/auth/login",
+            json={"login_name": "alice", "password": "correct password"},
+        )
+
+    assert response.status_code == 200
+    assert "accounts.status =" in str(session.scalar.call_args.args[0])
 
 
 @pytest.mark.asyncio
