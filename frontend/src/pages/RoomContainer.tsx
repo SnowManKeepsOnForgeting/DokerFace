@@ -8,7 +8,8 @@ import { KeyRound, AlertTriangle, ArrowLeft } from 'lucide-react';
 export function RoomContainer() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const { currentRoom, joinRoom, leaveRoom, status, lastCommandError } = useGameStore();
+  const { currentRoom, joinRoom, leaveRoom, status, lastCommandError, matchSettled } =
+    useGameStore();
 
   const returnToLobby = () => navigate('/');
 
@@ -218,7 +219,7 @@ export function RoomContainer() {
         </div>
       )}
 
-      {currentRoom?.status === 'active' ? (
+      {currentRoom?.status === 'active' || matchSettled ? (
         <PokerTable roomId={roomId!} onLeave={returnToLobby} />
       ) : (
         <WaitingRoom roomId={roomId!} onLeave={returnToLobby} />

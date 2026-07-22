@@ -644,4 +644,131 @@ describe('WaitingRoom and PokerTable Flow', () => {
       vi.useRealTimers();
     }
   });
+
+  it('keeps the match settlement visible after the room returns to waiting', async () => {
+    const matchId = '00000000-0000-4000-8000-000000000002';
+    restoreSocket = mockConnectedSocket({
+      ok: true,
+      room: {
+        room_id: roomId,
+        host_account_id: 1,
+        status: 'active',
+        members: [
+          { account_id: 1, ready: true, seat: 0, connected: true },
+          { account_id: 2, ready: true, seat: 1, connected: true },
+        ],
+        match_id: matchId,
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={[`/rooms/${roomId}`]}>
+        <QueryClientProvider
+          client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+        >
+          <AuthContext.Provider
+            value={{
+              user: {
+                account_id: 1,
+                login_name: 'alice',
+                role: 'player',
+                status: 'active',
+                display_name: 'Alice',
+              },
+              isLoading: false,
+              login: async () => ({
+                account_id: 1,
+                login_name: 'alice',
+                role: 'player',
+                status: 'active',
+                display_name: 'Alice',
+              }),
+              logout: async () => {},
+              refetch: async () => {},
+            }}
+          >
+            <Routes>
+              <Route path="/rooms/:roomId" element={<RoomContainer />} />
+            </Routes>
+          </AuthContext.Provider>
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(useGameStore.getState().currentRoom?.status).toBe('active'));
+
+    const socketForTest = socket as unknown as {
+      listeners: (event: string) => Array<(payload: unknown) => void>;
+    };
+    act(() => {
+      socketForTest.listeners('game:private-snapshot').forEach((listener) =>
+        listener({
+          schema_version: 1,
+          match_id: matchId,
+          hand_id: '00000000-0000-4000-8000-000000000003',
+          hand_number: 1,
+          state_version: 1,
+          street: 'preflop',
+          button_account_id: 1,
+          actor_account_id: 2,
+          board: [],
+          pot_amounts: [100],
+          complete: true,
+          players: [
+            {
+              account_id: 1,
+              seat: 0,
+              display_name: 'Alice',
+              stack: 1100,
+              bet: 0,
+              folded: false,
+              all_in: false,
+              connected: true,
+            },
+            {
+              account_id: 2,
+              seat: 1,
+              display_name: 'Bob',
+              stack: 900,
+              bet: 0,
+              folded: false,
+              all_in: false,
+              connected: true,
+            },
+          ],
+          server_time: '2026-07-17T00:00:00Z',
+          actions: [],
+          action_deadline_at: null,
+          account_id: 1,
+          hole_cards: ['As', 'Kd'],
+          legal_actions: [],
+        }),
+      );
+      socketForTest.listeners('game:match-settled').forEach((listener) =>
+        listener({
+          schema_version: 1,
+          match_id: matchId,
+          state_version: 1,
+          account_ids: [1, 2],
+          final_stacks: [1100, 900],
+          status: 'complete',
+        }),
+      );
+      socketForTest.listeners('room:snapshot').forEach((listener) =>
+        listener({
+          schema_version: 1,
+          room_id: roomId,
+          host_account_id: 1,
+          status: 'waiting',
+          members: [
+            { account_id: 1, ready: false, seat: null, connected: true },
+            { account_id: 2, ready: false, seat: null, connected: true },
+          ],
+        }),
+      );
+    });
+
+    expect(await screen.findByText('Match Completed')).toBeInTheDocument();
+    expect(screen.queryByText('Waiting Room')).not.toBeInTheDocument();
+  });
 });
