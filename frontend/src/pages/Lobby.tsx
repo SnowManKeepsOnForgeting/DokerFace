@@ -47,6 +47,7 @@ export function Lobby() {
   const [smallBlind, setSmallBlind] = useState(10);
   const [bigBlind, setBigBlind] = useState(20);
   const [ante, setAnte] = useState(0);
+  const [decisionTimeoutMode, setDecisionTimeoutMode] = useState<'timed' | 'unlimited'>('timed');
   const [decisionTimeout, setDecisionTimeout] = useState(30);
   const [blindIncrease, setBlindIncrease] = useState(10);
   const [winnerShow, setWinnerShow] = useState(true);
@@ -128,7 +129,7 @@ export function Lobby() {
       setValidationError('Ante must be non-negative and up to 50,000');
       return;
     }
-    if (decisionTimeout < 10 || decisionTimeout > 300) {
+    if (decisionTimeoutMode === 'timed' && (decisionTimeout < 10 || decisionTimeout > 300)) {
       setValidationError('Decision timeout must be between 10 and 300 seconds');
       return;
     }
@@ -149,7 +150,7 @@ export function Lobby() {
         small_blind: smallBlind,
         big_blind: bigBlind,
         ante,
-        decision_timeout_seconds: decisionTimeout,
+        decision_timeout_seconds: decisionTimeoutMode === 'unlimited' ? null : decisionTimeout,
         blind_increase_every_hands: blindIncrease,
         show_remaining_board: false,
         winner_may_show_hand: winnerShow,
@@ -518,14 +519,45 @@ export function Lobby() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 mb-2">
-                      Decision Timeout (10-300s)
+                      Decision Time
                     </label>
-                    <input
-                      type="number"
-                      value={decisionTimeout}
-                      onChange={(e) => setDecisionTimeout(parseInt(e.target.value) || 30)}
-                      className="w-full h-10 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-lg px-3 text-sm text-slate-100 outline-none"
-                    />
+                    <div className="flex h-10 gap-2">
+                      <button
+                        type="button"
+                        aria-pressed={decisionTimeoutMode === 'timed'}
+                        onClick={() => setDecisionTimeoutMode('timed')}
+                        className={`flex-1 rounded-lg border text-xs font-semibold transition-all ${
+                          decisionTimeoutMode === 'timed'
+                            ? 'border-purple-500/30 bg-purple-600/10 text-purple-400'
+                            : 'border-slate-800 bg-slate-950/20 text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        Timed
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={decisionTimeoutMode === 'unlimited'}
+                        onClick={() => setDecisionTimeoutMode('unlimited')}
+                        className={`flex-1 rounded-lg border text-xs font-semibold transition-all ${
+                          decisionTimeoutMode === 'unlimited'
+                            ? 'border-purple-500/30 bg-purple-600/10 text-purple-400'
+                            : 'border-slate-800 bg-slate-950/20 text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        Unlimited
+                      </button>
+                    </div>
+                    {decisionTimeoutMode === 'timed' && (
+                      <input
+                        type="number"
+                        min={10}
+                        max={300}
+                        value={decisionTimeout}
+                        aria-label="Decision timeout seconds"
+                        onChange={(e) => setDecisionTimeout(parseInt(e.target.value) || 30)}
+                        className="mt-2 w-full h-10 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-lg px-3 text-sm text-slate-100 outline-none"
+                      />
+                    )}
                   </div>
                 </div>
               </div>

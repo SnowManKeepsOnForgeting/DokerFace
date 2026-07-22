@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, beforeAll, afterEach, afterAll, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -107,5 +108,68 @@ describe('Lobby View and Interactions', () => {
 
     await waitFor(() => expect(screen.getByText('Updated Room Name')).toBeInTheDocument());
     expect(screen.getByText('4 / 8 players')).toBeInTheDocument();
+  });
+
+  it('creates a room with unlimited decision time as null', async () => {
+    let requestBody: { rules: { decision_timeout_seconds: number | null } } | undefined;
+
+    server.use(
+      http.get('http://localhost:8080/api/v1/me', () => {
+        return HttpResponse.json(
+          {
+            account_id: 1,
+            login_name: 'alice',
+            role: 'player',
+            status: 'active',
+            display_name: 'Alice',
+          },
+          { status: 200 },
+        );
+      }),
+      http.get('http://localhost:8080/api/v1/rooms', () => {
+        return HttpResponse.json(mockRooms, { status: 200 });
+      }),
+      http.post('http://localhost:8080/api/v1/rooms', async ({ request }) => {
+        requestBody = (await request.json()) as typeof requestBody;
+        return HttpResponse.json(
+          {
+            ...mockRooms.items[0],
+            room_id: 'room-created',
+            name: "Alice's Room",
+            rules: {
+              ...mockRooms.items[0].rules,
+              decision_timeout_seconds: null,
+            },
+          },
+          { status: 201 },
+        );
+      }),
+    );
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Lobby />
+          </AuthProvider>
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByText('Standard Room')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: 'Create Table' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Unlimited' }));
+
+    expect(
+      screen.queryByRole('spinbutton', { name: 'Decision timeout seconds' }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open Table' }));
+
+    await waitFor(() => expect(requestBody?.rules.decision_timeout_seconds).toBeNull());
   });
 });
