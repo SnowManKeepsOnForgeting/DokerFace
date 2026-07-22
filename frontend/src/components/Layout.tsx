@@ -33,7 +33,7 @@ export function Layout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
+    <div className="flex h-dvh w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4">
         <div className="flex items-center gap-3 px-2 py-4 mb-6">
@@ -93,8 +93,8 @@ export function Layout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="flex md:hidden items-center justify-between h-16 bg-slate-900 border-b border-slate-800 px-4">
+      <div className="flex-1 flex min-h-0 flex-col min-w-0 overflow-hidden">
+        <header className="flex md:hidden shrink-0 items-center justify-between h-16 bg-slate-900 border-b border-slate-800 px-4">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded bg-purple-600 text-white font-bold text-sm">
               D
@@ -108,11 +108,11 @@ export function Layout({ children }: { children: ReactNode }) {
           )}
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-950">
-          <div className="max-w-7xl mx-auto h-full flex flex-col">{children}</div>
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6 bg-slate-950">
+          <div className="max-w-7xl mx-auto min-h-full lg:h-full flex flex-col">{children}</div>
         </main>
 
-        <nav className="flex md:hidden bg-slate-900 border-t border-slate-800 h-16 items-center justify-around px-2">
+        <nav className="flex md:hidden shrink-0 bg-slate-900 border-t border-slate-800 h-16 items-center justify-around px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (

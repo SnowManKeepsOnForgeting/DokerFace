@@ -196,6 +196,11 @@ describe('WaitingRoom and PokerTable Flow', () => {
     await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
     expect(screen.getByText('Not Ready')).toBeInTheDocument();
 
+    const waitingRoom = screen.getByTestId('waiting-room');
+    expect(waitingRoom).not.toHaveClass('overflow-hidden');
+    expect(waitingRoom).toHaveClass('lg:overflow-hidden');
+    expect(waitingRoom).not.toHaveClass('h-[calc(100vh-80px)]');
+
     const readyBtn = screen.getByText('Set Ready');
     await userEvent.click(readyBtn);
   });
