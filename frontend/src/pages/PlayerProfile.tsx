@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../api/auth-context';
 import { ApiError } from '../api/client';
@@ -10,6 +10,7 @@ import {
   updateMyProfileApiV1MeProfilePatch,
   listPlayerMatchesApiV1PlayersAccountIdMatchesGet,
   getMatchHistoryApiV1MatchesMatchIdGet,
+  changePasswordApiV1MeChangePasswordPost,
 } from '../contracts/rest';
 import type {
   ActionHistoryResponse,
@@ -29,11 +30,13 @@ import {
   ChevronDown,
   ChevronUp,
   Award,
+  KeyRound,
 } from 'lucide-react';
 
 export function PlayerProfile() {
   const { playerId } = useParams<{ playerId: string }>();
   const { user: currentUser, refetch: refetchAuth } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const accountId = parseInt(playerId || '0');
@@ -48,6 +51,10 @@ export function PlayerProfile() {
   const [editAvatarText, setEditAvatarText] = useState('');
   const [editAvatarColor, setEditAvatarColor] = useState('#4f46e5');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   // Queries
   const {
@@ -112,6 +119,22 @@ export function PlayerProfile() {
     },
   });
 
+  const changePasswordMutation = useMutation<void, ApiError>({
+    mutationFn: async () => {
+      await changePasswordApiV1MeChangePasswordPost({
+        body: { current_password: currentPassword, new_password: newPassword },
+        throwOnError: true,
+      });
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      navigate('/login', { replace: true });
+    },
+    onError: (err) => {
+      setPasswordError(err.message || 'Failed to change password');
+    },
+  });
+
   // Open edit mode with prefilled values
   const handleStartEdit = () => {
     if (!player) return;
@@ -145,6 +168,20 @@ export function PlayerProfile() {
       avatar_text: editAvatarText.trim(),
       avatar_background_color: editAvatarColor,
     });
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    if (!currentPassword || !newPassword) {
+      setPasswordError('Current and new passwords are required');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+    changePasswordMutation.mutate();
   };
 
   if (isPlayerLoading) {
@@ -304,6 +341,67 @@ export function PlayerProfile() {
                 </button>
               </div>
             </div>
+          </form>
+        </section>
+      )}
+
+      {isOwnProfile && (
+        <section className="border-y border-slate-800/80 py-6">
+          <div className="mb-4 flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-purple-400" />
+            <h3 className="text-sm font-bold uppercase text-purple-400">Account Security</h3>
+          </div>
+
+          {passwordError && (
+            <div
+              role="alert"
+              className="mb-4 max-w-2xl rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-400"
+            >
+              {passwordError}
+            </div>
+          )}
+
+          <form
+            onSubmit={handleChangePassword}
+            className="grid max-w-4xl grid-cols-1 items-end gap-4 md:grid-cols-4"
+          >
+            <label className="text-xs font-semibold text-slate-400">
+              Current Password
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+                className="mt-2 h-10 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 text-sm text-slate-100 outline-none focus:border-purple-500/50"
+              />
+            </label>
+            <label className="text-xs font-semibold text-slate-400">
+              New Password
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                className="mt-2 h-10 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 text-sm text-slate-100 outline-none focus:border-purple-500/50"
+              />
+            </label>
+            <label className="text-xs font-semibold text-slate-400">
+              Confirm New Password
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                className="mt-2 h-10 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 text-sm text-slate-100 outline-none focus:border-purple-500/50"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={changePasswordMutation.isPending}
+              className="h-10 rounded-lg bg-purple-600 px-4 text-xs font-bold uppercase text-white transition-colors hover:bg-purple-500 disabled:cursor-wait disabled:opacity-60"
+            >
+              {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
+            </button>
           </form>
         </section>
       )}

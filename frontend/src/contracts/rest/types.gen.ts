@@ -271,6 +271,20 @@ export type AuditLogResponse = {
 };
 
 /**
+ * ChangePasswordRequest
+ */
+export type ChangePasswordRequest = {
+    /**
+     * Current Password
+     */
+    current_password: string;
+    /**
+     * New Password
+     */
+    new_password: string;
+};
+
+/**
  * CreateAccountRequest
  */
 export type CreateAccountRequest = {
@@ -1265,6 +1279,31 @@ export type LogoutApiV1AuthLogoutPostResponses = {
 };
 
 export type LogoutApiV1AuthLogoutPostResponse = LogoutApiV1AuthLogoutPostResponses[keyof LogoutApiV1AuthLogoutPostResponses];
+
+export type ChangePasswordApiV1MeChangePasswordPostData = {
+    body: ChangePasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/change-password';
+};
+
+export type ChangePasswordApiV1MeChangePasswordPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ChangePasswordApiV1MeChangePasswordPostError = ChangePasswordApiV1MeChangePasswordPostErrors[keyof ChangePasswordApiV1MeChangePasswordPostErrors];
+
+export type ChangePasswordApiV1MeChangePasswordPostResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type ChangePasswordApiV1MeChangePasswordPostResponse = ChangePasswordApiV1MeChangePasswordPostResponses[keyof ChangePasswordApiV1MeChangePasswordPostResponses];
 
 export type CurrentUserApiV1MeGetData = {
     body?: never;
