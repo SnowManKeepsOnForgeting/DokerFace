@@ -14,3 +14,6 @@ build/
 .vscode/
 graphify-out/
 deploy/backups/
+deploy/compose.yml
+deploy/Caddyfile
+deploy/.env
