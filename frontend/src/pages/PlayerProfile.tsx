@@ -753,7 +753,7 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
       s: { char: '♠', color: 'text-slate-800' },
       h: { char: '♥', color: 'text-rose-500' },
       d: { char: '♦', color: 'text-rose-500' },
-      c: { char: '♣', color: 'text-emerald-600' },
+      c: { char: '♣', color: 'text-slate-800' },
     };
     const suit = suitsMap[suitSymbol] || { char: suitSymbol, color: 'text-slate-400' };
 

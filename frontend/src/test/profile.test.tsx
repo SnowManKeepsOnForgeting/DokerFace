@@ -98,7 +98,7 @@ const mockMatchDetail = {
       small_blind: 10,
       big_blind: 20,
       status: 'settled',
-      public_board: ['As', 'Kd', 'Qc'],
+      public_board: ['As', 'Kd', 'Qc', 'Jh'],
       settlement_summary: { '1': 1500 },
       players: [{ account_id: 1, chips: 1500 }],
       actions: [
@@ -216,6 +216,10 @@ describe('PlayerProfile View and Editing', () => {
     // Verify Street actions are displayed (CSS capitalize is visual-only, DOM text is lowercase)
     await waitFor(() => expect(screen.getByText('bet or raise')).toBeInTheDocument());
     expect(screen.getByText('100')).toBeInTheDocument();
+    expect(screen.getByText('♠')).toHaveClass('text-slate-800');
+    expect(screen.getByText('♦')).toHaveClass('text-rose-500');
+    expect(screen.getByText('♣')).toHaveClass('text-slate-800');
+    expect(screen.getByText('♥')).toHaveClass('text-rose-500');
 
     // Close Modal
     const closeBtn = screen.getByRole('button', { name: '' }); // X close button

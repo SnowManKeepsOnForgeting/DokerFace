@@ -220,7 +220,7 @@ describe('WaitingRoom and PokerTable Flow', () => {
         street: 'preflop',
         button_account_id: 2,
         actor_account_id: 1,
-        board: [],
+        board: ['Qc', 'Jh'],
         pot_amounts: [30],
         complete: false,
         players: [
@@ -293,6 +293,10 @@ describe('WaitingRoom and PokerTable Flow', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'raise40' })).toBeInTheDocument(),
     );
+    expect(screen.getByText('♠')).toHaveClass('text-slate-800');
+    expect(screen.getByText('♦')).toHaveClass('text-rose-500');
+    expect(screen.getByText('♣')).toHaveClass('text-slate-800');
+    expect(screen.getByText('♥')).toHaveClass('text-rose-500');
     expect(screen.getByRole('slider', { name: 'Bet or raise amount' })).toHaveValue('40');
     expect(screen.getByRole('spinbutton', { name: 'Bet or raise amount' })).toHaveValue(40);
   });
