@@ -1,9 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/game';
 import { useAuth } from '../api/auth-context';
 import { createCommandId } from '../api/command-id';
 import type { ActionType } from '../contracts/realtime';
-import { Coins, DoorOpen, LogOut, Shield, Smile, Clock } from 'lucide-react';
+import {
+  Clock,
+  Coins,
+  DoorOpen,
+  LogOut,
+  MessageSquare,
+  Send,
+  Shield,
+  Smile,
+  X,
+} from 'lucide-react';
 
 interface PokerTableProps {
   roomId: string;
@@ -21,6 +31,14 @@ const SEAT_POSITIONS = [
   { top: '72%', left: '84%', transform: 'translate(-50%, -50%)' }, // Seat 7 (Bottom Right)
 ];
 
+const QUICK_PHRASES = [
+  'Good luck, everyone!',
+  'Nice hand!',
+  'Check it down?',
+  'Tough luck.',
+  'Deal me in!',
+];
+
 export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const { user } = useAuth();
   const {
@@ -32,6 +50,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
     submitAction,
     activeEmotes,
     sendEmote,
+    chatMessages,
+    sendChat,
     handSettled,
     matchSettled,
     resetGame,
@@ -41,9 +61,18 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
   const [betAmount, setBetAmount] = useState<number>(0);
   const [showEmotesMenu, setShowEmotesMenu] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [chatInput, setChatInput] = useState('');
   const [leaveError, setLeaveError] = useState<string | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
   const [isQuitting, setIsQuitting] = useState(false);
+  const chatListRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showChat && chatListRef.current) {
+      chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
+    }
+  }, [chatMessages, showChat]);
 
   const handleLeave = async (resetAfterSuccess = false) => {
     if (isLeaving) return;
@@ -81,6 +110,14 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
     }
     setLeaveError(`Unable to quit match: ${response.error ?? 'realtime_error'}`);
     setIsQuitting(false);
+  };
+
+  const handleSendChat = (event: React.FormEvent) => {
+    event.preventDefault();
+    const content = chatInput.trim();
+    if (!content) return;
+    void sendChat(roomId, content);
+    setChatInput('');
   };
 
   // Active snapshot choice (Hero private state takes precedence)
@@ -184,6 +221,16 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
         </div>
 
         <div className="flex gap-2">
+          <button
+            onClick={() => setShowChat((visible) => !visible)}
+            aria-label={showChat ? 'Hide table chat' : 'Show table chat'}
+            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
+          >
+            <MessageSquare className="h-5 w-5" />
+            {!showChat && chatMessages.length > 0 && (
+              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-slate-900 bg-purple-500" />
+            )}
+          </button>
           {/* Quick emotes menu toggle */}
           <button
             onClick={() => setShowEmotesMenu(!showEmotesMenu)}
@@ -236,6 +283,86 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
             </button>
           ))}
         </div>
+      )}
+
+      {showChat && (
+        <aside className="absolute inset-x-4 bottom-4 top-16 z-20 flex flex-col rounded-xl border border-slate-700 bg-slate-900/95 p-4 shadow-2xl backdrop-blur-md sm:left-auto sm:w-80">
+          <div className="mb-3 flex shrink-0 items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-purple-400">
+              <MessageSquare className="h-4 w-4" />
+              Table Chat
+            </h2>
+            <button
+              onClick={() => setShowChat(false)}
+              aria-label="Close table chat"
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div
+            ref={chatListRef}
+            className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin"
+          >
+            {chatMessages.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-xs font-semibold uppercase text-slate-600">
+                No chat messages.
+              </div>
+            ) : (
+              chatMessages.map((message) => (
+                <div key={message.message_id} className="max-w-full space-y-1 break-words text-xs">
+                  <div className="flex items-baseline justify-between gap-3 text-[10px] text-slate-500">
+                    <span className="truncate font-bold text-purple-400">
+                      {message.account_id === user?.account_id
+                        ? 'You'
+                        : `Player #${message.account_id}`}
+                    </span>
+                    <span className="shrink-0">
+                      {new Date(message.created_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                  <p className="rounded-lg border border-slate-800/60 bg-slate-950/60 px-2.5 py-2 text-slate-200">
+                    {message.content}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="my-3 flex shrink-0 flex-wrap gap-1.5">
+            {QUICK_PHRASES.map((phrase) => (
+              <button
+                key={phrase}
+                onClick={() => void sendChat(roomId, phrase, 'quick')}
+                className="cursor-pointer rounded border border-slate-700/80 bg-slate-800/70 px-2 py-1 text-[10px] text-slate-300 hover:bg-slate-700"
+              >
+                {phrase}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={handleSendChat} className="flex shrink-0 gap-2">
+            <input
+              type="text"
+              aria-label="Table chat message"
+              placeholder="Type a message..."
+              value={chatInput}
+              onChange={(event) => setChatInput(event.target.value)}
+              className="h-10 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100 outline-none focus:border-purple-500/60"
+            />
+            <button
+              type="submit"
+              aria-label="Send table chat message"
+              className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-purple-600 text-white hover:bg-purple-500"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </form>
+        </aside>
       )}
 
       {/* Felt Canvas */}
