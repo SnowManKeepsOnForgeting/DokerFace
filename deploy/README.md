@@ -1,9 +1,23 @@
 # Docker deployment
 
-Create a local environment file, then build and start the stack:
+Create the local deployment files from the committed examples:
 
 ```bash
 cp deploy/.env.example deploy/.env
+cp deploy/compose.example.yml deploy/compose.yml
+cp deploy/Caddyfile.example deploy/Caddyfile
+```
+
+The generated `.env`, `compose.yml`, and `Caddyfile` files are ignored by Git so each deployment
+can keep its own credentials, ports, and Caddy site address. Edit them for the target environment
+before starting the stack. Keep `compose.example.yml` and `Caddyfile.example` as the versioned
+defaults; when either example changes, review the difference before updating an existing local
+deployment file.
+
+Validate the resolved Compose configuration, then build and start the stack:
+
+```bash
+docker compose --env-file deploy/.env -f deploy/compose.yml config --quiet
 docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
 ```
 

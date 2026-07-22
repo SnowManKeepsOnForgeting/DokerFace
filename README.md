@@ -21,8 +21,9 @@ proxy.
 | Local Compose verification | `http://localhost:8080` | `development` | No | Verify the complete container stack |
 | Public production server | `https://your-domain` | `production` | Yes | Production use |
 
-The committed `deploy/Caddyfile` and `deploy/compose.yml` default to local Compose verification.
-Public production deployment requires the domain and port changes documented below.
+The committed `deploy/Caddyfile.example` and `deploy/compose.example.yml` provide the deployment
+defaults. Copy them to the Git-ignored local files before use. Public production deployment
+requires the domain and port changes documented below.
 
 ## Local Development
 
@@ -64,11 +65,15 @@ The frontend development server runs at <http://localhost:5173>, while the devel
 
 ### First Start
 
-From the repository root, create the environment file:
+From the repository root, create the local deployment files:
 
 ```bash
 cp deploy/.env.example deploy/.env
+cp deploy/compose.example.yml deploy/compose.yml
+cp deploy/Caddyfile.example deploy/Caddyfile
 ```
+
+The generated files are ignored by Git and may be customized for the current environment.
 
 Edit `deploy/.env` and replace at least these sensitive values:
 
@@ -86,9 +91,10 @@ DOKERFACE_CORS_ORIGINS=["http://localhost:5173","http://localhost:8080"]
 HTTP_PORT=8080
 ```
 
-Build and start the stack:
+Validate the Compose configuration, then build and start the stack:
 
 ```bash
+docker compose --env-file deploy/.env -f deploy/compose.yml config --quiet
 docker compose --env-file deploy/.env -f deploy/compose.yml up --build -d
 ```
 
