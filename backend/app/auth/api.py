@@ -25,6 +25,11 @@ class LoginRequest(BaseModel):
     remember: bool = False
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
 class CurrentUserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -96,6 +101,42 @@ async def logout(
     token = request.cookies.get(settings.session_cookie_name)
     if token:
         await SessionService(settings.session_ttl_hours).revoke(db_session, token)
+    response.delete_cookie(
+        key=settings.session_cookie_name,
+        secure=settings.is_production,
+        httponly=True,
+        samesite="lax",
+    )
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response
+
+
+@router.post("/api/v1/me/change-password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    response: Response,
+    account: Annotated[Account, Depends(get_current_account)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> Response:
+    password_service = PasswordService()
+    if not password_service.verify(payload.current_password, account.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+    if not payload.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password is required",
+        )
+
+    account.password_hash = password_service.hash(payload.new_password)
+    settings = cast(Settings, request.app.state.settings)
+    await SessionService(settings.session_ttl_hours).revoke_all_for_account(
+        db_session,
+        account.account_id,
+    )
     response.delete_cookie(
         key=settings.session_cookie_name,
         secure=settings.is_production,
