@@ -196,6 +196,11 @@ describe('WaitingRoom and PokerTable Flow', () => {
     await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
     expect(screen.getByText('Not Ready')).toBeInTheDocument();
 
+    const waitingRoom = screen.getByTestId('waiting-room');
+    expect(waitingRoom).not.toHaveClass('overflow-hidden');
+    expect(waitingRoom).toHaveClass('lg:overflow-hidden');
+    expect(waitingRoom).not.toHaveClass('h-[calc(100vh-80px)]');
+
     const readyBtn = screen.getByText('Set Ready');
     await userEvent.click(readyBtn);
   });
@@ -290,6 +295,108 @@ describe('WaitingRoom and PokerTable Flow', () => {
     );
     expect(screen.getByRole('slider', { name: 'Bet or raise amount' })).toHaveValue('40');
     expect(screen.getByRole('spinbutton', { name: 'Bet or raise amount' })).toHaveValue(40);
+  });
+
+  it('sends and receives table chat while a match is active', async () => {
+    restoreSocket = mockConnectedSocket();
+    useGameStore.setState({
+      connected: true,
+      publicSnapshot: {
+        schema_version: 1,
+        match_id: '00000000-0000-4000-8000-000000000002',
+        hand_id: '00000000-0000-4000-8000-000000000003',
+        hand_number: 1,
+        state_version: 1,
+        street: 'preflop',
+        button_account_id: 2,
+        actor_account_id: 2,
+        board: [],
+        pot_amounts: [30],
+        complete: false,
+        players: [
+          {
+            account_id: 1,
+            seat: 0,
+            display_name: 'Alice',
+            stack: 990,
+            bet: 10,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+          {
+            account_id: 2,
+            seat: 1,
+            display_name: 'Bob',
+            stack: 980,
+            bet: 20,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+        ],
+        server_time: '2026-07-17T00:00:00Z',
+        actions: [],
+        action_deadline_at: null,
+      },
+    });
+
+    render(
+      <AuthContext.Provider
+        value={{
+          user: {
+            account_id: 1,
+            login_name: 'alice',
+            role: 'player',
+            status: 'active',
+            display_name: 'Alice',
+          },
+          isLoading: false,
+          login: async () => ({
+            account_id: 1,
+            login_name: 'alice',
+            role: 'player',
+            status: 'active',
+            display_name: 'Alice',
+          }),
+          logout: async () => {},
+          refetch: async () => {},
+        }}
+      >
+        <PokerTable roomId={roomId} onLeave={vi.fn()} />
+      </AuthContext.Provider>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show table chat' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'Table chat message' }), 'In game');
+    await userEvent.click(screen.getByRole('button', { name: 'Send table chat message' }));
+
+    const timedSocket = socket.timeout(8_000) as unknown as {
+      emitWithAck: ReturnType<typeof vi.fn>;
+    };
+    expect(timedSocket.emitWithAck).toHaveBeenCalledWith('chat:send', {
+      schema_version: 1,
+      room_id: roomId,
+      message_type: 'text',
+      content: 'In game',
+    });
+
+    act(() => {
+      socket.listeners('chat:message').forEach((listener) =>
+        listener({
+          schema_version: 1,
+          message_id: '00000000-0000-4000-8000-000000000004',
+          room_id: roomId,
+          account_id: 2,
+          message_type: 'text',
+          content: 'Still here',
+          target_account_id: null,
+          created_at: '2026-07-17T00:00:00Z',
+        }),
+      );
+    });
+
+    expect(screen.getByText('Still here')).toBeInTheDocument();
   });
 
   it('quits the active match immediately and returns to the lobby', async () => {

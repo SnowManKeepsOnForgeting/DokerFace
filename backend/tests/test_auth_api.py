@@ -160,3 +160,71 @@ async def test_logout_revokes_cookie_session() -> None:
     assert response.status_code == 204
     assert "dokerface_session=" in response.headers["set-cookie"]
     session.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_change_password_updates_hash_revokes_sessions_and_clears_cookie() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    account = make_account()
+    session.scalar.return_value = AccountSession(
+        account=account,
+        token_hash="unused",
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
+        last_activity_at=datetime.now(UTC),
+    )
+    app = build_app(session)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        client.cookies.set("dokerface_session", "valid-token")
+        response = await client.post(
+            "/api/v1/me/change-password",
+            json={
+                "current_password": "correct password",
+                "new_password": "new password",
+            },
+        )
+
+    assert response.status_code == 204
+    assert PasswordService().verify("new password", account.password_hash)
+    assert "dokerface_session=" in response.headers["set-cookie"]
+    session.execute.assert_awaited_once()
+    assert "sessions.account_id" in str(session.execute.call_args.args[0])
+    assert session.commit.await_count == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("current_password", "new_password", "detail"),
+    [
+        ("wrong password", "new password", "Current password is incorrect"),
+        ("correct password", "", "New password is required"),
+    ],
+)
+async def test_change_password_rejects_invalid_credentials(
+    current_password: str,
+    new_password: str,
+    detail: str,
+) -> None:
+    session = AsyncMock(spec=AsyncSession)
+    account = make_account()
+    original_hash = account.password_hash
+    session.scalar.return_value = AccountSession(
+        account=account,
+        token_hash="unused",
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
+        last_activity_at=datetime.now(UTC),
+    )
+    app = build_app(session)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        client.cookies.set("dokerface_session", "valid-token")
+        response = await client.post(
+            "/api/v1/me/change-password",
+            json={"current_password": current_password, "new_password": new_password},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": detail}
+    assert account.password_hash == original_hash
+    session.execute.assert_not_awaited()
+    assert session.commit.await_count == 1

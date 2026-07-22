@@ -38,7 +38,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
   const [chatInput, setChatInput] = useState('');
   const [leaveError, setLeaveError] = useState<string | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
-  const chatBottomRef = useRef<HTMLDivElement>(null);
+  const chatListRef = useRef<HTMLDivElement>(null);
 
   const handleLeave = async () => {
     if (isLeaving) return;
@@ -59,8 +59,8 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
 
   // Auto scroll chat list
   useEffect(() => {
-    if (chatBottomRef.current?.scrollIntoView) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (chatListRef.current) {
+      chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
     }
   }, [chatMessages]);
 
@@ -91,9 +91,12 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
   const emotes = ['👍', '👎', '🔥', '😮', '😂', '😭', '💩', '🤡'];
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row gap-6 p-4 md:p-6 font-sans text-slate-100 max-w-7xl mx-auto w-full h-[calc(100vh-80px)] overflow-hidden">
+    <div
+      data-testid="waiting-room"
+      className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 font-sans text-slate-100 md:p-6 lg:min-h-0 lg:flex-row lg:overflow-hidden"
+    >
       {/* Left Column: Waiting Room Info & Players */}
-      <div className="flex-1 flex flex-col gap-6 min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col gap-6 lg:min-h-0">
         {/* Header summary */}
         <section className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
           <div>
@@ -106,7 +109,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex w-full flex-wrap gap-3 md:w-auto">
             <button
               onClick={() => void handleLeave()}
               disabled={isLeaving}
@@ -158,12 +161,12 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
         )}
 
         {/* Players list card */}
-        <section className="flex-1 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col overflow-hidden min-h-0">
+        <section className="flex flex-col rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
           <h3 className="font-bold text-sm uppercase tracking-wider text-purple-400 mb-4 shrink-0">
             Players ({members.length})
           </h3>
 
-          <div className="flex-1 overflow-y-auto pr-1 space-y-3 min-h-0">
+          <div className="space-y-3 pr-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             {members.map((member) => (
               <MemberRow
                 key={member.account_id}
@@ -206,7 +209,10 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
         </h3>
 
         {/* Message area */}
-        <div className="flex-1 overflow-y-auto pr-1 space-y-3 mb-4 min-h-0 scrollbar-thin">
+        <div
+          ref={chatListRef}
+          className="mb-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin"
+        >
           {chatMessages.length === 0 ? (
             <div className="h-full flex items-center justify-center text-slate-600 text-xs font-semibold uppercase tracking-wider">
               No chat messages.
@@ -233,7 +239,6 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
               </div>
             ))
           )}
-          <div ref={chatBottomRef} />
         </div>
 
         {/* Fast phrases */}

@@ -126,6 +126,7 @@ describe('PlayerProfile View and Editing', () => {
 
   it('renders player profile stats and allows editing when viewing own profile', async () => {
     let currentMockPlayer = { ...mockPlayer };
+    let changePasswordPayload: Record<string, string> | null = null;
 
     server.use(
       http.get('http://localhost:8080/api/v1/me', () => {
@@ -155,6 +156,10 @@ describe('PlayerProfile View and Editing', () => {
       http.get('http://localhost:8080/api/v1/matches/match-12345678', () => {
         return HttpResponse.json(mockMatchDetail, { status: 200 });
       }),
+      http.post('http://localhost:8080/api/v1/me/change-password', async ({ request }) => {
+        changePasswordPayload = (await request.json()) as Record<string, string>;
+        return new HttpResponse(null, { status: 204 });
+      }),
     );
 
     const queryClient = new QueryClient({
@@ -167,6 +172,7 @@ describe('PlayerProfile View and Editing', () => {
           <AuthProvider>
             <Routes>
               <Route path="/players/:playerId" element={<PlayerProfile />} />
+              <Route path="/login" element={<div>Login again</div>} />
             </Routes>
           </AuthProvider>
         </QueryClientProvider>
@@ -253,5 +259,17 @@ describe('PlayerProfile View and Editing', () => {
 
     await waitFor(() => expect(screen.getByText('Alice Updated')).toBeInTheDocument());
     expect(screen.queryByText('Avatar text is required')).not.toBeInTheDocument();
+
+    const passwordInputs = screen.getAllByLabelText(/Password/);
+    await userEvent.type(passwordInputs[0], 'correct password');
+    await userEvent.type(passwordInputs[1], 'new password');
+    await userEvent.type(passwordInputs[2], 'new password');
+    await userEvent.click(screen.getByRole('button', { name: 'Change Password' }));
+
+    await waitFor(() => expect(screen.getByText('Login again')).toBeInTheDocument());
+    expect(changePasswordPayload).toEqual({
+      current_password: 'correct password',
+      new_password: 'new password',
+    });
   });
 });
