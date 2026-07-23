@@ -20,23 +20,24 @@ interface PokerTableProps {
   onLeave: () => void;
 }
 
-const SEAT_POSITIONS = [
-  { top: '82%', left: '50%', transform: 'translate(-50%, -50%)' }, // Seat 0 (Hero - Bottom Center)
-  { top: '72%', left: '16%', transform: 'translate(-50%, -50%)' }, // Seat 1 (Bottom Left)
-  { top: '38%', left: '10%', transform: 'translate(-50%, -50%)' }, // Seat 2 (Middle Left)
-  { top: '12%', left: '20%', transform: 'translate(-50%, -50%)' }, // Seat 3 (Top Left)
-  { top: '10%', left: '50%', transform: 'translate(-50%, -50%)' }, // Seat 4 (Top Center)
-  { top: '12%', left: '80%', transform: 'translate(-50%, -50%)' }, // Seat 5 (Top Right)
-  { top: '38%', left: '90%', transform: 'translate(-50%, -50%)' }, // Seat 6 (Middle Right)
-  { top: '72%', left: '84%', transform: 'translate(-50%, -50%)' }, // Seat 7 (Bottom Right)
-];
-
 const QUICK_PHRASES = [
   'Good luck, everyone!',
   'Nice hand!',
   'Check it down?',
   'Tough luck.',
   'Deal me in!',
+];
+
+// Seat order is rotated so the current player is always seat 0 at the bottom.
+const SEAT_POSITION_CLASSES = [
+  'bottom-0 left-1/2 -translate-x-1/2',
+  'bottom-[12%] left-0',
+  'top-[38%] left-0',
+  'top-0 left-[25%] -translate-x-1/2',
+  'top-0 left-1/2 -translate-x-1/2',
+  'top-0 left-[75%] -translate-x-1/2',
+  'top-[38%] right-0',
+  'bottom-[12%] right-0',
 ];
 
 export function PokerTable({ roomId, onLeave }: PokerTableProps) {
@@ -151,6 +152,11 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
   const totalPot = pot_amounts.reduce((sum, amt) => sum + amt, 0);
   const isMyTurn = actor_account_id === user?.account_id;
+  const orderedPlayers = [...players].sort((left, right) => {
+    const leftPosition = (left.seat - mySeat + 8) % 8;
+    const rightPosition = (right.seat - mySeat + 8) % 8;
+    return leftPosition - rightPosition;
+  });
 
   const betAction = privateSnapshot?.legal_actions.find(
     (action) => action.action === 'bet_or_raise',
@@ -166,7 +172,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const emotes = ['👍', '👎', '🔥', '😮', '😂', '😭', '💩', '🤡'];
 
   // Card UI helper
-  const renderCard = (cardStr: string) => {
+  const renderCard = (cardStr: string, compact = false) => {
     if (!cardStr || cardStr.length < 2) return null;
     const rank = cardStr.slice(0, -1).toUpperCase();
     const suitSymbol = cardStr.slice(-1);
@@ -177,14 +183,37 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       c: { char: '♣', color: 'text-slate-800' },
     };
     const suit = suitsMap[suitSymbol] || { char: suitSymbol, color: 'text-slate-400' };
+    const cardSize = compact
+      ? 'h-9 w-6 md:h-14 md:w-10'
+      : 'h-11 w-8 sm:h-14 sm:w-10 md:h-18 md:w-12';
+    const cardPadding = compact ? 'p-0.5 md:p-1.5' : 'p-1 sm:p-1.5';
+    const rankSize = compact ? 'text-[9px] md:text-xs' : 'text-[10px] sm:text-xs';
+    const suitSize = compact ? 'text-sm md:text-xl' : 'text-base sm:text-lg md:text-xl';
 
     return (
-      <div className="w-10 h-14 md:w-12 md:h-18 bg-white text-slate-900 border border-slate-300 rounded-lg flex flex-col justify-between p-1.5 shadow-md font-sans select-none animate-scaleUp">
-        <div className="text-xs font-black leading-none">{rank}</div>
-        <div className={`text-center text-lg md:text-xl font-bold leading-none ${suit.color}`}>
+      <div
+        className={`${cardSize} ${cardPadding} flex flex-col justify-between rounded-lg border border-slate-300 bg-white font-sans text-slate-900 shadow-md select-none animate-scaleUp`}
+      >
+        <div className={`${rankSize} font-black leading-none`}>{rank}</div>
+        <div className={`${suitSize} text-center font-bold leading-none ${suit.color}`}>
           {suit.char}
         </div>
-        <div className="text-xs font-black leading-none self-end rotate-180">{rank}</div>
+        <div className={`${rankSize} self-end rotate-180 font-black leading-none`}>{rank}</div>
+      </div>
+    );
+  };
+
+  const renderCardBack = (compact = false) => {
+    const cardSize = compact
+      ? 'h-9 w-6 md:h-14 md:w-10'
+      : 'h-11 w-8 sm:h-14 sm:w-10 md:h-18 md:w-12';
+
+    return (
+      <div
+        aria-hidden="true"
+        className={`${cardSize} rounded-lg border-2 border-rose-200/70 bg-rose-500 p-0.5 shadow-md`}
+      >
+        <div className="h-full w-full rounded border border-rose-200/60 bg-rose-400/70" />
       </div>
     );
   };
@@ -210,23 +239,23 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col relative w-full h-[calc(100vh-80px)] overflow-hidden font-sans bg-slate-950">
+    <div className="relative flex min-h-full w-full flex-col bg-slate-950 font-sans lg:h-full lg:min-h-0">
       {/* Hand status / stats bar */}
-      <header className="bg-slate-900/60 border-b border-slate-800/80 px-6 py-3 flex justify-between items-center shrink-0 z-10">
-        <div className="flex items-center gap-4">
-          <span className="text-xs font-semibold text-purple-400 capitalize bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/20">
+      <header className="z-10 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-3 border-b border-slate-800/80 bg-slate-900/60 px-3 py-3 sm:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+          <span className="min-w-0 max-w-full rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-xs font-semibold capitalize leading-tight text-purple-400">
             Street: {street}
           </span>
-          <span className="text-xs font-semibold text-slate-400">Hand #{hand_number}</span>
+          <span className="shrink-0 text-xs font-semibold text-slate-400">Hand #{hand_number}</span>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
           <button
             onClick={() => setShowChat((visible) => !visible)}
             aria-label={showChat ? 'Hide table chat' : 'Show table chat'}
-            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
+            className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
           >
-            <MessageSquare className="h-5 w-5" />
+            <MessageSquare className="h-4.5 w-4.5" />
             {!showChat && chatMessages.length > 0 && (
               <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-slate-900 bg-purple-500" />
             )}
@@ -235,14 +264,14 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           <button
             onClick={() => setShowEmotesMenu(!showEmotesMenu)}
             aria-label={showEmotesMenu ? 'Hide emotes' : 'Show emotes'}
-            className="h-9 w-9 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg cursor-pointer transition-colors"
+            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
           >
-            <Smile className="h-5 w-5" />
+            <Smile className="h-4.5 w-4.5" />
           </button>
           <button
             onClick={() => void handleQuit()}
             disabled={isLeaving || isQuitting || !privateSnapshot}
-            className="h-9 px-4 bg-rose-950/70 hover:bg-rose-900 text-rose-200 hover:text-white border border-rose-800/70 hover:border-rose-600 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer disabled:cursor-wait disabled:opacity-60"
+            className="flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-rose-800/70 bg-rose-950/70 px-3 text-xs font-bold uppercase text-rose-200 transition-all hover:border-rose-600 hover:bg-rose-900 hover:text-white disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:px-4"
           >
             <LogOut className="h-3.5 w-3.5" />
             {isQuitting ? 'Quitting...' : 'Quit'}
@@ -250,7 +279,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           <button
             onClick={() => void handleLeave()}
             disabled={isLeaving || isQuitting}
-            className="h-9 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer disabled:cursor-wait disabled:opacity-60"
+            className="flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-700/60 bg-slate-800 px-3 text-xs font-bold uppercase text-slate-300 transition-all hover:bg-slate-700 disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:px-4"
           >
             <DoorOpen className="h-3.5 w-3.5" />
             {isLeaving ? 'Leaving...' : 'Leave'}
@@ -365,134 +394,120 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
         </aside>
       )}
 
-      {/* Felt Canvas */}
-      <div className="flex-1 relative flex items-center justify-center p-4">
-        {/* The green felt oval */}
-        <div className="w-full max-w-4xl aspect-[2/1] bg-gradient-to-b from-emerald-800 to-emerald-950 border-[10px] border-amber-900/80 rounded-[200px] shadow-2xl relative flex flex-col items-center justify-center p-6 border-double">
-          {/* Outer Felt line */}
-          <div className="absolute inset-2 border border-emerald-700/30 rounded-[190px] pointer-events-none" />
+      {/* The felt and the seats share a stage, but seats remain outside the felt DOM and bounds. */}
+      <div className="min-h-0 flex-1 overflow-visible lg:overflow-y-auto">
+        <div
+          data-testid="player-rail"
+          className="relative mx-auto min-h-[44rem] w-full max-w-6xl p-3 md:min-h-[54rem] md:p-4"
+        >
+          {/* Felt Canvas */}
+          <div
+            data-testid="felt-table"
+            className="absolute left-1/2 top-1/2 flex aspect-[3/5] w-[60%] max-w-[24rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-[40%] border-[8px] border-double border-amber-900/80 bg-gradient-to-b from-emerald-800 to-emerald-950 p-4 shadow-2xl md:aspect-[2/1] md:w-[78%] md:max-w-4xl md:rounded-[200px] md:border-[10px] md:p-6"
+          >
+            <div className="pointer-events-none absolute inset-2 rounded-[38%] border border-emerald-700/30 md:rounded-[190px]" />
 
-          {/* Center Community Board & Pot */}
-          <div className="flex flex-col items-center gap-4 text-center select-none z-10">
-            {/* Main/Side Pot summary */}
-            <div className="bg-black/40 border border-emerald-500/20 rounded-full px-4 py-1.5 flex items-center gap-1.5 text-slate-200 shadow-md">
-              <Coins className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-bold text-slate-100">
-                Pot: {totalPot.toLocaleString()}
-              </span>
-            </div>
-
-            {/* Community Cards slots */}
-            <div className="flex gap-2">
-              {[0, 1, 2, 3, 4].map((index) => {
-                const card = board[index];
-                return card ? (
-                  <div key={index}>{renderCard(card)}</div>
-                ) : (
-                  <div
-                    key={index}
-                    className="w-10 h-14 md:w-12 md:h-18 rounded-lg border-2 border-emerald-700/40 bg-emerald-950/20"
-                  />
-                );
-              })}
-            </div>
-
-            {/* Turn timer countdown */}
-            {action_deadline_at && (
-              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 bg-black/40 px-3 py-1 rounded-full border border-amber-500/10">
-                <Clock className="h-3.5 w-3.5 animate-spin" />
-                <TimerCountdown deadline={action_deadline_at} />
+            {/* Center Community Board & Pot */}
+            <div className="z-10 flex flex-col items-center gap-4 text-center select-none">
+              <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-black/40 px-4 py-1.5 text-slate-200 shadow-md">
+                <Coins className="h-4 w-4 text-yellow-500" />
+                <span className="text-sm font-bold text-slate-100">
+                  Pot: {totalPot.toLocaleString()}
+                </span>
               </div>
-            )}
+
+              <div className="grid grid-cols-5 gap-1.5 sm:flex sm:gap-2">
+                {[0, 1, 2, 3, 4].map((index) => {
+                  const card = board[index];
+                  return card ? (
+                    <div key={index}>{renderCard(card)}</div>
+                  ) : (
+                    <div
+                      key={index}
+                      className="h-11 w-8 rounded-lg border-2 border-emerald-700/40 bg-emerald-950/20 sm:h-14 sm:w-10 md:h-18 md:w-12"
+                    />
+                  );
+                })}
+              </div>
+
+              {action_deadline_at && (
+                <div className="flex items-center gap-1.5 rounded-full border border-amber-500/10 bg-black/40 px-3 py-1 text-xs font-bold text-amber-400">
+                  <Clock className="h-3.5 w-3.5 animate-spin" />
+                  <TimerCountdown deadline={action_deadline_at} />
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Players Seating positions */}
-          {players.map((player) => {
-            // Seating rotation so Hero is seat 0 (Bottom Center)
+          {orderedPlayers.map((player) => {
             const rotatedIndex = (player.seat - mySeat + 8) % 8;
-            const pos = SEAT_POSITIONS[rotatedIndex];
-
             const isActive = player.account_id === actor_account_id;
             const isButton = player.account_id === button_account_id;
             const isHero = player.account_id === user?.account_id;
-
-            // Get emotes overlay
             const memberEmotes = activeEmotes.filter((e) => e.account_id === player.account_id);
             const activeEmote = memberEmotes[memberEmotes.length - 1];
+            const hasVisibleHoleCards = isHero && Boolean(privateSnapshot?.hole_cards?.length);
 
             return (
-              <div
+              <article
                 key={player.account_id}
-                className="absolute flex flex-col items-center select-none"
-                style={{ ...pos }}
+                data-testid={`player-card-${player.account_id}`}
+                className={`absolute z-10 flex w-16 flex-col items-center gap-1 rounded-xl border bg-slate-950/90 p-1.5 text-center shadow-xl md:w-28 md:gap-2 md:rounded-2xl md:p-2 ${SEAT_POSITION_CLASSES[rotatedIndex]} ${
+                  isActive ? 'border-amber-400 shadow-amber-500/20' : 'border-slate-800'
+                }`}
               >
-                {/* Player Card */}
-                <div
-                  className={`flex flex-col items-center bg-slate-950/80 border ${
-                    isActive ? 'border-amber-400 shadow-lg shadow-amber-500/20' : 'border-slate-800'
-                  } rounded-2xl p-2 w-28 md:w-32 text-center relative overflow-visible`}
-                >
-                  {/* Floating Emote Popup Balloon */}
-                  {activeEmote && (
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 h-8 w-8 text-xl flex items-center justify-center bg-slate-900 border border-purple-500/30 rounded-full shadow-lg shadow-black/40 animate-bounce z-20">
-                      {activeEmote.emote}
-                    </div>
-                  )}
-
-                  {/* Dealer Button Icon */}
-                  {isButton && (
-                    <div className="absolute -top-3 -right-2 h-6 w-6 rounded-full bg-white text-slate-900 border border-slate-300 flex items-center justify-center font-black text-[10px] shadow">
-                      D
-                    </div>
-                  )}
-
-                  {/* Profile initials */}
-                  <div
-                    className={`h-9 w-9 rounded-full text-white font-bold text-xs flex items-center justify-center border ${
-                      isActive ? 'border-amber-400 ring-2 ring-amber-500/20' : 'border-white/10'
-                    }`}
-                    style={{ backgroundColor: '#4f46e5' }}
-                  >
-                    {player.display_name.slice(0, 2).toUpperCase()}
+                {activeEmote && (
+                  <div className="absolute -top-3 right-0 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-purple-500/30 bg-slate-900 text-lg shadow-lg shadow-black/40 animate-bounce md:-top-4 md:h-8 md:w-8 md:text-xl">
+                    {activeEmote.emote}
                   </div>
+                )}
 
-                  <span className="text-[11px] font-bold text-slate-200 mt-1 truncate max-w-full">
-                    {player.display_name}
-                  </span>
+                {isButton && (
+                  <div className="absolute -right-2 -top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-[9px] font-black text-slate-900 shadow md:h-6 md:w-6 md:text-[10px]">
+                    D
+                  </div>
+                )}
 
-                  <span className="text-[10px] text-emerald-400 font-semibold mt-0.5">
-                    {player.stack.toLocaleString()}
-                  </span>
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-bold text-white md:h-10 md:w-10 md:text-xs ${
+                    isActive ? 'border-amber-400 ring-2 ring-amber-500/20' : 'border-white/10'
+                  }`}
+                  style={{ backgroundColor: '#4f46e5' }}
+                >
+                  {player.display_name.slice(0, 2).toUpperCase()}
+                </div>
+                <span className="w-full truncate text-[9px] font-bold text-slate-200 md:text-[11px]">
+                  {player.display_name}
+                </span>
+                <span className="rounded-full bg-black/40 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400 md:text-[10px]">
+                  {player.stack.toLocaleString()}
+                </span>
 
-                  {/* Hole Cards overlay for Hero */}
-                  {isHero &&
-                    privateSnapshot?.hole_cards &&
-                    privateSnapshot.hole_cards.length > 0 && (
-                      <div className="flex gap-1 mt-2 z-10">
-                        {privateSnapshot.hole_cards.map((card, idx) => (
-                          <div key={idx} className="scale-75 origin-top">
-                            {renderCard(card)}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                  {/* Disconnect indicator */}
-                  {!player.connected && (
-                    <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
-                      DC
-                    </span>
-                  )}
+                <div
+                  data-testid={isHero ? 'hero-hole-cards' : `hole-cards-${player.account_id}`}
+                  className={`flex items-center justify-center gap-0.5 ${player.folded ? 'opacity-40' : ''}`}
+                  aria-label={isHero ? 'Your hole cards' : 'Hidden hole cards'}
+                >
+                  {hasVisibleHoleCards
+                    ? privateSnapshot?.hole_cards?.map((card, idx) => (
+                        <div key={idx}>{renderCard(card, true)}</div>
+                      ))
+                    : [0, 1].map((index) => <div key={index}>{renderCardBack(true)}</div>)}
                 </div>
 
-                {/* Bet Size display next to seat */}
                 {player.bet > 0 && (
-                  <div className="mt-1.5 bg-black/40 border border-yellow-500/20 rounded-full px-2 py-0.5 flex items-center gap-1 text-[10px] font-bold text-yellow-400">
+                  <div className="flex items-center gap-1 rounded-full border border-yellow-500/20 bg-black/40 px-1.5 py-0.5 text-[9px] font-bold text-yellow-400 md:px-2 md:text-[10px]">
                     <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
                     {player.bet.toLocaleString()}
                   </div>
                 )}
-              </div>
+
+                {!player.connected && (
+                  <span className="absolute -bottom-2 rounded border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[8px] font-bold text-rose-400">
+                    DC
+                  </span>
+                )}
+              </article>
             );
           })}
         </div>

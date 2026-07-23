@@ -299,6 +299,21 @@ describe('WaitingRoom and PokerTable Flow', () => {
     expect(screen.getByText('♥')).toHaveClass('text-rose-500');
     expect(screen.getByRole('slider', { name: 'Bet or raise amount' })).toHaveValue('40');
     expect(screen.getByRole('spinbutton', { name: 'Bet or raise amount' })).toHaveValue(40);
+    expect(screen.getByRole('button', { name: 'Quit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Leave' })).toBeInTheDocument();
+    expect(screen.getByTestId('player-rail')).toContainElement(screen.getByTestId('player-card-1'));
+    expect(screen.getByTestId('player-rail')).toContainElement(
+      screen.getByTestId('hero-hole-cards'),
+    );
+    expect(screen.getByTestId('felt-table')).not.toContainElement(
+      screen.getByTestId('player-card-1'),
+    );
+    expect(screen.getByTestId('felt-table')).not.toContainElement(
+      screen.getByTestId('hero-hole-cards'),
+    );
+    expect(screen.getByTestId('felt-table')).not.toContainElement(
+      screen.getByTestId('hole-cards-2'),
+    );
   });
 
   it('sends and receives table chat while a match is active', async () => {
