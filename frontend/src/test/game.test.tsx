@@ -335,6 +335,14 @@ describe('WaitingRoom and PokerTable Flow', () => {
     expect(screen.getByTestId('felt-table')).not.toContainElement(
       screen.getByTestId('hole-cards-2'),
     );
+    // The mobile action bar stays reachable without scrolling the table.
+    const actionBar = screen.getByTestId('action-bar');
+    expect(actionBar).toHaveClass('sticky');
+    expect(actionBar).toHaveClass('bottom-0');
+    expect(actionBar).toHaveClass('lg:static');
+    expect(screen.getByTestId('player-rail')).toHaveClass('min-h-[30rem]');
+    // The stage reserves room so the pinned bar never covers the hero seat.
+    expect(screen.getByTestId('table-stage')).toHaveClass('pb-28');
   });
 
   it('renders the ten as 10 instead of the shorthand T', async () => {

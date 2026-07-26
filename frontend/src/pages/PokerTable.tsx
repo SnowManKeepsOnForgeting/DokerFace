@@ -155,6 +155,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
   const totalPot = pot_amounts.reduce((sum, amt) => sum + amt, 0);
   const isMyTurn = actor_account_id === user?.account_id;
+  // The mobile action bar is pinned to the viewport bottom, so it overlays the table stage.
+  const showActionBar = isMyTurn && Boolean(privateSnapshot);
   const orderedPlayers = [...players].sort((left, right) => {
     const leftPosition = (left.seat - mySeat + 8) % 8;
     const rightPosition = (right.seat - mySeat + 8) % 8;
@@ -188,11 +190,11 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
     };
     const suit = suitsMap[suitSymbol] || { char: suitSymbol, color: 'text-slate-400' };
     const cardSize = compact
-      ? 'h-9 w-6 md:h-14 md:w-10'
-      : 'h-11 w-8 sm:h-14 sm:w-10 md:h-18 md:w-12';
-    const cardPadding = compact ? 'p-0.5 md:p-1.5' : 'p-1 sm:p-1.5';
-    const rankSize = compact ? 'text-[9px] md:text-xs' : 'text-[10px] sm:text-xs';
-    const suitSize = compact ? 'text-sm md:text-xl' : 'text-base sm:text-lg md:text-xl';
+      ? 'h-7 w-5 sm:h-9 sm:w-6 md:h-14 md:w-10'
+      : 'h-9 w-[1.6rem] sm:h-14 sm:w-10 md:h-18 md:w-12';
+    const cardPadding = compact ? 'p-0.5 md:p-1.5' : 'p-0.5 sm:p-1.5';
+    const rankSize = compact ? 'text-[8px] sm:text-[9px] md:text-xs' : 'text-[9px] sm:text-xs';
+    const suitSize = compact ? 'text-xs sm:text-sm md:text-xl' : 'text-sm sm:text-lg md:text-xl';
 
     return (
       <div
@@ -209,8 +211,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
   const renderCardBack = (compact = false) => {
     const cardSize = compact
-      ? 'h-9 w-6 md:h-14 md:w-10'
-      : 'h-11 w-8 sm:h-14 sm:w-10 md:h-18 md:w-12';
+      ? 'h-7 w-5 sm:h-9 sm:w-6 md:h-14 md:w-10'
+      : 'h-9 w-[1.6rem] sm:h-14 sm:w-10 md:h-18 md:w-12';
 
     return (
       <div
@@ -399,28 +401,33 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       )}
 
       {/* The felt and the seats share a stage, but seats remain outside the felt DOM and bounds. */}
-      <div className="min-h-0 flex-1 overflow-visible lg:overflow-y-auto">
+      <div
+        data-testid="table-stage"
+        className={`min-h-0 flex-1 overflow-visible lg:overflow-y-auto lg:pb-0 ${
+          showActionBar ? 'pb-28' : ''
+        }`}
+      >
         <div
           data-testid="player-rail"
-          className="relative mx-auto min-h-[44rem] w-full max-w-6xl p-3 md:min-h-[54rem] md:p-4"
+          className="relative mx-auto min-h-[30rem] w-full max-w-6xl p-3 md:min-h-[54rem] md:p-4"
         >
           {/* Felt Canvas */}
           <div
             data-testid="felt-table"
-            className="absolute left-1/2 top-1/2 flex aspect-[3/5] w-[60%] max-w-[24rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-[40%] border-[8px] border-double border-amber-900/80 bg-gradient-to-b from-emerald-800 to-emerald-950 p-4 shadow-2xl md:aspect-[2/1] md:w-[78%] md:max-w-4xl md:rounded-[200px] md:border-[10px] md:p-6"
+            className="absolute left-1/2 top-1/2 flex aspect-[3/4] w-[52%] max-w-[15rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-[40%] border-[8px] border-double border-amber-900/80 bg-gradient-to-b from-emerald-800 to-emerald-950 p-3 shadow-2xl md:aspect-[2/1] md:w-[78%] md:max-w-4xl md:rounded-[200px] md:border-[10px] md:p-6"
           >
             <div className="pointer-events-none absolute inset-2 rounded-[38%] border border-emerald-700/30 md:rounded-[190px]" />
 
             {/* Center Community Board & Pot */}
-            <div className="z-10 flex flex-col items-center gap-4 text-center select-none">
-              <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-black/40 px-4 py-1.5 text-slate-200 shadow-md">
-                <Coins className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm font-bold text-slate-100">
+            <div className="z-10 flex flex-col items-center gap-2 text-center select-none md:gap-4">
+              <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-black/40 px-3 py-1 text-slate-200 shadow-md md:px-4 md:py-1.5">
+                <Coins className="h-3.5 w-3.5 text-yellow-500 md:h-4 md:w-4" />
+                <span className="text-xs font-bold text-slate-100 md:text-sm">
                   Pot: {totalPot.toLocaleString()}
                 </span>
               </div>
 
-              <div className="grid grid-cols-5 gap-1.5 sm:flex sm:gap-2">
+              <div className="grid grid-cols-5 gap-1 sm:flex sm:gap-2">
                 {[0, 1, 2, 3, 4].map((index) => {
                   const card = board[index];
                   return card ? (
@@ -428,7 +435,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                   ) : (
                     <div
                       key={index}
-                      className="h-11 w-8 rounded-lg border-2 border-emerald-700/40 bg-emerald-950/20 sm:h-14 sm:w-10 md:h-18 md:w-12"
+                      className="h-9 w-[1.6rem] rounded-lg border-2 border-emerald-700/40 bg-emerald-950/20 sm:h-14 sm:w-10 md:h-18 md:w-12"
                     />
                   );
                 })}
@@ -456,7 +463,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               <article
                 key={player.account_id}
                 data-testid={`player-card-${player.account_id}`}
-                className={`absolute z-10 flex w-16 flex-col items-center gap-1 rounded-xl border bg-slate-950/90 p-1.5 text-center shadow-xl md:w-28 md:gap-2 md:rounded-2xl md:p-2 ${SEAT_POSITION_CLASSES[rotatedIndex]} ${
+                className={`absolute z-10 flex w-14 flex-col items-center gap-0.5 rounded-xl border bg-slate-950/90 p-1 text-center shadow-xl sm:w-16 sm:gap-1 sm:p-1.5 md:w-28 md:gap-2 md:rounded-2xl md:p-2 ${SEAT_POSITION_CLASSES[rotatedIndex]} ${
                   isActive ? 'border-amber-400 shadow-amber-500/20' : 'border-slate-800'
                 }`}
               >
@@ -473,7 +480,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                 )}
 
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-bold text-white md:h-10 md:w-10 md:text-xs ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-[9px] font-bold text-white sm:h-8 sm:w-8 sm:text-[10px] md:h-10 md:w-10 md:text-xs ${
                     isActive ? 'border-amber-400 ring-2 ring-amber-500/20' : 'border-white/10'
                   }`}
                   style={{ backgroundColor: '#4f46e5' }}
@@ -518,8 +525,11 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       </div>
 
       {/* Action Decision Control Bar */}
-      {isMyTurn && privateSnapshot && (
-        <section className="bg-slate-900 border-t border-slate-800 p-4 shrink-0 flex flex-col gap-4 z-10 animate-slideUp">
+      {showActionBar && privateSnapshot && (
+        <section
+          data-testid="action-bar"
+          className="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-slate-800 bg-slate-900 p-3 animate-slideUp sm:gap-4 sm:p-4 lg:static"
+        >
           {lastCommandError && (
             <div
               role="status"
@@ -532,8 +542,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
           {/* Bet slider */}
           {betAction && (
-            <div className="flex items-center gap-4 max-w-2xl mx-auto w-full">
-              <span className="text-xs text-slate-400 font-semibold w-12 text-right">
+            <div className="mx-auto flex w-full max-w-2xl items-center gap-2 sm:gap-4">
+              <span className="w-10 shrink-0 text-right text-[10px] font-semibold text-slate-400 sm:w-12 sm:text-xs">
                 {minBetAmount.toLocaleString()}
               </span>
               <input
@@ -553,7 +563,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                 }
                 className="flex-1 accent-purple-500 bg-slate-950 h-2 rounded-lg cursor-pointer"
               />
-              <span className="text-xs text-slate-400 font-semibold w-12">
+              <span className="w-10 shrink-0 text-[10px] font-semibold text-slate-400 sm:w-12 sm:text-xs">
                 {maxBetAmount.toLocaleString()}
               </span>
               <input
@@ -570,13 +580,13 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                     ),
                   )
                 }
-                className="w-20 h-8 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-lg text-xs font-bold text-center text-purple-400 outline-none"
+                className="h-8 w-16 shrink-0 rounded-lg border border-slate-800 bg-slate-950 text-center text-xs font-bold text-purple-400 outline-none focus:border-purple-500/50 sm:w-20"
               />
             </div>
           )}
 
           {/* Action buttons */}
-          <div className="flex flex-wrap justify-center gap-3 w-full">
+          <div className="flex w-full flex-wrap justify-center gap-2 sm:gap-3">
             {privateSnapshot.legal_actions.map((act) => {
               const themeMap: Record<string, string> = {
                 fold: 'bg-rose-900/60 hover:bg-rose-900 border-rose-800 hover:border-rose-700 text-rose-200',
@@ -602,7 +612,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                   key={act.action}
                   onClick={() => handleAction(act.action as ActionType)}
                   disabled={!connected || Boolean(pendingAction)}
-                  className={`h-11 px-6 border rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-md disabled:cursor-not-allowed disabled:opacity-50 ${btnTheme}`}
+                  className={`flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 text-[11px] font-bold uppercase tracking-wider shadow-md transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:gap-2 sm:px-6 sm:text-xs ${btnTheme}`}
                 >
                   {actionLabel}
                   {(actionLabel === 'call' || act.action === 'bet_or_raise') && (
