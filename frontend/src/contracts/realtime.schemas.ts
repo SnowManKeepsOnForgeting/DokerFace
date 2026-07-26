@@ -7,6 +7,7 @@ export const ChatMessagePayloadSchema = z.object({
     "message_id": z.string().uuid(),
     "room_id": z.string().uuid(),
     "account_id": z.number().int(),
+    "display_name": z.string(),
     "message_type": z.enum(["text","quick","custom_quick"] as const),
     "content": z.string(),
     "target_account_id": z.union([z.number().int(), z.null()]).optional(),
@@ -86,6 +87,7 @@ export const GameHandSettledSchema = z.object({
     "hand_number": z.number().int(),
     "state_version": z.number().int(),
     "account_ids": z.array(z.number().int()),
+    "display_names": z.array(z.string()),
     "final_stacks": z.array(z.number().int()),
     "payoffs": z.array(z.number().int()),
     "pots": z.array(z.lazy(() => GameHandSettledGamePotSettlementSchema)).optional(),
@@ -105,6 +107,7 @@ export const GameMatchSettledSchema = z.object({
     "match_id": z.string().uuid(),
     "state_version": z.number().int(),
     "account_ids": z.array(z.number().int()),
+    "display_names": z.array(z.string()),
     "final_stacks": z.array(z.number().int()),
     "status": z.string(),
   }).passthrough();

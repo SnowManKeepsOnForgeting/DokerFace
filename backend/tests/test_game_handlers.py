@@ -357,6 +357,8 @@ async def test_game_quit_splits_chips_and_removes_the_connection_from_the_room()
     final_stacks = dict(zip(settlement["account_ids"], settlement["final_stacks"], strict=True))
     assert final_stacks[2] == 0
     assert final_stacks[1] == 2000
+    settled_names = dict(zip(settlement["account_ids"], settlement["display_names"], strict=True))
+    assert settled_names == {1: "Alice", 2: "Bob"}
 
 
 @pytest.mark.asyncio
@@ -425,7 +427,12 @@ async def test_match_completion_resets_room_to_waiting() -> None:
 
     assert matches.for_room(room.room_id) is None
     assert room.status is RoomStatus.WAITING
-    assert emitted_payloads(server, "game:match-settled")[-1]["status"] == "complete"
+    match_settled = emitted_payloads(server, "game:match-settled")[-1]
+    assert match_settled["status"] == "complete"
+    assert dict(zip(match_settled["account_ids"], match_settled["display_names"], strict=True)) == {
+        1: "Alice",
+        2: "Bob",
+    }
     waiting = emitted_payloads(server, "room:snapshot")[-1]
     assert waiting["status"] == "waiting"
     assert all(member["ready"] is False for member in waiting["members"])

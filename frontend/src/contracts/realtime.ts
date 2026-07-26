@@ -9,6 +9,8 @@ export type RoomId = string;
 
 export type AccountId = number;
 
+export type DisplayName = string;
+
 export type MessageType = 'text' | 'quick' | 'custom_quick';
 
 export type Content = string;
@@ -23,6 +25,7 @@ export interface ChatMessagePayload {
   message_id: MessageId;
   room_id: RoomId;
   account_id: AccountId;
+  display_name: DisplayName;
   message_type: MessageType;
   content: Content;
   target_account_id?: TargetAccountId;
@@ -109,6 +112,8 @@ export type HandNumber = number;
 
 export type AccountIds = number[];
 
+export type DisplayNames = string[];
+
 export type FinalStacks = number[];
 
 export type Payoffs = number[];
@@ -133,6 +138,7 @@ export interface GameHandSettled {
   hand_number: HandNumber;
   state_version: StateVersion;
   account_ids: AccountIds;
+  display_names: DisplayNames;
   final_stacks: FinalStacks;
   payoffs: Payoffs;
   pots?: Pots;
@@ -178,14 +184,13 @@ export interface GameMatchSettled {
   match_id: MatchId;
   state_version: StateVersion;
   account_ids: AccountIds;
+  display_names: DisplayNames;
   final_stacks: FinalStacks;
   status: Status;
   [k: string]: unknown;
 }
 
 export type Seat = number;
-
-export type DisplayName = string;
 
 export type Stack = number;
 

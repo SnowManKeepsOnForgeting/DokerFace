@@ -74,6 +74,7 @@ class ChatMessagePayload(BaseModel):
     message_id: UUID
     room_id: UUID
     account_id: int
+    display_name: str
     message_type: Literal["text", "quick", "custom_quick"]
     content: str
     target_account_id: int | None = None
@@ -214,6 +215,7 @@ class GameHandSettled(BaseModel):
     hand_number: int
     state_version: int
     account_ids: list[int]
+    display_names: list[str]
     final_stacks: list[int]
     payoffs: list[int]
     pots: list["GamePotSettlement"] = []
@@ -237,6 +239,7 @@ class GameMatchSettled(BaseModel):
     match_id: UUID
     state_version: int
     account_ids: list[int]
+    display_names: list[str]
     final_stacks: list[int]
     status: str
 

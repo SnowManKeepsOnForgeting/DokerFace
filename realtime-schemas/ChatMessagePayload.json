@@ -20,6 +20,10 @@
       "title": "Account Id",
       "type": "integer"
     },
+    "display_name": {
+      "title": "Display Name",
+      "type": "string"
+    },
     "message_type": {
       "enum": [
         "text",
@@ -55,6 +59,7 @@
     "message_id",
     "room_id",
     "account_id",
+    "display_name",
     "message_type",
     "content",
     "created_at"

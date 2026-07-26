@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
@@ -206,6 +207,9 @@ async def test_chat_persists_before_broadcast_and_emotes_target_members() -> Non
     db_session.add = MagicMock()
     room = make_room(uuid4())
     db_session.scalar.return_value = room
+    db_session.scalars.return_value = MagicMock(
+        all=MagicMock(return_value=[SimpleNamespace(account_id=1, display_name="Alice")])
+    )
     database = MagicMock()
     database.session_factory.return_value.__aenter__ = AsyncMock(return_value=db_session)
     database.session_factory.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -236,11 +240,15 @@ async def test_chat_persists_before_broadcast_and_emotes_target_members() -> Non
 
     assert chat["ok"] is True
     assert chat["message"]["message_type"] == "quick"
+    assert chat["message"]["display_name"] == "Alice"
     assert emote["ok"] is True
     assert emote["emote"]["target_account_id"] == 1
     assert invalid_target == {"ok": False, "error": "target_not_a_member"}
     assert db_session.commit.await_count == 1
-    assert [call.args[0] for call in server.emit.await_args_list][-2:] == [
-        "chat:message",
-        "emote:received",
-    ]
+    emitted = [call.args[0] for call in server.emit.await_args_list]
+    assert emitted[-2:] == ["chat:message", "emote:received"]
+    broadcast_chat = next(
+        call.args[1] for call in server.emit.await_args_list if call.args[0] == "chat:message"
+    )
+    assert broadcast_chat["display_name"] == "Alice"
+    assert broadcast_chat["account_id"] == 1

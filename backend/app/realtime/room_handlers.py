@@ -255,10 +255,12 @@ def register_room_handlers(
             )
         except Exception:
             return _error("chat_persistence_failed")
+        display_names = await _load_profile_names(app, [account_id])
         payload = ChatMessagePayload(
             message_id=message.message_id,
             room_id=message.room_id,
             account_id=message.account_id,
+            display_name=display_names.get(account_id, str(account_id)),
             message_type=event.message_type,
             content=message.content,
             created_at=message.created_at,
@@ -1120,6 +1122,7 @@ async def _emit_hand_settled(
     ):
         return
     account_ids = list(completed.public.account_ids)
+    seated_names = {player.account_id: player.display_name for player in match.players}
     pots = [
         GamePotSettlement(
             pot_number=index + 1,
@@ -1144,6 +1147,7 @@ async def _emit_hand_settled(
         hand_number=result.settled_hand_number,
         state_version=result.state_version,
         account_ids=account_ids,
+        display_names=[seated_names.get(account_id, str(account_id)) for account_id in account_ids],
         final_stacks=list(settlement.final_stacks),
         payoffs=list(settlement.payoffs),
         pots=pots,
@@ -1169,10 +1173,15 @@ async def _emit_match_settled(
     settlement = result.settlement
     if settlement is None:
         return
+    seated_names = {player.account_id: player.display_name for player in match.players}
     payload = GameMatchSettled(
         match_id=match.match_id,
         state_version=result.state_version,
         account_ids=list(match.actor.coordinator.player_ids),
+        display_names=[
+            seated_names.get(account_id, str(account_id))
+            for account_id in match.actor.coordinator.player_ids
+        ],
         final_stacks=[
             match.actor.coordinator.stacks[account_id]
             for account_id in match.actor.coordinator.player_ids

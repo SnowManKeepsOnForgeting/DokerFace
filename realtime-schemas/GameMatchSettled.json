@@ -22,6 +22,13 @@
       "title": "Account Ids",
       "type": "array"
     },
+    "display_names": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Display Names",
+      "type": "array"
+    },
     "final_stacks": {
       "items": {
         "type": "integer"
@@ -38,6 +45,7 @@
     "match_id",
     "state_version",
     "account_ids",
+    "display_names",
     "final_stacks",
     "status"
   ],
