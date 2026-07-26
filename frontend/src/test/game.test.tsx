@@ -203,6 +203,27 @@ describe('WaitingRoom and PokerTable Flow', () => {
 
     const readyBtn = screen.getByText('Set Ready');
     await userEvent.click(readyBtn);
+
+    act(() => {
+      socketForTest.listeners('chat:message').forEach((listener) =>
+        listener({
+          schema_version: 1,
+          message_id: '00000000-0000-4000-8000-000000000009',
+          room_id: roomId,
+          account_id: 2,
+          display_name: 'Bobby',
+          message_type: 'text',
+          content: 'Waiting here',
+          target_account_id: null,
+          created_at: '2026-07-17T00:00:00Z',
+        }),
+      );
+    });
+
+    // The waiting room chat identifies senders by nickname.
+    expect(screen.getByText('Waiting here')).toBeInTheDocument();
+    expect(screen.getByText('Bobby')).toBeInTheDocument();
+    expect(screen.queryByText('Player #2')).not.toBeInTheDocument();
   });
 
   it('uses the minimum legal amount before the bet control is changed', async () => {
@@ -493,6 +514,9 @@ describe('WaitingRoom and PokerTable Flow', () => {
     });
 
     expect(screen.getByText('Still here')).toBeInTheDocument();
+    // The sender is identified by the nickname carried in the chat payload.
+    expect(screen.getByText('Bobby')).toBeInTheDocument();
+    expect(screen.queryByText('Player #2')).not.toBeInTheDocument();
   });
 
   it('quits the active match immediately and returns to the lobby', async () => {
@@ -864,5 +888,8 @@ describe('WaitingRoom and PokerTable Flow', () => {
 
     expect(await screen.findByText('Match Completed')).toBeInTheDocument();
     expect(screen.queryByText('Waiting Room')).not.toBeInTheDocument();
+    // Final standings identify players by nickname instead of account id.
+    expect(screen.queryByText(/Player #/)).not.toBeInTheDocument();
+    expect(screen.getAllByText('Bob').length).toBeGreaterThan(0);
   });
 });

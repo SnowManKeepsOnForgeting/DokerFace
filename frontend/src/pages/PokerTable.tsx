@@ -349,7 +349,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                     <span className="truncate font-bold text-purple-400">
                       {message.account_id === user?.account_id
                         ? 'You'
-                        : `Player #${message.account_id}`}
+                        : message.display_name || `Player #${message.account_id}`}
                     </span>
                     <span className="shrink-0">
                       {new Date(message.created_at).toLocaleTimeString([], {
@@ -643,7 +643,9 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                     key={accId}
                     className="flex justify-between items-center text-xs font-semibold"
                   >
-                    <span className="text-slate-400">Player #{accId}</span>
+                    <span className="text-slate-400">
+                      {handSettled.display_names?.[idx] || `Player #${accId}`}
+                    </span>
                     <span className={payoff > 0 ? 'text-emerald-400' : 'text-rose-400'}>
                       {payoff > 0 ? '+' : ''}
                       {payoff.toLocaleString()} chips
@@ -682,7 +684,9 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                       <span className="h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400">
                         {idx + 1}
                       </span>
-                      <span className="text-sm font-semibold text-slate-200">Player #{accId}</span>
+                      <span className="text-sm font-semibold text-slate-200">
+                        {matchSettled.display_names?.[idx] || `Player #${accId}`}
+                      </span>
                     </div>
                     <span className="text-sm font-bold text-emerald-400">
                       {stack.toLocaleString()} chips

@@ -224,7 +224,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
                   <span className="font-bold text-purple-400 truncate max-w-[150px]">
                     {msg.account_id === currentUser?.account_id
                       ? 'You'
-                      : `Player #${msg.account_id}`}
+                      : msg.display_name || `Player #${msg.account_id}`}
                   </span>
                   <span>
                     {new Date(msg.created_at).toLocaleTimeString([], {
