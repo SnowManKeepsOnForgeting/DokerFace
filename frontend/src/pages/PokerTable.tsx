@@ -28,6 +28,9 @@ const QUICK_PHRASES = [
   'Deal me in!',
 ];
 
+// Backend cards use standard poker shorthand, where "T" is the ten.
+const RANK_LABELS: Record<string, string> = { T: '10' };
+
 // Seat order is rotated so the current player is always seat 0 at the bottom.
 const SEAT_POSITION_CLASSES = [
   'bottom-0 left-1/2 -translate-x-1/2',
@@ -174,7 +177,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   // Card UI helper
   const renderCard = (cardStr: string, compact = false) => {
     if (!cardStr || cardStr.length < 2) return null;
-    const rank = cardStr.slice(0, -1).toUpperCase();
+    const rankCode = cardStr.slice(0, -1).toUpperCase();
+    const rank = RANK_LABELS[rankCode] ?? rankCode;
     const suitSymbol = cardStr.slice(-1);
     const suitsMap: Record<string, { char: string; color: string }> = {
       s: { char: '♠', color: 'text-slate-800' },

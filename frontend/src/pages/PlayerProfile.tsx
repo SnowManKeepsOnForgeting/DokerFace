@@ -33,6 +33,9 @@ import {
   KeyRound,
 } from 'lucide-react';
 
+// Backend cards use standard poker shorthand, where "T" is the ten.
+const RANK_LABELS: Record<string, string> = { T: '10' };
+
 export function PlayerProfile() {
   const { playerId } = useParams<{ playerId: string }>();
   const { user: currentUser, refetch: refetchAuth } = useAuth();
@@ -747,7 +750,8 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
   // Render cards helper
   const renderMiniCard = (cardStr: string) => {
     if (!cardStr || cardStr.length < 2) return null;
-    const rank = cardStr.slice(0, -1).toUpperCase();
+    const rankCode = cardStr.slice(0, -1).toUpperCase();
+    const rank = RANK_LABELS[rankCode] ?? rankCode;
     const suitSymbol = cardStr.slice(-1);
     const suitsMap: Record<string, { char: string; color: string }> = {
       s: { char: '♠', color: 'text-slate-800' },

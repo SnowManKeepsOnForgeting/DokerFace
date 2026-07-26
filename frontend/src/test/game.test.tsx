@@ -316,6 +316,82 @@ describe('WaitingRoom and PokerTable Flow', () => {
     );
   });
 
+  it('renders the ten as 10 instead of the shorthand T', async () => {
+    restoreSocket = mockConnectedSocket();
+
+    useGameStore.setState({
+      connected: true,
+      publicSnapshot: {
+        schema_version: 1,
+        match_id: '00000000-0000-4000-8000-000000000002',
+        hand_id: '00000000-0000-4000-8000-000000000003',
+        hand_number: 1,
+        state_version: 1,
+        street: 'flop',
+        button_account_id: 2,
+        actor_account_id: 2,
+        board: ['Ts', '2h', '7d'],
+        pot_amounts: [30],
+        complete: false,
+        players: [
+          {
+            account_id: 1,
+            seat: 0,
+            display_name: 'Alice',
+            stack: 990,
+            bet: 15,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+          {
+            account_id: 2,
+            seat: 1,
+            display_name: 'Bob',
+            stack: 980,
+            bet: 25,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+        ],
+        server_time: '2026-07-17T00:00:00Z',
+        actions: [],
+        action_deadline_at: null,
+      },
+    });
+
+    render(
+      <AuthContext.Provider
+        value={{
+          user: {
+            account_id: 1,
+            login_name: 'alice',
+            role: 'player',
+            status: 'active',
+            display_name: 'Alice',
+          },
+          isLoading: false,
+          login: async () => ({
+            account_id: 1,
+            login_name: 'alice',
+            role: 'player',
+            status: 'active',
+            display_name: 'Alice',
+          }),
+          logout: async () => {},
+          refetch: async () => {},
+        }}
+      >
+        <PokerTable roomId={roomId} onLeave={vi.fn()} />
+      </AuthContext.Provider>,
+    );
+
+    // Each card renders its rank twice, once upright and once rotated.
+    expect(screen.getAllByText('10')).toHaveLength(2);
+    expect(screen.queryByText('T')).not.toBeInTheDocument();
+  });
+
   it('sends and receives table chat while a match is active', async () => {
     restoreSocket = mockConnectedSocket();
     useGameStore.setState({

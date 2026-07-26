@@ -98,7 +98,7 @@ const mockMatchDetail = {
       small_blind: 10,
       big_blind: 20,
       status: 'settled',
-      public_board: ['As', 'Kd', 'Qc', 'Jh'],
+      public_board: ['Ts', 'Kd', 'Qc', 'Jh'],
       settlement_summary: { '1': 1500 },
       players: [{ account_id: 1, chips: 1500 }],
       actions: [
@@ -220,6 +220,9 @@ describe('PlayerProfile View and Editing', () => {
     expect(screen.getByText('♦')).toHaveClass('text-rose-500');
     expect(screen.getByText('♣')).toHaveClass('text-slate-800');
     expect(screen.getByText('♥')).toHaveClass('text-rose-500');
+    // Standard poker shorthand "T" must be displayed as the ten.
+    expect(screen.getByText('10')).toBeInTheDocument();
+    expect(screen.queryByText('T')).not.toBeInTheDocument();
 
     // Close Modal
     const closeBtn = screen.getByRole('button', { name: '' }); // X close button
