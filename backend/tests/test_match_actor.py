@@ -6,6 +6,7 @@ import pytest
 
 from app.game_engine.actor import (
     MatchActor,
+    MatchActorSnapshot,
     MatchActorStateError,
     MatchCommand,
     MatchCommandConflictError,
@@ -180,6 +181,63 @@ async def test_timeout_command_requires_identity_and_folds_current_actor() -> No
     assert response.result.applied.action is ActionType.FOLD
     assert response.result.applied.account_id == initial.public.actor_account_id
     assert response.result.state_version == 1
+    await actor.close()
+
+
+async def _call_the_big_blind(actor: MatchActor, initial: MatchActorSnapshot) -> tuple[int, int]:
+    """Let the button call so the big blind can check for free."""
+    button_account_id = initial.public.actor_account_id
+    assert button_account_id is not None
+    await actor.submit(
+        MatchCommand(
+            command_id=uuid4(),
+            action=ActionCommand(button_account_id, ActionType.CHECK_OR_CALL, amount=50),
+            match_id=actor.match_id,
+            hand_id=initial.hand_id,
+            state_version=0,
+        )
+    )
+    big_blind_account_id = 2 if button_account_id == 1 else 1
+    return button_account_id, big_blind_account_id
+
+
+@pytest.mark.asyncio
+async def test_private_snapshot_offers_fold_when_checking_is_free() -> None:
+    actor = MatchActor(MatchCoordinator((1, 2), make_rules()), match_id=uuid4())
+    initial = await actor.start()
+
+    _, big_blind_account_id = await _call_the_big_blind(actor, initial)
+
+    private = actor.private_snapshot(big_blind_account_id)
+    check_or_call = next(
+        action for action in private.legal_actions if action.action is ActionType.CHECK_OR_CALL
+    )
+    assert check_or_call.min_amount == 0
+    assert ActionType.FOLD in {action.action for action in private.legal_actions}
+    await actor.close()
+
+
+@pytest.mark.asyncio
+async def test_timeout_checks_instead_of_folding_when_checking_is_free() -> None:
+    match_id = uuid4()
+    actor = MatchActor(MatchCoordinator((1, 2), make_rules()), match_id=match_id)
+    initial = await actor.start()
+
+    _, big_blind_account_id = await _call_the_big_blind(actor, initial)
+
+    response = await actor.submit_timeout(
+        uuid4(),
+        match_id=match_id,
+        hand_id=initial.hand_id,
+        state_version=1,
+    )
+
+    assert response.result.applied.action is ActionType.CHECK_OR_CALL
+    assert response.result.applied.account_id == big_blind_account_id
+    assert response.result.applied.amount == 0
+    assert response.result.snapshot.folded == (False, False)
+    assert response.result.snapshot.street == "flop"
+    assert response.result.snapshot.actor_account_id is not None
     await actor.close()
 
 

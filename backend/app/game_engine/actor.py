@@ -199,13 +199,24 @@ class MatchActor:
         return await self.submit(
             MatchCommand(
                 command_id=command_id,
-                action=ActionCommand(actor_account_id, ActionType.FOLD),
+                action=ActionCommand(actor_account_id, self._automatic_action(actor_account_id)),
                 match_id=match_id,
                 hand_id=hand_id,
                 state_version=state_version,
                 source=source,
             )
         )
+
+    def _automatic_action(self, account_id: int) -> ActionType:
+        """Return the action used when a player runs out of time.
+
+        Checking is free when nothing is at stake, so an expired timer must not
+        cost the player the hand. Facing a bet, the timer still folds.
+        """
+        for legal in self._coordinator.hand.legal_actions(account_id):
+            if legal.action is ActionType.CHECK_OR_CALL and legal.min_amount == 0:
+                return ActionType.CHECK_OR_CALL
+        return ActionType.FOLD
 
     def schedule_disconnect_timeout(self, account_id: int) -> bool:
         if self._decision_timeout_seconds is not None:
