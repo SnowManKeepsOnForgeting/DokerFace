@@ -184,20 +184,7 @@ async def leaderboard(
 
     # Compute current player leaderboard stats
     current_player_stats = None
-    all_ratings = list(
-        (
-            await db_session.scalars(
-                select(RatingRecord)
-                .where(RatingRecord.batch_id == batch.batch_id)
-                .order_by(
-                    RatingRecord.rating.desc(),
-                    RatingRecord.highest_rating.desc(),
-                    RatingRecord.completed_matches.desc(),
-                    RatingRecord.account_id,
-                )
-            )
-        ).all()
-    )
+    all_ratings = list(await service.ranked_visible_ratings(db_session, batch))
 
     current_player_index = None
     for idx, r in enumerate(all_ratings):

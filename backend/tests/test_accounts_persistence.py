@@ -440,3 +440,82 @@ async def test_account_schema_enforces_identity_uniqueness_and_relationships(
             assert replacement.account_id != deleted_history.account_id
     finally:
         await engine.dispose()
+
+
+async def test_leaderboard_hides_disabled_and_deleted_accounts(
+    postgres_database_url: str,
+) -> None:
+    engine = create_async_engine(postgres_database_url, pool_pre_ping=True)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    service = RatingService()
+
+    try:
+        async with session_factory() as session:
+            accounts = {
+                status_name: Account(
+                    login_name=f"leaderboard-{status_name}",
+                    password_hash="argon2-hash",
+                    status=status,
+                    profile=Profile(
+                        display_name=status_name.title(),
+                        avatar_text=status_name.title(),
+                    ),
+                )
+                for status_name, status in (
+                    ("active", AccountStatus.ACTIVE),
+                    ("disabled", AccountStatus.DISABLED),
+                    ("deleted", AccountStatus.DELETED),
+                )
+            }
+            session.add_all(list(accounts.values()))
+            await session.flush()
+
+            batch = RatingBatch(created_by_account_id=accounts["active"].account_id)
+            session.add(batch)
+            await session.flush()
+            # The hidden accounts hold the two highest ratings on purpose.
+            session.add_all(
+                [
+                    RatingRecord(
+                        batch_id=batch.batch_id,
+                        account_id=accounts["active"].account_id,
+                        rating=1000,
+                        highest_rating=1000,
+                    ),
+                    RatingRecord(
+                        batch_id=batch.batch_id,
+                        account_id=accounts["disabled"].account_id,
+                        rating=1200,
+                        highest_rating=1200,
+                    ),
+                    RatingRecord(
+                        batch_id=batch.batch_id,
+                        account_id=accounts["deleted"].account_id,
+                        rating=1300,
+                        highest_rating=1300,
+                    ),
+                ]
+            )
+            await session.commit()
+
+            _, entries, total = await service.leaderboard_entries(session, offset=0, limit=50)
+            assert [entry.account_id for entry in entries] == [accounts["active"].account_id]
+            assert total == 1
+            ranked = await service.ranked_visible_ratings(session, batch)
+            assert [entry.account_id for entry in ranked] == [accounts["active"].account_id]
+
+            # Restoring an account brings its untouched rating back to the board.
+            accounts["disabled"].status = AccountStatus.ACTIVE
+            await session.commit()
+
+            _, restored_entries, restored_total = await service.leaderboard_entries(
+                session, offset=0, limit=50
+            )
+            assert [entry.account_id for entry in restored_entries] == [
+                accounts["disabled"].account_id,
+                accounts["active"].account_id,
+            ]
+            assert restored_total == 2
+            assert restored_entries[0].rating == 1200
+    finally:
+        await engine.dispose()

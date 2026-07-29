@@ -11,6 +11,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql import Select
 
 from app.accounts.models import Account, AccountStatus, Profile
 from app.matches.models import MatchRecord
@@ -135,6 +136,41 @@ class RatingService:
         )
         return batch
 
+    def _visible_ratings_query(self, batch: RatingBatch) -> Select[tuple[RatingRecord]]:
+        """Select the batch's ratings for accounts a player is allowed to see.
+
+        Disabled and soft-deleted accounts keep their rating records so that a
+        restore brings back the same rating, so they are filtered out here
+        instead of being removed from the batch.
+        """
+        return (
+            select(RatingRecord)
+            .join(Account, Account.account_id == RatingRecord.account_id)
+            .where(
+                RatingRecord.batch_id == batch.batch_id,
+                Account.status == AccountStatus.ACTIVE,
+            )
+        )
+
+    async def ranked_visible_ratings(
+        self,
+        session: AsyncSession,
+        batch: RatingBatch,
+    ) -> Sequence[RatingRecord]:
+        """Return every visible rating of the batch in leaderboard order."""
+        return list(
+            (
+                await session.scalars(
+                    self._visible_ratings_query(batch).order_by(
+                        RatingRecord.rating.desc(),
+                        RatingRecord.highest_rating.desc(),
+                        RatingRecord.completed_matches.desc(),
+                        RatingRecord.account_id,
+                    )
+                )
+            ).all()
+        )
+
     async def leaderboard_entries(
         self,
         session: AsyncSession,
@@ -148,11 +184,15 @@ class RatingService:
         if batch is None:
             return None, (), 0
 
-        query = select(RatingRecord).where(RatingRecord.batch_id == batch.batch_id)
+        query = self._visible_ratings_query(batch)
         count_query = (
             select(func.count())
             .select_from(RatingRecord)
-            .where(RatingRecord.batch_id == batch.batch_id)
+            .join(Account, Account.account_id == RatingRecord.account_id)
+            .where(
+                RatingRecord.batch_id == batch.batch_id,
+                Account.status == AccountStatus.ACTIVE,
+            )
         )
 
         if only_with_matches:
