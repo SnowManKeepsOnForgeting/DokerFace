@@ -535,6 +535,96 @@ describe('WaitingRoom and PokerTable Flow', () => {
     expect(screen.queryByText('Player #2')).not.toBeInTheDocument();
   });
 
+  it('marks table chat unread only while the panel is closed', async () => {
+    restoreSocket = mockConnectedSocket();
+    useGameStore.setState({
+      connected: true,
+      chatMessages: [],
+      publicSnapshot: {
+        schema_version: 1,
+        match_id: '00000000-0000-4000-8000-000000000002',
+        hand_id: '00000000-0000-4000-8000-000000000003',
+        hand_number: 1,
+        state_version: 1,
+        street: 'preflop',
+        button_account_id: 2,
+        actor_account_id: 2,
+        board: [],
+        pot_amounts: [30],
+        complete: false,
+        players: [
+          {
+            account_id: 1,
+            seat: 0,
+            display_name: 'Alice',
+            stack: 990,
+            bet: 10,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+          {
+            account_id: 2,
+            seat: 1,
+            display_name: 'Bob',
+            stack: 980,
+            bet: 20,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+        ],
+        server_time: '2026-07-17T00:00:00Z',
+        actions: [],
+        action_deadline_at: null,
+      },
+    });
+
+    const receiveChat = (messageId: string, content: string) => {
+      act(() => {
+        socket.listeners('chat:message').forEach((listener) =>
+          listener({
+            schema_version: 1,
+            message_id: messageId,
+            room_id: roomId,
+            account_id: 2,
+            display_name: 'Bobby',
+            message_type: 'text',
+            content,
+            target_account_id: null,
+            created_at: '2026-07-17T00:00:00Z',
+          }),
+        );
+      });
+    };
+
+    renderPokerTable();
+
+    expect(screen.queryByTestId('chat-unread-badge')).not.toBeInTheDocument();
+
+    receiveChat('00000000-0000-4000-8000-000000000010', 'First');
+    expect(screen.getByTestId('chat-unread-badge')).toBeInTheDocument();
+
+    // Opening the panel clears the badge.
+    await userEvent.click(screen.getByRole('button', { name: 'Show table chat' }));
+    expect(screen.queryByTestId('chat-unread-badge')).not.toBeInTheDocument();
+
+    // Messages read while the panel is open must not come back as unread.
+    receiveChat('00000000-0000-4000-8000-000000000011', 'Second');
+    await userEvent.click(screen.getByRole('button', { name: 'Hide table chat' }));
+    expect(screen.queryByTestId('chat-unread-badge')).not.toBeInTheDocument();
+
+    // Only chat arriving after the panel closed marks the button again.
+    receiveChat('00000000-0000-4000-8000-000000000012', 'Third');
+    expect(screen.getByTestId('chat-unread-badge')).toBeInTheDocument();
+
+    // The panel's own close button clears the badge the same way.
+    await userEvent.click(screen.getByRole('button', { name: 'Show table chat' }));
+    receiveChat('00000000-0000-4000-8000-000000000013', 'Fourth');
+    await userEvent.click(screen.getByRole('button', { name: 'Close table chat' }));
+    expect(screen.queryByTestId('chat-unread-badge')).not.toBeInTheDocument();
+  });
+
   it('quits the active match immediately and returns to the lobby', async () => {
     restoreSocket = mockConnectedSocket();
     const onLeave = vi.fn();

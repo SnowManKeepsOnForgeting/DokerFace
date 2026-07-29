@@ -72,6 +72,26 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const [isLeaving, setIsLeaving] = useState(false);
   const [isQuitting, setIsQuitting] = useState(false);
   const chatListRef = useRef<HTMLDivElement>(null);
+  // Messages already in the list when the table mounts are not new, and the
+  // stored list is capped, so the last read message id is tracked instead of a
+  // message count.
+  const [lastReadChatId, setLastReadChatId] = useState<string | null>(
+    chatMessages[chatMessages.length - 1]?.message_id ?? null,
+  );
+  const latestChatId = chatMessages[chatMessages.length - 1]?.message_id ?? null;
+  const hasUnreadChat = !showChat && latestChatId !== null && latestChatId !== lastReadChatId;
+
+  // Opening the panel clears the badge; closing it also marks what was on
+  // screen as read, so only chat arriving afterwards raises the badge again.
+  const toggleChat = () => {
+    setLastReadChatId(latestChatId);
+    setShowChat((visible) => !visible);
+  };
+
+  const closeChat = () => {
+    setLastReadChatId(latestChatId);
+    setShowChat(false);
+  };
 
   useEffect(() => {
     if (showChat && chatListRef.current) {
@@ -258,13 +278,17 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
         <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
           <button
-            onClick={() => setShowChat((visible) => !visible)}
+            onClick={toggleChat}
             aria-label={showChat ? 'Hide table chat' : 'Show table chat'}
             className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
           >
             <MessageSquare className="h-4.5 w-4.5" />
-            {!showChat && chatMessages.length > 0 && (
-              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-slate-900 bg-purple-500" />
+            {hasUnreadChat && (
+              <span
+                data-testid="chat-unread-badge"
+                aria-label="Unread table chat"
+                className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-slate-900 bg-purple-500"
+              />
             )}
           </button>
           {/* Quick emotes menu toggle */}
@@ -329,7 +353,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               Table Chat
             </h2>
             <button
-              onClick={() => setShowChat(false)}
+              onClick={closeChat}
               aria-label="Close table chat"
               className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-100"
             >
