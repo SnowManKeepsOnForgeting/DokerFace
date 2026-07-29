@@ -63,6 +63,33 @@ def test_fold_completes_hand_and_preserves_chip_conservation() -> None:
     assert settlement.final_stacks == (950, 1050)
 
 
+def test_fold_is_legal_and_settles_when_checking_is_free() -> None:
+    adapter = make_heads_up()
+
+    adapter.apply_action(ActionCommand(101, ActionType.CHECK_OR_CALL, amount=50))
+
+    check_or_call = next(
+        action for action in adapter.legal_actions(202) if action.action is ActionType.CHECK_OR_CALL
+    )
+    assert check_or_call.min_amount == 0
+    assert {action.action for action in adapter.legal_actions(202)} == {
+        ActionType.FOLD,
+        ActionType.CHECK_OR_CALL,
+        ActionType.BET_OR_RAISE,
+    }
+    assert ActionType.FOLD in {
+        action.action for action in adapter.private_snapshot(202).legal_actions
+    }
+
+    applied = adapter.apply_action(ActionCommand(202, ActionType.FOLD))
+    settlement = adapter.settlement()
+
+    assert applied.action is ActionType.FOLD
+    assert adapter.is_complete()
+    assert sum(settlement.final_stacks) == 2000
+    assert settlement.final_stacks == (1100, 900)
+
+
 def test_quit_splits_the_quitter_value_by_seat_order_and_returns_other_bets() -> None:
     adapter = PokerKitAdapter.create_hand(
         CONFIG,

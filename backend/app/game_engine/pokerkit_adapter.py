@@ -151,7 +151,10 @@ class PokerKitAdapter:
         self._require_current_actor(player_index)
         actions: list[LegalAction] = []
         with warnings.catch_warnings():
-            warnings.simplefilter("error", UserWarning)
+            # PokerKit only warns that a fold is pointless when checking is free.
+            # Folding is still a legal player choice, so the warning must not
+            # remove the action from the contract.
+            warnings.simplefilter("ignore", UserWarning)
             can_fold = self._state.can_fold()
         if can_fold:
             actions.append(LegalAction(ActionType.FOLD))
