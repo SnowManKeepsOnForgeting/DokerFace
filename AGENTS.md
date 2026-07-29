@@ -47,7 +47,8 @@ Completed and committed:
 - Authenticated public player list/detail endpoints and self profile updates.
 - Text/emoji avatar profiles with centered client rendering data, validated six-digit hex
   background colors, default values, and the `0003_profile_avatars` migration. User-uploaded images
-  and Pillow processing are not supported.
+  and Pillow processing are not supported. Every frontend surface renders avatars through the shared
+  `PlayerAvatar` component backed by the `['player', accountId]` public-profile query.
 - Room rule validation for all explicit `Feature.md` numeric limits, including winner-takes-all and
   fixed-hand modes.
 - Persistent room configurations with visibility/status enums, rule JSONB, host foreign key, and
@@ -317,6 +318,7 @@ Deployment files:
 Recent backend commits:
 
 ```text
+7b31fbf Read avatars from the public profile everywhere
 58a11a2 Align card rank to the top left
 75406fc Check instead of folding on timeout
 7dca405 Allow folding when checking is free
@@ -363,7 +365,8 @@ tests: passed
 Finite action deadlines, disconnected-player fallback, SID rebinding, and snapshot recovery tests:
 passed
 Free-check fold legality, private-snapshot fold exposure, and timeout auto-check tests: passed
-Frontend vitest suite including card rank alignment: 21 passed
+Frontend vitest suite including card rank alignment and shared avatar rendering: 21 passed
+Frontend eslint, tsc, prettier, and vite build: passed
 Match history, privacy redaction, per-pot settlement, statistics rebuild/API, rating replay, and
 backend end-to-end tests: passed
 Room create/list/detail through Caddy: passed
