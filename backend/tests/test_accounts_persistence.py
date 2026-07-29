@@ -11,15 +11,20 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
 from testcontainers.postgres import PostgresContainer
 
 from app.accounts.models import Account, AccountRole, AccountSession, AccountStatus, Profile
 from app.admin.models import AdminAuditLog
+from app.auth.dependencies import get_current_account
 from app.chat.models import ChatMessageRecord
+from app.config import Settings
+from app.db.dependencies import get_db_session
+from app.main import create_app
 from app.matches.models import (
     ActionRecord,
     HandRecord,
@@ -517,5 +522,48 @@ async def test_leaderboard_hides_disabled_and_deleted_accounts(
             ]
             assert restored_total == 2
             assert restored_entries[0].rating == 1200
+
+            accounts["disabled"].status = AccountStatus.DISABLED
+            await session.commit()
+
+            app = create_app(Settings(database_url=postgres_database_url))
+
+            async def override_db_session() -> AsyncIterator[AsyncSession]:
+                yield session
+
+            async def override_current_account() -> Account:
+                return accounts["active"]
+
+            app.dependency_overrides[get_db_session] = override_db_session
+            app.dependency_overrides[get_current_account] = override_current_account
+
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                leaderboard = (await client.get("/api/v1/leaderboard")).json()
+                players = (await client.get("/api/v1/players?limit=100")).json()
+                disabled_detail = await client.get(
+                    f"/api/v1/players/{accounts['disabled'].account_id}"
+                )
+                deleted_detail = await client.get(
+                    f"/api/v1/players/{accounts['deleted'].account_id}"
+                )
+
+            assert [item["account_id"] for item in leaderboard["items"]] == [
+                accounts["active"].account_id
+            ]
+            assert [item["rank"] for item in leaderboard["items"]] == [1]
+            assert leaderboard["total"] == 1
+            assert leaderboard["current_player_stats"]["rank"] == 1
+            assert leaderboard["current_player_stats"]["diff_to_previous_player"] is None
+
+            listed_ids = [item["account_id"] for item in players["items"]]
+            assert accounts["disabled"].account_id not in listed_ids
+            assert accounts["deleted"].account_id not in listed_ids
+            assert accounts["active"].account_id in listed_ids
+
+            # A disabled account stays reachable by direct link; a deleted one does not.
+            assert disabled_detail.status_code == 200
+            assert deleted_detail.status_code == 404
     finally:
         await engine.dispose()

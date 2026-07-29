@@ -203,3 +203,62 @@ async def test_leaderboard_response_ranks_visible_players_from_one() -> None:
     # The viewer's rank and gap come from the same filtered set as the list.
     assert payload["current_player_stats"]["rank"] == 2
     assert payload["current_player_stats"]["diff_to_previous_player"] == 100.0
+
+
+class AccountQuerySession:
+    """Async session double that records the account queries it receives."""
+
+    def __init__(self, accounts: Sequence[Account]) -> None:
+        self.accounts = accounts
+        self.statements: list[str] = []
+
+    async def scalar(self, statement: Any, *args: Any, **kwargs: Any) -> Any:
+        rendered = compiled_sql(statement)
+        self.statements.append(rendered)
+        if "count(*)" in rendered:
+            return len(self.accounts)
+        return self.accounts[0] if self.accounts else None
+
+    async def scalars(self, statement: Any, *args: Any, **kwargs: Any) -> Any:
+        self.statements.append(compiled_sql(statement))
+        result = MagicMock()
+        result.all.return_value = list(self.accounts)
+        return result
+
+
+@pytest.mark.asyncio
+async def test_public_player_list_only_queries_active_accounts() -> None:
+    current_account = make_account(1, "alice")
+    session = AccountQuerySession([current_account])
+    app = build_app(session, current_account)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/v1/players")
+
+    assert response.status_code == 200
+    assert [item["account_id"] for item in response.json()["items"]] == [1]
+    account_statements = [
+        statement for statement in session.statements if "FROM accounts" in statement
+    ]
+    assert len(account_statements) == 2
+    for statement in account_statements:
+        assert ACTIVE_ACCOUNT_FILTER in statement
+
+
+@pytest.mark.asyncio
+async def test_public_player_detail_still_serves_disabled_accounts() -> None:
+    current_account = make_account(1, "alice")
+    session = AccountQuerySession([current_account])
+    app = build_app(session, current_account)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        await client.get("/api/v1/players/2")
+
+    detail_statements = [
+        statement for statement in session.statements if "FROM accounts" in statement
+    ]
+    assert detail_statements
+    for statement in detail_statements:
+        # A disabled account keeps its profile page reachable through history.
+        assert "accounts.status != 'deleted'" in statement
+        assert ACTIVE_ACCOUNT_FILTER not in statement

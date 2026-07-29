@@ -92,14 +92,14 @@ async def list_players(
         )
 
     total = await db_session.scalar(
-        select(func.count()).select_from(Account).where(Account.status != AccountStatus.DELETED)
+        select(func.count()).select_from(Account).where(Account.status == AccountStatus.ACTIVE)
     )
     accounts = list(
         (
             await db_session.scalars(
                 select(Account)
                 .options(selectinload(Account.profile))
-                .where(Account.status != AccountStatus.DELETED)
+                .where(Account.status == AccountStatus.ACTIVE)
                 .order_by(Account.account_id)
                 .offset(offset)
                 .limit(limit)
