@@ -220,6 +220,9 @@ describe('PlayerProfile View and Editing', () => {
     expect(screen.getByText('♦')).toHaveClass('text-rose-500');
     expect(screen.getByText('♣')).toHaveClass('text-slate-800');
     expect(screen.getByText('♥')).toHaveClass('text-rose-500');
+    // The rank must stay in the top-left corner of the card instead of
+    // inheriting the centered text alignment of the surrounding containers.
+    expect(screen.getByText('♠').parentElement).toHaveClass('text-left');
     // Standard poker shorthand "T" must be displayed as the ten.
     expect(screen.getByText('10')).toBeInTheDocument();
     expect(screen.queryByText('T')).not.toBeInTheDocument();

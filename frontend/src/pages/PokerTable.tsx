@@ -198,7 +198,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
     return (
       <div
-        className={`${cardSize} ${cardPadding} flex flex-col justify-between rounded-lg border border-slate-300 bg-white font-sans text-slate-900 shadow-md select-none animate-scaleUp`}
+        className={`${cardSize} ${cardPadding} flex flex-col justify-between rounded-lg border border-slate-300 bg-white text-left font-sans text-slate-900 shadow-md select-none animate-scaleUp`}
       >
         <div className={`${rankSize} font-black leading-none`}>{rank}</div>
         <div className={`${suitSize} text-center font-bold leading-none ${suit.color}`}>

@@ -318,6 +318,9 @@ describe('WaitingRoom and PokerTable Flow', () => {
     expect(screen.getByText('♦')).toHaveClass('text-rose-500');
     expect(screen.getByText('♣')).toHaveClass('text-slate-800');
     expect(screen.getByText('♥')).toHaveClass('text-rose-500');
+    // The rank must stay in the top-left corner instead of inheriting the
+    // centered text alignment of the seat and board containers.
+    expect(screen.getByText('♠').parentElement).toHaveClass('text-left');
     expect(screen.getByRole('slider', { name: 'Bet or raise amount' })).toHaveValue('40');
     expect(screen.getByRole('spinbutton', { name: 'Bet or raise amount' })).toHaveValue(40);
     expect(screen.getByRole('button', { name: 'Quit' })).toBeInTheDocument();

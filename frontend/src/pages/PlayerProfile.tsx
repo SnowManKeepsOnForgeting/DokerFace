@@ -762,7 +762,7 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
     const suit = suitsMap[suitSymbol] || { char: suitSymbol, color: 'text-slate-400' };
 
     return (
-      <div className="w-8 h-12 bg-white text-slate-900 border border-slate-300 rounded flex flex-col justify-between p-1 shadow-sm font-sans select-none text-[10px] font-bold">
+      <div className="w-8 h-12 bg-white text-slate-900 border border-slate-300 rounded flex flex-col justify-between p-1 shadow-sm font-sans select-none text-left text-[10px] font-bold">
         <span className="leading-none">{rank}</span>
         <span className={`text-center text-sm font-bold leading-none ${suit.color}`}>
           {suit.char}
