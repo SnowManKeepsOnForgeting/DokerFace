@@ -318,6 +318,7 @@ Deployment files:
 Recent backend commits:
 
 ```text
+39426c4 Show the chat badge only for unread messages
 7b31fbf Read avatars from the public profile everywhere
 58a11a2 Align card rank to the top left
 75406fc Check instead of folding on timeout
@@ -365,7 +366,8 @@ tests: passed
 Finite action deadlines, disconnected-player fallback, SID rebinding, and snapshot recovery tests:
 passed
 Free-check fold legality, private-snapshot fold exposure, and timeout auto-check tests: passed
-Frontend vitest suite including card rank alignment and shared avatar rendering: 21 passed
+Frontend vitest suite including card rank alignment, shared avatar rendering, and unread chat
+badge behavior: 22 passed
 Frontend eslint, tsc, prettier, and vite build: passed
 Match history, privacy redaction, per-pot settlement, statistics rebuild/API, rating replay, and
 backend end-to-end tests: passed
