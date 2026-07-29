@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/game';
 import { useAuth } from '../api/auth-context';
 import { createCommandId } from '../api/command-id';
+import { PlayerAvatar } from '../components/PlayerAvatar';
 import type { ActionType } from '../contracts/realtime';
 import {
   Clock,
@@ -479,14 +480,14 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                   </div>
                 )}
 
-                <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-[9px] font-bold text-white sm:h-8 sm:w-8 sm:text-[10px] md:h-10 md:w-10 md:text-xs ${
+                <PlayerAvatar
+                  accountId={player.account_id}
+                  fallbackName={player.display_name}
+                  label={`${player.display_name} avatar`}
+                  className={`h-7 w-7 border text-[9px] sm:h-8 sm:w-8 sm:text-[10px] md:h-10 md:w-10 md:text-xs ${
                     isActive ? 'border-amber-400 ring-2 ring-amber-500/20' : 'border-white/10'
                   }`}
-                  style={{ backgroundColor: '#4f46e5' }}
-                >
-                  {player.display_name.slice(0, 2).toUpperCase()}
-                </div>
+                />
                 <span className="w-full truncate text-[9px] font-bold text-slate-200 md:text-[11px]">
                   {player.display_name}
                 </span>

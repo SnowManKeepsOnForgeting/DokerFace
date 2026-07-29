@@ -28,6 +28,34 @@ const mockPlayerInfo = {
 
 const roomId = '00000000-0000-4000-8000-000000000001';
 
+const aliceUser = {
+  account_id: 1,
+  login_name: 'alice',
+  role: 'player' as const,
+  status: 'active' as const,
+  display_name: 'Alice',
+};
+
+/** PokerTable reads public profiles, so it always needs a query client. */
+const renderPokerTable = (onLeave: () => void = vi.fn()) =>
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <AuthContext.Provider
+        value={{
+          user: aliceUser,
+          isLoading: false,
+          login: async () => aliceUser,
+          logout: async () => {},
+          refetch: async () => {},
+        }}
+      >
+        <PokerTable roomId={roomId} onLeave={onLeave} />
+      </AuthContext.Provider>
+    </QueryClientProvider>,
+  );
+
 type AckResponse = { ok: boolean; error?: string; room?: RoomSnapshot };
 
 const mockConnectedSocket = (
@@ -228,6 +256,23 @@ describe('WaitingRoom and PokerTable Flow', () => {
 
   it('uses the minimum legal amount before the bet control is changed', async () => {
     restoreSocket = mockConnectedSocket();
+    server.use(
+      http.get('http://localhost:8080/api/v1/players/1', () => {
+        return HttpResponse.json(mockPlayerInfo, { status: 200 });
+      }),
+      http.get('http://localhost:8080/api/v1/players/2', () => {
+        return HttpResponse.json(
+          {
+            ...mockPlayerInfo,
+            account_id: 2,
+            display_name: 'Bob',
+            avatar_text: '🐙',
+            avatar_background_color: '#0f766e',
+          },
+          { status: 200 },
+        );
+      }),
+    );
 
     const matchId = '00000000-0000-4000-8000-000000000002';
     const handId = '00000000-0000-4000-8000-000000000003';
@@ -321,6 +366,14 @@ describe('WaitingRoom and PokerTable Flow', () => {
     // The rank must stay in the top-left corner instead of inheriting the
     // centered text alignment of the seat and board containers.
     expect(screen.getByText('♠').parentElement).toHaveClass('text-left');
+    // Seat avatars come from the public profile, so a profile edit is visible
+    // at the table instead of falling back to hardcoded initials.
+    const heroAvatar = await screen.findByLabelText('Alice avatar');
+    expect(heroAvatar).toHaveTextContent('A');
+    expect(heroAvatar).toHaveStyle({ backgroundColor: 'rgb(79, 70, 229)' });
+    const villainAvatar = await screen.findByLabelText('Bob avatar');
+    expect(villainAvatar).toHaveTextContent('🐙');
+    expect(villainAvatar).toHaveStyle({ backgroundColor: 'rgb(15, 118, 110)' });
     expect(screen.getByRole('slider', { name: 'Bet or raise amount' })).toHaveValue('40');
     expect(screen.getByRole('spinbutton', { name: 'Bet or raise amount' })).toHaveValue(40);
     expect(screen.getByRole('button', { name: 'Quit' })).toBeInTheDocument();
@@ -393,31 +446,7 @@ describe('WaitingRoom and PokerTable Flow', () => {
       },
     });
 
-    render(
-      <AuthContext.Provider
-        value={{
-          user: {
-            account_id: 1,
-            login_name: 'alice',
-            role: 'player',
-            status: 'active',
-            display_name: 'Alice',
-          },
-          isLoading: false,
-          login: async () => ({
-            account_id: 1,
-            login_name: 'alice',
-            role: 'player',
-            status: 'active',
-            display_name: 'Alice',
-          }),
-          logout: async () => {},
-          refetch: async () => {},
-        }}
-      >
-        <PokerTable roomId={roomId} onLeave={vi.fn()} />
-      </AuthContext.Provider>,
-    );
+    renderPokerTable();
 
     // Each card renders its rank twice, once upright and once rotated.
     expect(screen.getAllByText('10')).toHaveLength(2);
@@ -468,31 +497,7 @@ describe('WaitingRoom and PokerTable Flow', () => {
       },
     });
 
-    render(
-      <AuthContext.Provider
-        value={{
-          user: {
-            account_id: 1,
-            login_name: 'alice',
-            role: 'player',
-            status: 'active',
-            display_name: 'Alice',
-          },
-          isLoading: false,
-          login: async () => ({
-            account_id: 1,
-            login_name: 'alice',
-            role: 'player',
-            status: 'active',
-            display_name: 'Alice',
-          }),
-          logout: async () => {},
-          refetch: async () => {},
-        }}
-      >
-        <PokerTable roomId={roomId} onLeave={vi.fn()} />
-      </AuthContext.Provider>,
-    );
+    renderPokerTable();
 
     await userEvent.click(screen.getByRole('button', { name: 'Show table chat' }));
     await userEvent.type(screen.getByRole('textbox', { name: 'Table chat message' }), 'In game');
@@ -590,31 +595,7 @@ describe('WaitingRoom and PokerTable Flow', () => {
       },
     });
 
-    render(
-      <AuthContext.Provider
-        value={{
-          user: {
-            account_id: 1,
-            login_name: 'alice',
-            role: 'player',
-            status: 'active',
-            display_name: 'Alice',
-          },
-          isLoading: false,
-          login: async () => ({
-            account_id: 1,
-            login_name: 'alice',
-            role: 'player',
-            status: 'active',
-            display_name: 'Alice',
-          }),
-          logout: async () => {},
-          refetch: async () => {},
-        }}
-      >
-        <PokerTable roomId={roomId} onLeave={onLeave} />
-      </AuthContext.Provider>,
-    );
+    renderPokerTable(onLeave);
 
     await userEvent.click(screen.getByRole('button', { name: 'Quit' }));
 

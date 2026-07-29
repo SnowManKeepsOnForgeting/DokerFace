@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useGameStore } from '../store/game';
 import { useAuth } from '../api/auth-context';
 import { getPlayerApiV1PlayersAccountIdGet } from '../contracts/rest';
+import { PlayerAvatar } from '../components/PlayerAvatar';
 import type { EmotePayload, RoomMemberSnapshot } from '../contracts/realtime';
 import {
   Crown,
@@ -316,12 +317,12 @@ function MemberRow({
       <div className="flex items-center gap-3 min-w-0">
         {/* Avatar */}
         <div className="relative">
-          <div
-            className="flex h-10 w-10 min-w-0 shrink-0 items-center justify-center overflow-hidden rounded-full px-0.5 text-center break-all whitespace-pre-wrap leading-tight text-white font-bold text-sm shadow-md"
-            style={{ backgroundColor: player?.avatar_background_color || '#4f46e5' }}
-          >
-            {player?.avatar_text || player?.display_name?.slice(0, 2).toUpperCase() || 'P'}
-          </div>
+          <PlayerAvatar
+            accountId={member.account_id}
+            fallbackName={player?.display_name}
+            label={`${player?.display_name || `Player #${member.account_id}`} avatar`}
+            className="h-10 w-10 text-sm shadow-md"
+          />
 
           {/* Floating Emote Popup Balloon */}
           {activeEmote && (

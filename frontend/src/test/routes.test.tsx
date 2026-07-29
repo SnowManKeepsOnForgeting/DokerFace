@@ -40,6 +40,19 @@ describe('Secure Routes Redirects', () => {
       http.get('http://localhost:8080/api/v1/rooms', () => {
         return HttpResponse.json({ items: [] }, { status: 200 });
       }),
+      http.get('http://localhost:8080/api/v1/players/2', () => {
+        return HttpResponse.json(
+          {
+            account_id: 2,
+            display_name: 'Bob',
+            avatar_text: '🐙',
+            avatar_background_color: '#0f766e',
+            rank_badge_theme: 'Bronze',
+            is_online: true,
+          },
+          { status: 200 },
+        );
+      }),
     );
 
     render(<App />);
@@ -51,5 +64,11 @@ describe('Secure Routes Redirects', () => {
         ),
       ).toBeInTheDocument(),
     );
+
+    // The sidebar avatar comes from the public profile, so profile edits show up
+    // outside the profile page as well.
+    const sidebarAvatar = await screen.findByLabelText('Your avatar');
+    expect(sidebarAvatar).toHaveTextContent('🐙');
+    expect(sidebarAvatar).toHaveStyle({ backgroundColor: 'rgb(15, 118, 110)' });
   });
 });

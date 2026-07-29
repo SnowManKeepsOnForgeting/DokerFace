@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import { useAuth } from '../api/auth-context';
+import { PlayerAvatar } from './PlayerAvatar';
 import { LayoutDashboard, Trophy, User, LogOut, ShieldAlert } from 'lucide-react';
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -27,10 +28,6 @@ export function Layout({ children }: { children: ReactNode }) {
       navItems.push({ to: '/admin/accounts', label: 'Admin Console', icon: ShieldAlert });
     }
   }
-
-  const getInitials = (name: string) => {
-    return name ? name.slice(0, 2).toUpperCase() : '??';
-  };
 
   return (
     <div className="flex h-dvh w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
@@ -70,12 +67,12 @@ export function Layout({ children }: { children: ReactNode }) {
         {user && (
           <div className="mt-auto border-t border-slate-800 pt-4 flex flex-col gap-3">
             <div className="flex items-center gap-3 px-2">
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full text-white font-bold text-sm"
-                style={{ backgroundColor: '#4f46e5' }}
-              >
-                {getInitials(user.display_name)}
-              </div>
+              <PlayerAvatar
+                accountId={user.account_id}
+                fallbackName={user.display_name}
+                label="Your avatar"
+                className="h-10 w-10 text-sm"
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold truncate">{user.display_name}</p>
                 <p className="text-xs text-slate-400 truncate capitalize">{user.role}</p>

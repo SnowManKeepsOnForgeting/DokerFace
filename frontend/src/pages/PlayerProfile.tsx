@@ -114,7 +114,10 @@ export function PlayerProfile() {
     },
     onSuccess: () => {
       setIsEditing(false);
+      // Every avatar surface reads ['player', accountId]; the leaderboard
+      // carries its own copy of the display name and avatar.
       queryClient.invalidateQueries({ queryKey: ['player', accountId] });
+      queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
       refetchAuth();
     },
     onError: (err) => {
