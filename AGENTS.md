@@ -317,6 +317,9 @@ Deployment files:
 Recent backend commits:
 
 ```text
+58a11a2 Align card rank to the top left
+75406fc Check instead of folding on timeout
+7dca405 Allow folding when checking is free
 ce7ca21 Persist realtime match history
 0cd661b Add startup match recovery
 49e2168 Settle ratings with completed matches
@@ -339,7 +342,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed
-pytest: 145 passed
+pytest: 182 passed, 1 skipped
 Alembic head: 0009_add_matches_played_to_stats
 PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
@@ -359,6 +362,8 @@ Room start, game action, snapshot request, stale-command, duplicate-command, and
 tests: passed
 Finite action deadlines, disconnected-player fallback, SID rebinding, and snapshot recovery tests:
 passed
+Free-check fold legality, private-snapshot fold exposure, and timeout auto-check tests: passed
+Frontend vitest suite including card rank alignment: 21 passed
 Match history, privacy redaction, per-pot settlement, statistics rebuild/API, rating replay, and
 backend end-to-end tests: passed
 Room create/list/detail through Caddy: passed
@@ -547,7 +552,7 @@ The user explicitly requires fine-grained, reversible Git history.
 - Separate public and player-private snapshots plus `game:request-snapshot` are implemented;
   spectator snapshots remain out of scope until spectator policy is finalized.
 - Finite action timers and the 60-second disconnected-player fallback for unlimited rooms are
-  implemented.
+  implemented. An expired timer checks when checking is free and folds only when facing a bet.
 - Old connections are replaced on reconnect and a full current snapshot is available.
 - Only completed hands/matches are persisted; incomplete matches are voided after process restart.
 
