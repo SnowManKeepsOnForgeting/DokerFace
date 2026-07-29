@@ -74,7 +74,9 @@ Completed and committed:
 - Versioned player statistics reducer, persistent counters, statistics rebuild from completed
   `actions`, `GET /api/v1/players/{account_id}/statistics`, and `counted_in_stats` enforcement.
 - Multiplayer Elo batches, deterministic leaderboard, startup rating initialization, administrator
-  rating reset, and current-batch replay after match voiding.
+  rating reset, and current-batch replay after match voiding. The leaderboard and the public player
+  list only show active accounts; disabled and soft-deleted accounts keep their rating records so a
+  restore is reversible, and a disabled account's profile page stays reachable by direct link.
 - Waiting-room host transfer/kick policy, public chat/quick phrases/custom phrases, and emote events.
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 - One-command Compose startup with a one-shot Alembic migration dependency before the API.
@@ -345,7 +347,7 @@ Last successful checks:
 ```text
 Ruff: passed
 Pyright strict mode: passed
-pytest: 182 passed, 1 skipped
+pytest: 188 passed, 2 skipped
 Alembic head: 0009_add_matches_played_to_stats
 PostgreSQL integration test including avatar and room migrations: passed
 Pillow: removed from project dependencies and uv.lock
@@ -366,6 +368,8 @@ tests: passed
 Finite action deadlines, disconnected-player fallback, SID rebinding, and snapshot recovery tests:
 passed
 Free-check fold legality, private-snapshot fold exposure, and timeout auto-check tests: passed
+Leaderboard and public-player-list visibility statements: verified against the PostgreSQL dialect;
+the matching real-data integration test requires Docker and is skipped in the sandbox
 Frontend vitest suite including card rank alignment, shared avatar rendering, and unread chat
 badge behavior: 22 passed
 Frontend eslint, tsc, prettier, and vite build: passed
