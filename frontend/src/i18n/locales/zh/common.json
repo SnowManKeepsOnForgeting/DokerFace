@@ -31,5 +31,7 @@
     "notFoundTitle": "404 页面不存在",
     "notFoundDescription": "你访问的页面不存在。",
     "returnToLobby": "返回大厅"
-  }
+  },
+  "you": "你",
+  "playerFallback": "玩家 #{{id}}"
 }

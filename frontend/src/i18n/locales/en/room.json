@@ -1,0 +1,48 @@
+{
+  "waiting": {
+    "title": "Waiting Room",
+    "roomId": "Room ID:",
+    "leave": "Leave Room",
+    "leaving": "Leaving...",
+    "setReady": "Set Ready",
+    "setNotReady": "Set Not Ready",
+    "startMatch": "Start Match",
+    "players": "Players ({{value}})",
+    "sendEmote": "Send Emote",
+    "chatTitle": "Room Chat",
+    "chatEmpty": "No chat messages.",
+    "chatPlaceholder": "Type a message...",
+    "chatSend": "Send room chat message"
+  },
+  "member": {
+    "you": "(You)",
+    "accountId": "Account ID: {{id}}",
+    "disconnected": "DC",
+    "ready": "Ready",
+    "notReady": "Not Ready",
+    "kick": "Kick Player",
+    "avatarLabel": "{{name}} avatar"
+  },
+  "leaveError": {
+    "active": "You cannot leave while a match is active.",
+    "generic": "Unable to leave room: {{reason}}"
+  },
+  "join": {
+    "passwordTitle": "Password Required",
+    "passwordDescription": "This table is private. Please enter the password to join.",
+    "passwordPlaceholder": "Room Password",
+    "backToLobby": "Back to Lobby",
+    "submit": "Join Table",
+    "loading": "Joining waiting room...",
+    "failedTitle": "Failed to Connect",
+    "invalidPassword": "Invalid room password. Please try again.",
+    "failedReason": "Failed to join room: {{reason}}",
+    "networkError": "Network error connecting to table."
+  },
+  "connection": {
+    "replaced": "This account is connected in another browser. Use a different account for each player.",
+    "failed": "Realtime connection failed. Refresh the page and sign in again.",
+    "disconnected": "Realtime sync disconnected. Attempting to reconnect..."
+  },
+  "commandFailed": "Realtime command failed: {{reason}}"
+}

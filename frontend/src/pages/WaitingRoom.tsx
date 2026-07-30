@@ -16,7 +16,9 @@ import {
   MessageSquare,
   Smile,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useFormatters } from '../i18n/useFormatters';
+import { useRealtimeError } from '../i18n/useRealtimeError';
 
 interface WaitingRoomProps {
   roomId: string;
@@ -25,7 +27,9 @@ interface WaitingRoomProps {
 
 export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
   const { user: currentUser } = useAuth();
+  const { t } = useTranslation(['room', 'common']);
   const { formatTime } = useFormatters();
+  const realtimeError = useRealtimeError();
   const {
     currentRoom,
     toggleReady,
@@ -53,8 +57,8 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
     } else {
       setLeaveError(
         response.error === 'room_active'
-          ? 'You cannot leave while a match is active.'
-          : `Unable to leave room: ${response.error ?? 'realtime_error'}`,
+          ? t('room:leaveError.active')
+          : t('room:leaveError.generic', { reason: realtimeError(response.error) }),
       );
     }
     setIsLeaving(false);
@@ -105,10 +109,10 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
           <div>
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <h2 className="text-xl font-bold text-slate-200">Waiting Room</h2>
+              <h2 className="text-xl font-bold text-slate-200">{t('room:waiting.title')}</h2>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Room ID: <span className="font-mono text-slate-500">{roomId}</span>
+              {t('room:waiting.roomId')} <span className="font-mono text-slate-500">{roomId}</span>
             </p>
           </div>
 
@@ -119,7 +123,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
               className="h-10 px-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-slate-100 transition-all flex items-center gap-2 cursor-pointer disabled:cursor-wait disabled:opacity-60"
             >
               <LogOut className="h-4 w-4" />
-              {isLeaving ? 'Leaving...' : 'Leave Room'}
+              {isLeaving ? t('room:waiting.leaving') : t('room:waiting.leave')}
             </button>
 
             <button
@@ -132,11 +136,11 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
             >
               {isReady ? (
                 <>
-                  <XCircle className="h-4 w-4" /> Set Not Ready
+                  <XCircle className="h-4 w-4" /> {t('room:waiting.setNotReady')}
                 </>
               ) : (
                 <>
-                  <CheckCircle className="h-4 w-4" /> Set Ready
+                  <CheckCircle className="h-4 w-4" /> {t('room:waiting.setReady')}
                 </>
               )}
             </button>
@@ -148,7 +152,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
                 className="h-10 px-5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-purple-950/20 disabled:shadow-none cursor-pointer disabled:cursor-not-allowed"
               >
                 <Play className="h-4 w-4" />
-                Start Match
+                {t('room:waiting.startMatch')}
               </button>
             )}
           </div>
@@ -166,7 +170,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
         {/* Players list card */}
         <section className="flex flex-col rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
           <h3 className="font-bold text-sm uppercase tracking-wider text-purple-400 mb-4 shrink-0">
-            Players ({members.length})
+            {t('room:waiting.players', { value: members.length })}
           </h3>
 
           <div className="space-y-3 pr-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
@@ -187,7 +191,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
           {/* Emotes broadcast selector */}
           <div className="border-t border-slate-800/60 pt-4 mt-4 shrink-0">
             <h4 className="text-xs text-slate-500 font-semibold mb-2 flex items-center gap-1.5">
-              <Smile className="h-3.5 w-3.5" /> Send Emote
+              <Smile className="h-3.5 w-3.5" /> {t('room:waiting.sendEmote')}
             </h4>
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
               {emotes.map((emoji) => (
@@ -208,7 +212,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
       <section className="w-full lg:w-96 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col h-[400px] lg:h-full overflow-hidden shrink-0">
         <h3 className="font-bold text-sm uppercase tracking-wider text-purple-400 mb-4 flex items-center gap-2 shrink-0">
           <MessageSquare className="h-4 w-4" />
-          Room Chat
+          {t('room:waiting.chatTitle')}
         </h3>
 
         {/* Message area */}
@@ -218,7 +222,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
         >
           {chatMessages.length === 0 ? (
             <div className="h-full flex items-center justify-center text-slate-600 text-xs font-semibold uppercase tracking-wider">
-              No chat messages.
+              {t('room:waiting.chatEmpty')}
             </div>
           ) : (
             chatMessages.map((msg) => (
@@ -226,8 +230,8 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
                 <div className="flex items-baseline justify-between text-[10px] text-slate-500">
                   <span className="font-bold text-purple-400 truncate max-w-[150px]">
                     {msg.account_id === currentUser?.account_id
-                      ? 'You'
-                      : msg.display_name || `Player #${msg.account_id}`}
+                      ? t('common:you')
+                      : msg.display_name || t('common:playerFallback', { id: msg.account_id })}
                   </span>
                   <span>{formatTime(msg.created_at)}</span>
                 </div>
@@ -256,13 +260,14 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
         <form onSubmit={handleSendChat} className="flex gap-2 shrink-0">
           <input
             type="text"
-            placeholder="Type a message..."
+            placeholder={t('room:waiting.chatPlaceholder')}
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             className="flex-1 h-10 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-xl px-3 text-xs outline-none"
           />
           <button
             type="submit"
+            aria-label={t('room:waiting.chatSend')}
             className="h-10 w-10 flex items-center justify-center bg-purple-600 hover:bg-purple-500 text-white rounded-xl cursor-pointer"
           >
             <Send className="h-4 w-4" />
@@ -291,6 +296,7 @@ function MemberRow({
   onKick,
   activeEmotes,
 }: MemberRowProps) {
+  const { t } = useTranslation(['room', 'common']);
   const isHost = member.account_id === hostAccountId;
   const isMe = member.account_id === currentUserId;
 
@@ -317,7 +323,9 @@ function MemberRow({
           <PlayerAvatar
             accountId={member.account_id}
             fallbackName={player?.display_name}
-            label={`${player?.display_name || `Player #${member.account_id}`} avatar`}
+            label={t('room:member.avatarLabel', {
+              name: player?.display_name || t('common:playerFallback', { id: member.account_id }),
+            })}
             className="h-10 w-10 text-sm shadow-md"
           />
 
@@ -332,12 +340,18 @@ function MemberRow({
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="font-semibold text-sm text-slate-200 truncate">
-              {player?.display_name || `Player #${member.account_id}`}
+              {player?.display_name || t('common:playerFallback', { id: member.account_id })}
             </span>
             {isHost && <Crown className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />}
-            {isMe && <span className="text-[10px] text-slate-500 font-semibold">(You)</span>}
+            {isMe && (
+              <span className="text-[10px] text-slate-500 font-semibold">
+                {t('room:member.you')}
+              </span>
+            )}
           </div>
-          <p className="text-[10px] text-slate-500">Account ID: {member.account_id}</p>
+          <p className="text-[10px] text-slate-500">
+            {t('room:member.accountId', { id: member.account_id })}
+          </p>
         </div>
       </div>
 
@@ -345,7 +359,7 @@ function MemberRow({
         {/* Connection status */}
         {!member.connected && (
           <span className="text-[9px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded animate-pulse">
-            DC
+            {t('room:member.disconnected')}
           </span>
         )}
 
@@ -357,14 +371,14 @@ function MemberRow({
               : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
           }`}
         >
-          {member.ready ? 'Ready' : 'Not Ready'}
+          {member.ready ? t('room:member.ready') : t('room:member.notReady')}
         </span>
 
         {/* Host kick control */}
         {isCurrentUserHost && !isMe && (
           <button
             onClick={() => onKick(member.account_id)}
-            title="Kick Player"
+            title={t('room:member.kick')}
             className="h-8 w-8 flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-red-500/20"
           >
             <UserX className="h-4 w-4" />

@@ -1,0 +1,48 @@
+{
+  "waiting": {
+    "title": "等待房",
+    "roomId": "房间 ID：",
+    "leave": "离开房间",
+    "leaving": "正在离开…",
+    "setReady": "准备就绪",
+    "setNotReady": "取消准备",
+    "startMatch": "开始对局",
+    "players": "玩家（{{value}}）",
+    "sendEmote": "发送表情",
+    "chatTitle": "房间聊天",
+    "chatEmpty": "暂无聊天消息。",
+    "chatPlaceholder": "输入消息…",
+    "chatSend": "发送房间聊天消息"
+  },
+  "member": {
+    "you": "（你）",
+    "accountId": "账号 ID：{{id}}",
+    "disconnected": "掉线",
+    "ready": "已准备",
+    "notReady": "未准备",
+    "kick": "移出该玩家",
+    "avatarLabel": "{{name}} 的头像"
+  },
+  "leaveError": {
+    "active": "对局进行中无法离开。",
+    "generic": "无法离开房间：{{reason}}"
+  },
+  "join": {
+    "passwordTitle": "需要密码",
+    "passwordDescription": "这是一张私密牌桌，请输入密码后加入。",
+    "passwordPlaceholder": "房间密码",
+    "backToLobby": "返回大厅",
+    "submit": "加入牌桌",
+    "loading": "正在加入等待房…",
+    "failedTitle": "连接失败",
+    "invalidPassword": "房间密码不正确，请重试。",
+    "failedReason": "加入房间失败：{{reason}}",
+    "networkError": "连接牌桌时出现网络错误。"
+  },
+  "connection": {
+    "replaced": "该账号已在另一个浏览器登录，请为每位玩家使用不同的账号。",
+    "failed": "实时连接失败，请刷新页面并重新登录。",
+    "disconnected": "实时同步已断开，正在尝试重新连接…"
+  },
+  "commandFailed": "实时指令失败：{{reason}}"
+}

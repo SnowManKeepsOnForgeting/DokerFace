@@ -31,5 +31,7 @@
     "notFoundTitle": "404 Not Found",
     "notFoundDescription": "The page you are looking for does not exist.",
     "returnToLobby": "Return to Lobby"
-  }
+  },
+  "you": "You",
+  "playerFallback": "Player #{{id}}"
 }

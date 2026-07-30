@@ -4,10 +4,14 @@ import { useGameStore } from '../store/game';
 import { WaitingRoom } from './WaitingRoom';
 import { PokerTable } from './PokerTable';
 import { KeyRound, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useRealtimeError } from '../i18n/useRealtimeError';
 
 export function RoomContainer() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('room');
+  const realtimeError = useRealtimeError();
   const { currentRoom, joinRoom, leaveRoom, status, lastCommandError, matchSettled } =
     useGameStore();
 
@@ -43,17 +47,17 @@ export function RoomContainer() {
           if (res.error === 'password_required' || res.error === 'invalid_password') {
             setPasswordRequired(true);
             if (res.error === 'invalid_password') {
-              setErrorMsg('Invalid room password. Please try again.');
+              setErrorMsg(t('join.invalidPassword'));
             }
           } else {
-            setErrorMsg(`Failed to join room: ${res.error}`);
+            setErrorMsg(t('join.failedReason', { reason: realtimeError(res.error) }));
           }
         } else {
           setPasswordRequired(false);
         }
       } catch {
         if (!active) return;
-        setErrorMsg('Network error connecting to table.');
+        setErrorMsg(t('join.networkError'));
       } finally {
         if (active) setLoading(false);
       }
@@ -70,7 +74,7 @@ export function RoomContainer() {
         }
       }
     };
-  }, [roomId, joinRoom, leaveRoom]);
+  }, [roomId, joinRoom, leaveRoom, realtimeError, t]);
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,9 +86,9 @@ export function RoomContainer() {
       setLoading(false);
       if (res && res.ok === false) {
         if (res.error === 'invalid_password') {
-          setErrorMsg('Invalid password. Please try again.');
+          setErrorMsg(t('join.invalidPassword'));
         } else {
-          setErrorMsg(`Join failed: ${res.error}`);
+          setErrorMsg(t('join.failedReason', { reason: realtimeError(res.error) }));
         }
       } else {
         setPasswordRequired(false);
@@ -103,10 +107,8 @@ export function RoomContainer() {
               <KeyRound className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-100">Password Required</h3>
-              <p className="text-xs text-slate-500 mt-1">
-                This table is private. Please enter the password to join.
-              </p>
+              <h3 className="text-lg font-bold text-slate-100">{t('join.passwordTitle')}</h3>
+              <p className="text-xs text-slate-500 mt-1">{t('join.passwordDescription')}</p>
             </div>
           </div>
 
@@ -120,7 +122,7 @@ export function RoomContainer() {
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <input
               type="password"
-              placeholder="Room Password"
+              placeholder={t('join.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full h-12 bg-slate-950/60 border border-slate-800 focus:border-purple-500/50 rounded-xl px-4 text-sm text-slate-200 outline-none transition-all placeholder-slate-600"
@@ -133,7 +135,7 @@ export function RoomContainer() {
                 onClick={returnToLobby}
                 className="flex-1 h-11 bg-slate-800/60 hover:bg-slate-800 text-slate-300 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
               >
-                Back to Lobby
+                {t('join.backToLobby')}
               </button>
               <button
                 type="submit"
@@ -143,7 +145,7 @@ export function RoomContainer() {
                 {loading ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 ) : (
-                  'Join Table'
+                  t('join.submit')
                 )}
               </button>
             </div>
@@ -159,7 +161,7 @@ export function RoomContainer() {
       <div className="flex-1 flex flex-col items-center justify-center gap-4">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
         <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">
-          Joining waiting room...
+          {t('join.loading')}
         </p>
       </div>
     );
@@ -173,14 +175,14 @@ export function RoomContainer() {
           <div className="h-12 w-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mx-auto mb-4">
             <AlertTriangle className="h-6 w-6" />
           </div>
-          <h3 className="text-lg font-bold text-slate-100 mb-1">Failed to Connect</h3>
+          <h3 className="text-lg font-bold text-slate-100 mb-1">{t('join.failedTitle')}</h3>
           <p className="text-sm text-red-400 mb-6">{errorMsg}</p>
           <button
             onClick={returnToLobby}
             className="h-10 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors inline-flex items-center gap-2 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Lobby
+            {t('join.backToLobby')}
           </button>
         </div>
       </div>
@@ -189,11 +191,11 @@ export function RoomContainer() {
 
   const connectionMessage =
     status === 'replaced'
-      ? 'This account is connected in another browser. Use a different account for each player.'
+      ? t('connection.replaced')
       : status === 'failed'
-        ? 'Realtime connection failed. Refresh the page and sign in again.'
+        ? t('connection.failed')
         : status === 'disconnected'
-          ? 'Realtime sync disconnected. Attempting to reconnect...'
+          ? t('connection.disconnected')
           : null;
 
   return (
@@ -215,7 +217,7 @@ export function RoomContainer() {
           aria-live="polite"
           className="border-b border-rose-500/20 bg-rose-500/10 px-6 py-2 text-center text-xs font-semibold text-rose-300"
         >
-          Realtime command failed: {lastCommandError}
+          {t('commandFailed', { reason: realtimeError(lastCommandError) })}
         </div>
       )}
 
