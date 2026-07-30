@@ -19,7 +19,8 @@
     "avatarLabel": "你的头像"
   },
   "actions": {
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "cancel": "取消"
   },
   "states": {
     "loadingSession": "正在加载会话…"

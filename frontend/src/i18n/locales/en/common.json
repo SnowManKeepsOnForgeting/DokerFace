@@ -19,7 +19,8 @@
     "avatarLabel": "Your avatar"
   },
   "actions": {
-    "logout": "Logout"
+    "logout": "Logout",
+    "cancel": "Cancel"
   },
   "states": {
     "loadingSession": "Loading session..."

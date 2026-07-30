@@ -1,0 +1,85 @@
+{
+  "title": "Lobby",
+  "subtitle": "Create or join a poker table. Realtime rooms updates are synced automatically.",
+  "createTable": "Create Table",
+  "defaultRoomName": "{{name}}'s Room",
+  "searchPlaceholder": "Search rooms by name...",
+  "filters": {
+    "all": "All",
+    "waiting": "Waiting",
+    "active": "Active"
+  },
+  "fetchError": {
+    "title": "Failed to fetch rooms",
+    "description": "Please check your connection and try again."
+  },
+  "empty": {
+    "title": "No active rooms found",
+    "filtered": "No rooms match your filter criteria. Try adjusting your query.",
+    "hint": "Be the first one to create a waiting room and invite your friends!"
+  },
+  "card": {
+    "statusActive": "Active",
+    "statusWaiting": "Waiting",
+    "blinds": "Blinds:",
+    "ante": " (Ante {{amount}})",
+    "startingChips": "Starting Chips:",
+    "matchMode": "Match Mode:",
+    "capacity": "Capacity:",
+    "capacityValue": "{{current}} / {{max}} players",
+    "spectate": "Spectate",
+    "join": "Join Table"
+  },
+  "password": {
+    "title": "Locked Room",
+    "description": "This room requires a password to enter. Please input the passcode below.",
+    "placeholder": "Enter password",
+    "submit": "Unlock and Join",
+    "required": "Password is required"
+  },
+  "create": {
+    "title": "Room Configuration",
+    "roomName": "Room Name",
+    "roomNamePlaceholder": "Enter table name",
+    "accessPolicy": "Access Code Policy",
+    "public": "Public",
+    "passwordProtected": "Password Protected",
+    "passcode": "Passcode",
+    "passcodePlaceholder": "Set passcode for this table",
+    "mechanicsTitle": "Poker Mechanics & Limits",
+    "maxPlayers": "Max Players (2-8)",
+    "startingChips": "Starting Chips (100 - 100k)",
+    "decisionTime": "Decision Time",
+    "timed": "Timed",
+    "unlimited": "Unlimited",
+    "decisionTimeoutLabel": "Decision timeout seconds",
+    "smallBlind": "Small Blind",
+    "bigBlind": "Big Blind",
+    "ante": "Ante (Optional)",
+    "blindInterval": "Blind Raise Interval (Hands)",
+    "endPolicy": "Match End Policy",
+    "endModeWinner": "Winner Takes All",
+    "endModeFixed": "Fixed Hand Count",
+    "handLimit": "Hand Count Limit",
+    "settingsTitle": "Game Settings",
+    "countedInStats": "Include in Stats & Elo",
+    "countedInStatsHint": "Count this match toward player history rankings",
+    "winnerMayShow": "Winner May Show Hand",
+    "winnerMayShowHint": "Allow winning players to show or muck cards",
+    "submit": "Open Table",
+    "submitting": "Creating Table..."
+  },
+  "validation": {
+    "nameRequired": "Room name is required",
+    "passwordRequired": "Password is required for locked rooms",
+    "maxPlayers": "Players count must be between 2 and 8",
+    "startingChips": "Starting chips must be between 100 and 100,000",
+    "smallBlind": "Small blind must be between 1 and 50,000",
+    "bigBlind": "Big blind must be between 2 and 100,000",
+    "bigBlindRatio": "Big blind must be at least twice the small blind",
+    "ante": "Ante must be non-negative and up to 50,000",
+    "decisionTimeout": "Decision timeout must be between 10 and 300 seconds",
+    "blindInterval": "Blind increase interval must be between 5 and 100 hands",
+    "createFailed": "Failed to create room"
+  }
+}

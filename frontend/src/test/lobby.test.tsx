@@ -8,6 +8,7 @@ import { Lobby } from '../pages/Lobby';
 import { AuthProvider } from '../api/auth';
 import { socket } from '../api/socket';
 import { MemoryRouter } from 'react-router';
+import i18n from '../i18n';
 import '../api/client';
 
 const server = setupServer();
@@ -171,5 +172,54 @@ describe('Lobby View and Interactions', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Open Table' }));
 
     await waitFor(() => expect(requestBody?.rules.decision_timeout_seconds).toBeNull());
+  });
+
+  it('renders the create form and a validation message in Chinese', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/v1/me', () => {
+        return HttpResponse.json(
+          {
+            account_id: 1,
+            login_name: 'alice',
+            role: 'player',
+            status: 'active',
+            display_name: 'Alice',
+          },
+          { status: 200 },
+        );
+      }),
+      http.get('http://localhost:8080/api/v1/rooms', () => {
+        return HttpResponse.json(mockRooms, { status: 200 });
+      }),
+    );
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Lobby />
+          </AuthProvider>
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByText('Standard Room')).toBeInTheDocument());
+    await i18n.changeLanguage('zh');
+
+    await waitFor(() => expect(screen.getByText('大厅')).toBeInTheDocument());
+    expect(screen.getByText('人数：')).toBeInTheDocument();
+    expect(screen.getByText('3 / 8 人')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: '创建牌桌' }));
+    expect(screen.getByText('房间配置')).toBeInTheDocument();
+
+    await userEvent.clear(screen.getByPlaceholderText('请输入牌桌名称'));
+    await userEvent.click(screen.getByRole('button', { name: '开桌' }));
+
+    await waitFor(() => expect(screen.getByText('请输入房间名称')).toBeInTheDocument());
   });
 });

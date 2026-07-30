@@ -1,0 +1,85 @@
+{
+  "title": "大厅",
+  "subtitle": "创建或加入一张牌桌，房间列表会实时同步。",
+  "createTable": "创建牌桌",
+  "defaultRoomName": "{{name}} 的房间",
+  "searchPlaceholder": "按名称搜索房间…",
+  "filters": {
+    "all": "全部",
+    "waiting": "等待中",
+    "active": "进行中"
+  },
+  "fetchError": {
+    "title": "获取房间列表失败",
+    "description": "请检查网络连接后重试。"
+  },
+  "empty": {
+    "title": "没有找到房间",
+    "filtered": "没有符合筛选条件的房间，试着调整搜索内容。",
+    "hint": "来创建第一个等待房，邀请你的朋友加入！"
+  },
+  "card": {
+    "statusActive": "进行中",
+    "statusWaiting": "等待中",
+    "blinds": "盲注：",
+    "ante": "（前注 {{amount}}）",
+    "startingChips": "起始筹码：",
+    "matchMode": "结束方式：",
+    "capacity": "人数：",
+    "capacityValue": "{{current}} / {{max}} 人",
+    "spectate": "观战",
+    "join": "加入牌桌"
+  },
+  "password": {
+    "title": "密码房间",
+    "description": "进入该房间需要密码，请在下方输入。",
+    "placeholder": "请输入密码",
+    "submit": "解锁并加入",
+    "required": "请输入密码"
+  },
+  "create": {
+    "title": "房间配置",
+    "roomName": "房间名称",
+    "roomNamePlaceholder": "请输入牌桌名称",
+    "accessPolicy": "进入方式",
+    "public": "公开",
+    "passwordProtected": "密码保护",
+    "passcode": "房间密码",
+    "passcodePlaceholder": "为该牌桌设置密码",
+    "mechanicsTitle": "规则与上限",
+    "maxPlayers": "最大人数（2-8）",
+    "startingChips": "起始筹码（100 - 100,000）",
+    "decisionTime": "决策时间",
+    "timed": "限时",
+    "unlimited": "不限时",
+    "decisionTimeoutLabel": "决策时间（秒）",
+    "smallBlind": "小盲",
+    "bigBlind": "大盲",
+    "ante": "前注（可选）",
+    "blindInterval": "盲注提升间隔（手数）",
+    "endPolicy": "对局结束方式",
+    "endModeWinner": "一人通吃",
+    "endModeFixed": "固定手数",
+    "handLimit": "手数上限",
+    "settingsTitle": "对局设置",
+    "countedInStats": "计入统计与 Elo",
+    "countedInStatsHint": "将本局计入玩家历史与排名",
+    "winnerMayShow": "允许赢家亮牌",
+    "winnerMayShowHint": "允许获胜玩家选择亮牌或盖牌",
+    "submit": "开桌",
+    "submitting": "正在创建…"
+  },
+  "validation": {
+    "nameRequired": "请输入房间名称",
+    "passwordRequired": "密码房间必须设置密码",
+    "maxPlayers": "人数必须在 2 到 8 之间",
+    "startingChips": "起始筹码必须在 100 到 100,000 之间",
+    "smallBlind": "小盲必须在 1 到 50,000 之间",
+    "bigBlind": "大盲必须在 2 到 100,000 之间",
+    "bigBlindRatio": "大盲至少为小盲的两倍",
+    "ante": "前注不能为负，且最多 50,000",
+    "decisionTimeout": "决策时间必须在 10 到 300 秒之间",
+    "blindInterval": "盲注提升间隔必须在 5 到 100 手之间",
+    "createFailed": "创建房间失败"
+  }
+}
