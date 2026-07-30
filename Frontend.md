@@ -604,3 +604,79 @@ pnpm build
 
 本地 Vite 将 `/api` 和 `/socket.io` 代理到 API，浏览器始终使用相对 URL。这样本地与生产代码都走
 Cookie 会话，不需要把 API 地址、会话 token 或 CORS 特例编译进业务组件。
+
+## 16. 国际化（i18n）
+
+界面支持英文与简体中文两种语言，实现范围限定在前端文案。后端 `HTTPException(detail=...)` 返回的
+英文文本按原样展示，后端不做任何本地化改动。
+
+### 16.1 运行时约定
+
+- 语言标签只有 `en` 与 `zh`（简体），不使用 `zh-CN` / `zh-TW`。`load: 'languageOnly'` 让浏览器上报的
+  `zh-CN`、`zh-SG`、`zh-TW`、`zh-Hant-HK` 全部归一到 `zh`。
+- 探测顺序为 `localStorage('dokerface.language')` → `navigator` → 回落 `en`。中文系统浏览器首次访问
+  即中文；手动切换后以 localStorage 为准。语言偏好不写入数据库。
+- 单一全局 i18next 实例在 `src/i18n/index.ts` 初始化，资源静态打包，`initAsync: false`，
+  `react.useSuspense: false`。`main.tsx` 顶部 `import './i18n'` 完成挂载。
+- `src/i18n/i18next.d.ts` 通过 `CustomTypeOptions` 把英文资源声明为 key 的唯一真相来源，因此
+  `t()` 的 key 由 TypeScript 校验；中文资源用 `satisfies typeof englishResources` 保证键集合一致。
+
+### 16.2 目录与命名空间
+
+```text
+src/i18n/
+├── index.ts                # 实例、语言常量、normalizeLanguage、文档语言同步
+├── i18next.d.ts            # key 类型增强
+├── useLanguage.ts          # 读取与切换当前语言
+├── useFormatters.ts        # Intl 数字/日期格式化
+├── useEnumLabel.ts         # 后端枚举值字典
+├── useRealtimeError.ts     # Socket.IO 错误码字典
+└── locales/{en,zh}/
+    ├── admin.json          # 管理后台
+    ├── auth.json           # 登录
+    ├── common.json         # 应用壳、导航、通用动作
+    ├── enums.json          # 后端枚举值
+    ├── errors.json         # 实时错误码
+    ├── game.json           # 牌桌
+    ├── leaderboard.json    # 排行榜
+    ├── lobby.json          # 大厅
+    ├── profile.json        # 个人资料
+    └── room.json           # 等待房与加入流程
+```
+
+- key 命名为 `namespace:section.element`，禁止用英文原文当 key。
+- 组件只用 `t()` 与 `<Trans>`，不拼接字符串；变量走插值。i18next 的 `count` 会触发复数规则，纯数量
+  展示统一用 `{{value}}`。
+- 日期与数字禁止直接调用 `toLocaleString()`，必须走 `useFormatters()`，否则切换语言后格式不跟随。
+- 后端枚举值（角色、状态、街名、动作、审计动作等）走 `useEnumLabel()`；未登记的新枚举值会退化为
+  可读的原始字符串而不是暴露 key。
+- Socket.IO 错误码走 `useRealtimeError()`；未登记的码保留原始码以便排查。
+- `rank_badge_theme` 是用户可自定义的资料字段而非枚举，与昵称一样不翻译。
+- 快捷短语与表情是聊天正文，按发送方语言广播，因此不接入 i18n。
+
+### 16.3 扑克术语表
+
+| English | 简体中文 |
+| --- | --- |
+| Street | 阶段 |
+| Preflop / Flop / Turn / River | 翻牌前 / 翻牌 / 转牌 / 河牌 |
+| Showdown / Settlement | 亮牌 / 结算 |
+| Pot | 底池 |
+| Fold | 弃牌 |
+| Check | 看牌 |
+| Call | 跟注 |
+| Bet | 下注 |
+| Raise | 加注 |
+| All-in | 全下 |
+| Show / Muck | 亮牌 / 盖牌 |
+| Small blind / Big blind / Ante | 小盲 / 大盲 / 前注 |
+| Winner takes all / Fixed hands | 一人通吃 / 固定手数 |
+| Hand Settled / Match Completed | 本手结算 / 对局结束 |
+| VPIP / PFR / 3-Bet | 入池率 / 翻牌前加注率 / 3-Bet 率 |
+
+### 16.4 测试约定
+
+- `src/test/setup.ts` 在每个测试前强制 `en` 并清除语言偏好，因此既有英文断言保持稳定。
+- 需要验证中文的测试内部显式调用 `await i18n.changeLanguage('zh')`。
+- `src/test/chinese-smoke.test.tsx` 校验两种语言的 key 集合完全一致，并在渲染主要页面时断言没有
+  `missingKey` 事件。新增文案若只补了英文，这条测试会失败。

@@ -549,7 +549,9 @@ export function AdminConsole() {
                                   : 'bg-emerald-900/20 text-emerald-450 border border-emerald-900/30'
                               }`}
                             >
-                              {m.void_reason ? t('admin:matches.voided') : m.status}
+                              {m.void_reason
+                                ? t('admin:matches.voided')
+                                : enumLabel('matchStatus', m.status)}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-right">

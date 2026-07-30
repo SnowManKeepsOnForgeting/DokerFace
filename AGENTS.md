@@ -81,6 +81,15 @@ Completed and committed:
 - Docker Compose deployment baseline for PostgreSQL, the API, and Caddy.
 - One-command Compose startup with a one-shot Alembic migration dependency before the API.
 - PostgreSQL backup/restore scripts, container log rotation, and backend GitHub Actions quality checks.
+- Frontend interface language switching between English and Simplified Chinese. Only the two
+  language tags `en` and `zh` exist; `zh-CN`, `zh-SG`, `zh-TW`, and `zh-Hant-HK` all resolve to `zh`.
+  The preference lives in `localStorage` under `dokerface.language`, falls back to browser detection
+  and then English, and is never stored in the database. Switchers are in the sidebar, the login
+  page, and the Preferences section of a player's own profile. Every frontend surface reads its copy
+  from `frontend/src/i18n/locales/{en,zh}/` through the ten namespaces `admin`, `auth`, `common`,
+  `enums`, `errors`, `game`, `leaderboard`, `lobby`, `profile`, and `room`. Backend
+  `HTTPException(detail=...)` text stays English and is displayed as received; Socket.IO error codes
+  are translated on the client. Player-provided data, quick phrases, and emotes are not translated.
 
 Backend implementation commit:
 
@@ -370,8 +379,8 @@ passed
 Free-check fold legality, private-snapshot fold exposure, and timeout auto-check tests: passed
 Leaderboard and public-player-list visibility statements: verified against the PostgreSQL dialect;
 the matching real-data integration test requires Docker and is skipped in the sandbox
-Frontend vitest suite including card rank alignment, shared avatar rendering, and unread chat
-badge behavior: 22 passed
+Frontend vitest suite including card rank alignment, shared avatar rendering, unread chat badge
+behavior, and Chinese interface smoke coverage: 53 passed
 Frontend eslint, tsc, prettier, and vite build: passed
 Match history, privacy redaction, per-pot settlement, statistics rebuild/API, rating replay, and
 backend end-to-end tests: passed

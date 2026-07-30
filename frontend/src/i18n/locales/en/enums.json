@@ -22,6 +22,11 @@
     "winner_takes_all": "Winner takes all",
     "fixed_hands": "Fixed hands"
   },
+  "matchStatus": {
+    "active": "Active",
+    "complete": "Complete",
+    "void": "Void"
+  },
   "messageType": {
     "text": "Text",
     "quick": "Quick phrase",

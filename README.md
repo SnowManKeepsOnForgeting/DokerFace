@@ -56,6 +56,24 @@ pnpm dev
 The frontend development server runs at <http://localhost:5173>, while the development API runs at
 <http://localhost:8080>. Ensure `DOKERFACE_CORS_ORIGINS` contains both local origins.
 
+## Interface Language
+
+The interface ships in English and Simplified Chinese. The language is a per-browser preference and
+is not stored in the database.
+
+- Switch it from the sidebar (desktop and mobile), from the login page, or from the Preferences
+  section of your own profile page.
+- On the first visit the language follows the browser: a Chinese browser opens in Simplified
+  Chinese, everything else falls back to English. After an explicit switch the choice is remembered
+  in `localStorage` under `dokerface.language`.
+- Only the frontend copy is translated. API error messages are returned by the backend in English
+  and are shown as received. Realtime error codes from Socket.IO are translated on the client.
+- Player-provided data such as nicknames, avatar text, chat content, quick phrases, and rank badge
+  themes is never translated.
+
+Translation resources live in `frontend/src/i18n/locales/{en,zh}/`. `Frontend.md` documents the
+namespace layout, the poker terminology table, and the test conventions.
+
 ## Local Docker Compose Verification
 
 ### Prerequisites

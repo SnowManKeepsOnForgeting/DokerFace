@@ -22,6 +22,11 @@
     "winner_takes_all": "一人通吃",
     "fixed_hands": "固定手数"
   },
+  "matchStatus": {
+    "active": "进行中",
+    "complete": "已完成",
+    "void": "已作废"
+  },
   "messageType": {
     "text": "文本",
     "quick": "快捷短语",
