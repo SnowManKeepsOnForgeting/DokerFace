@@ -41,5 +41,14 @@
     "bet_or_raise": "Bet or raise",
     "show": "Show",
     "muck": "Muck"
+  },
+  "auditAction": {
+    "account_created": "Account created",
+    "account_disabled": "Account disabled",
+    "account_restored": "Account restored",
+    "account_deleted": "Account deleted",
+    "account_role_updated": "Role updated",
+    "account_password_reset": "Password reset",
+    "room_closed": "Room closed"
   }
 }

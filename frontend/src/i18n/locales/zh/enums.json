@@ -41,5 +41,14 @@
     "bet_or_raise": "下注或加注",
     "show": "亮牌",
     "muck": "盖牌"
+  },
+  "auditAction": {
+    "account_created": "创建账号",
+    "account_disabled": "停用账号",
+    "account_restored": "恢复账号",
+    "account_deleted": "删除账号",
+    "account_role_updated": "修改角色",
+    "account_password_reset": "重置密码",
+    "room_closed": "关闭房间"
   }
 }

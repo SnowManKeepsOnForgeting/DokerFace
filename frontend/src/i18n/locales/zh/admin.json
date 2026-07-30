@@ -1,0 +1,114 @@
+{
+  "panelTitle": "管理面板",
+  "tabs": {
+    "accounts": "账号管理",
+    "rooms": "活动房间",
+    "matches": "对局记录",
+    "chats": "聊天审计",
+    "audits": "操作日志"
+  },
+  "accounts": {
+    "searchPlaceholder": "搜索账号…",
+    "create": "创建账号",
+    "empty": "没有找到账号。",
+    "columns": {
+      "accountId": "账号 ID",
+      "loginName": "登录名",
+      "displayName": "昵称",
+      "role": "角色",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "noDisplayName": "未设置",
+    "roleOptions": {
+      "player": "玩家",
+      "administrator": "管理员"
+    },
+    "statusOptions": {
+      "active": "正常",
+      "disabled": "已停用"
+    },
+    "resetPass": "重置密码",
+    "deleteAccount": "删除账号",
+    "confirmDelete": "确定删除账号 {{name}} 吗？",
+    "updateFailed": "更新账号设置失败"
+  },
+  "rooms": {
+    "title": "活动牌桌列表",
+    "empty": "没有活动房间。",
+    "columns": {
+      "roomId": "房间 ID",
+      "name": "名称",
+      "hostId": "房主 ID",
+      "players": "人数",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "close": "关闭牌桌",
+    "confirmClose": "确定关闭房间 {{name}} 吗？"
+  },
+  "matches": {
+    "title": "已完成与进行中的对局",
+    "empty": "没有对局记录。",
+    "columns": {
+      "matchId": "对局 ID",
+      "roomId": "房间 ID",
+      "endMode": "结束方式",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "voided": "已作废",
+    "void": "作废对局",
+    "confirmVoid": "确定作废该对局吗？评分将重新计算。",
+    "voidSuccess": "对局已作废",
+    "voidFailed": "作废对局失败"
+  },
+  "chats": {
+    "title": "大厅与牌桌聊天归档",
+    "empty": "没有聊天归档。",
+    "columns": {
+      "roomId": "房间 ID",
+      "senderId": "发送者 ID",
+      "type": "类型",
+      "content": "内容",
+      "timestamp": "时间"
+    }
+  },
+  "audits": {
+    "title": "管理员操作日志",
+    "empty": "没有操作日志。",
+    "logId": "日志 ID：{{id}}",
+    "adminId": "管理员 ID：",
+    "targetId": "目标账号 ID：",
+    "hideState": "隐藏数据",
+    "viewState": "查看数据",
+    "beforeState": "变更前",
+    "afterState": "变更后",
+    "noBeforeState": "无（新建）",
+    "noAfterState": "无（已删除）"
+  },
+  "createModal": {
+    "title": "创建账号",
+    "loginName": "登录名",
+    "loginNamePlaceholder": "例如 johndoe",
+    "displayName": "昵称（可选）",
+    "displayNamePlaceholder": "例如 John",
+    "password": "明文密码",
+    "passwordPlaceholder": "密码",
+    "role": "账号角色",
+    "rolePlayer": "玩家",
+    "roleAdministrator": "管理员",
+    "submit": "创建账号",
+    "missingFields": "请填写登录名和密码",
+    "createFailed": "创建账号失败"
+  },
+  "resetModal": {
+    "title": "强制重置密码",
+    "newPassword": "新的明文密码",
+    "newPasswordPlaceholder": "新密码",
+    "submit": "重置密码",
+    "missingPassword": "请输入新密码",
+    "success": "密码重置成功",
+    "failed": "重置密码失败"
+  }
+}

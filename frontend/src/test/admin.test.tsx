@@ -7,6 +7,7 @@ import { AdminConsole } from '../pages/AdminConsole';
 import { AuthProvider } from '../api/auth';
 import { MemoryRouter } from 'react-router';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import '../api/client';
 
 const server = setupServer();
@@ -296,6 +297,62 @@ describe('AdminConsole Page Interactions', () => {
 
     // Restore alert/confirm mocks
     window.alert = originalAlert;
+    window.confirm = originalConfirm;
+  });
+
+  it('renders the administrator console in Chinese', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/v1/me', () => {
+        return HttpResponse.json(
+          {
+            account_id: 1,
+            login_name: 'alice',
+            role: 'administrator',
+            status: 'active',
+            display_name: 'Alice Admin',
+          },
+          { status: 200 },
+        );
+      }),
+      http.get('http://localhost:8080/api/v1/admin/accounts', () => {
+        return HttpResponse.json(mockAccounts, { status: 200 });
+      }),
+    );
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <AdminConsole />
+          </AuthProvider>
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByText('Accounts Console')).toBeInTheDocument());
+
+    await i18n.changeLanguage('zh');
+
+    await waitFor(() => expect(screen.getByText('账号管理')).toBeInTheDocument());
+    expect(screen.getByText('管理面板')).toBeInTheDocument();
+    expect(screen.getByText('登录名')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('搜索账号…')).toBeInTheDocument();
+    expect(screen.getAllByText('重置密码').length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle('删除账号').length).toBe(2);
+
+    // High risk confirmations are translated too.
+    const originalConfirm = window.confirm;
+    let confirmMessage = '';
+    window.confirm = vi.fn((message?: string) => {
+      confirmMessage = message ?? '';
+      return false;
+    });
+    await userEvent.click(screen.getAllByTitle('删除账号')[0]);
+    expect(confirmMessage).toBe('确定删除账号 alice 吗？');
     window.confirm = originalConfirm;
   });
 });

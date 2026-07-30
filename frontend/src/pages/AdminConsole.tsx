@@ -28,6 +28,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEnumLabel } from '../i18n/useEnumLabel';
 import { useFormatters } from '../i18n/useFormatters';
 
@@ -39,6 +40,7 @@ export function AdminConsole() {
     'accounts' | 'rooms' | 'matches' | 'chats' | 'audits'
   >('accounts');
   const queryClient = useQueryClient();
+  const { t } = useTranslation(['admin', 'common']);
   const enumLabel = useEnumLabel();
   const { formatDateTime } = useFormatters();
 
@@ -115,7 +117,7 @@ export function AdminConsole() {
       queryClient.invalidateQueries({ queryKey: ['admin-accounts'] });
     },
     onError: (err: unknown) => {
-      setErrorMsg(errorMessage(err, 'Failed to create account'));
+      setErrorMsg(errorMessage(err, t('admin:createModal.createFailed')));
     },
   });
 
@@ -132,10 +134,10 @@ export function AdminConsole() {
       setNewPassword('');
       setSelectedAccountId(null);
       setErrorMsg(null);
-      alert('Password reset successful');
+      alert(t('admin:resetModal.success'));
     },
     onError: (err: unknown) => {
-      setErrorMsg(errorMessage(err, 'Failed to reset password'));
+      setErrorMsg(errorMessage(err, t('admin:resetModal.failed')));
     },
   });
 
@@ -168,7 +170,7 @@ export function AdminConsole() {
       queryClient.invalidateQueries({ queryKey: ['admin-audits'] });
     },
     onError: (err: unknown) => {
-      alert(errorMessage(err, 'Failed to update account setting'));
+      alert(errorMessage(err, t('admin:accounts.updateFailed')));
     },
   });
 
@@ -196,17 +198,17 @@ export function AdminConsole() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-matches'] });
       queryClient.invalidateQueries({ queryKey: ['admin-audits'] });
-      alert('Match voided successfully');
+      alert(t('admin:matches.voidSuccess'));
     },
     onError: (err: unknown) => {
-      alert(errorMessage(err, 'Failed to void match'));
+      alert(errorMessage(err, t('admin:matches.voidFailed')));
     },
   });
 
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginName.trim() || !password) {
-      setErrorMsg('Login name and Password are required');
+      setErrorMsg(t('admin:createModal.missingFields'));
       return;
     }
     createAccountMutation.mutate();
@@ -215,7 +217,7 @@ export function AdminConsole() {
   const handleResetSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAccountId || !newPassword.trim()) {
-      setErrorMsg('New password is required');
+      setErrorMsg(t('admin:resetModal.missingPassword'));
       return;
     }
     resetPasswordMutation.mutate({ accountId: selectedAccountId, pass: newPassword.trim() });
@@ -233,7 +235,7 @@ export function AdminConsole() {
       {/* Sidebar Sub Tab Selector */}
       <aside className="w-full md:w-56 shrink-0 flex flex-col gap-2">
         <h2 className="text-xs uppercase font-black text-slate-500 tracking-wider px-3 mb-2">
-          Control Panel
+          {t('admin:panelTitle')}
         </h2>
 
         <button
@@ -245,7 +247,7 @@ export function AdminConsole() {
           }`}
         >
           <Users className="h-4 w-4" />
-          Accounts Console
+          {t('admin:tabs.accounts')}
         </button>
 
         <button
@@ -257,7 +259,7 @@ export function AdminConsole() {
           }`}
         >
           <Layers className="h-4 w-4" />
-          Active Rooms
+          {t('admin:tabs.rooms')}
         </button>
 
         <button
@@ -269,7 +271,7 @@ export function AdminConsole() {
           }`}
         >
           <Shield className="h-4 w-4" />
-          Match Logs
+          {t('admin:tabs.matches')}
         </button>
 
         <button
@@ -281,7 +283,7 @@ export function AdminConsole() {
           }`}
         >
           <MessageSquare className="h-4 w-4" />
-          Chat Audits
+          {t('admin:tabs.chats')}
         </button>
 
         <button
@@ -293,7 +295,7 @@ export function AdminConsole() {
           }`}
         >
           <FileText className="h-4 w-4" />
-          Audit Logs
+          {t('admin:tabs.audits')}
         </button>
       </aside>
 
@@ -307,7 +309,7 @@ export function AdminConsole() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                 <input
                   type="text"
-                  placeholder="Search accounts..."
+                  placeholder={t('admin:accounts.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full h-10 pl-9 pr-4 bg-slate-950/60 border border-slate-800 focus:border-purple-500/50 rounded-xl text-xs outline-none transition-all placeholder-slate-650"
@@ -322,7 +324,7 @@ export function AdminConsole() {
                 className="h-10 px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-md"
               >
                 <UserPlus className="h-4 w-4" />
-                Create Account
+                {t('admin:accounts.create')}
               </button>
             </div>
 
@@ -332,7 +334,7 @@ export function AdminConsole() {
               </div>
             ) : filteredAccounts.length === 0 ? (
               <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl p-8 text-center text-slate-500 text-xs">
-                No accounts found.
+                {t('admin:accounts.empty')}
               </div>
             ) : (
               <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl overflow-hidden">
@@ -340,12 +342,14 @@ export function AdminConsole() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-800/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-950/20">
-                        <th className="py-3.5 px-4">Account ID</th>
-                        <th className="py-3.5 px-4">Login Name</th>
-                        <th className="py-3.5 px-4">Display Name</th>
-                        <th className="py-3.5 px-4">Role</th>
-                        <th className="py-3.5 px-4">Status</th>
-                        <th className="py-3.5 px-4 text-right">Actions</th>
+                        <th className="py-3.5 px-4">{t('admin:accounts.columns.accountId')}</th>
+                        <th className="py-3.5 px-4">{t('admin:accounts.columns.loginName')}</th>
+                        <th className="py-3.5 px-4">{t('admin:accounts.columns.displayName')}</th>
+                        <th className="py-3.5 px-4">{t('admin:accounts.columns.role')}</th>
+                        <th className="py-3.5 px-4">{t('admin:accounts.columns.status')}</th>
+                        <th className="py-3.5 px-4 text-right">
+                          {t('admin:accounts.columns.actions')}
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/40 text-xs text-slate-350">
@@ -355,7 +359,9 @@ export function AdminConsole() {
                           <td className="py-3 px-4 font-semibold text-slate-200">
                             {acc.login_name}
                           </td>
-                          <td className="py-3 px-4">{acc.display_name || 'N/A'}</td>
+                          <td className="py-3 px-4">
+                            {acc.display_name || t('admin:accounts.noDisplayName')}
+                          </td>
                           <td className="py-3 px-4">
                             <select
                               value={acc.role}
@@ -367,8 +373,12 @@ export function AdminConsole() {
                               }
                               className="bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-slate-300 outline-none"
                             >
-                              <option value="player">Player</option>
-                              <option value="administrator">Admin</option>
+                              <option value="player">
+                                {t('admin:accounts.roleOptions.player')}
+                              </option>
+                              <option value="administrator">
+                                {t('admin:accounts.roleOptions.administrator')}
+                              </option>
                             </select>
                           </td>
                           <td className="py-3 px-4">
@@ -382,8 +392,12 @@ export function AdminConsole() {
                               }
                               className="bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-slate-300 outline-none"
                             >
-                              <option value="active">Active</option>
-                              <option value="disabled">Disabled</option>
+                              <option value="active">
+                                {t('admin:accounts.statusOptions.active')}
+                              </option>
+                              <option value="disabled">
+                                {t('admin:accounts.statusOptions.disabled')}
+                              </option>
                             </select>
                           </td>
                           <td className="py-3 px-4 text-right space-x-2">
@@ -395,14 +409,18 @@ export function AdminConsole() {
                               }}
                               className="h-8 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700/50 text-[10px] font-bold uppercase transition-all cursor-pointer"
                             >
-                              Reset Pass
+                              {t('admin:accounts.resetPass')}
                             </button>
                             <button
                               type="button"
-                              aria-label="Delete account"
-                              title="Delete account"
+                              aria-label={t('admin:accounts.deleteAccount')}
+                              title={t('admin:accounts.deleteAccount')}
                               onClick={() => {
-                                if (confirm(`Delete account ${acc.login_name}?`)) {
+                                if (
+                                  confirm(
+                                    t('admin:accounts.confirmDelete', { name: acc.login_name }),
+                                  )
+                                ) {
                                   updateAccountMutation.mutate({
                                     accountId: acc.account_id,
                                     payload: { status: 'deleted' },
@@ -428,7 +446,7 @@ export function AdminConsole() {
         {activeSubTab === 'rooms' && (
           <div className="space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-purple-400">
-              Active Tables Registry
+              {t('admin:rooms.title')}
             </h3>
 
             {isRoomsLoading ? (
@@ -437,7 +455,7 @@ export function AdminConsole() {
               </div>
             ) : !roomsData || roomsData.items.length === 0 ? (
               <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl p-8 text-center text-slate-500 text-xs">
-                No active rooms found.
+                {t('admin:rooms.empty')}
               </div>
             ) : (
               <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl overflow-hidden">
@@ -445,12 +463,14 @@ export function AdminConsole() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-800/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-950/20">
-                        <th className="py-3.5 px-4">Room ID</th>
-                        <th className="py-3.5 px-4">Name</th>
-                        <th className="py-3.5 px-4">Host ID</th>
-                        <th className="py-3.5 px-4">Players</th>
-                        <th className="py-3.5 px-4">Status</th>
-                        <th className="py-3.5 px-4 text-right">Actions</th>
+                        <th className="py-3.5 px-4">{t('admin:rooms.columns.roomId')}</th>
+                        <th className="py-3.5 px-4">{t('admin:rooms.columns.name')}</th>
+                        <th className="py-3.5 px-4">{t('admin:rooms.columns.hostId')}</th>
+                        <th className="py-3.5 px-4">{t('admin:rooms.columns.players')}</th>
+                        <th className="py-3.5 px-4">{t('admin:rooms.columns.status')}</th>
+                        <th className="py-3.5 px-4 text-right">
+                          {t('admin:rooms.columns.actions')}
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/40 text-xs text-slate-350">
@@ -465,13 +485,13 @@ export function AdminConsole() {
                             {room.status !== 'closed' && (
                               <button
                                 onClick={() => {
-                                  if (confirm(`Close room ${room.name}?`)) {
+                                  if (confirm(t('admin:rooms.confirmClose', { name: room.name }))) {
                                     closeRoomMutation.mutate(room.room_id);
                                   }
                                 }}
                                 className="h-8 px-2 bg-rose-950/50 hover:bg-rose-900/80 text-rose-300 border border-rose-900/30 rounded text-[10px] font-bold uppercase transition-all cursor-pointer"
                               >
-                                Close Table
+                                {t('admin:rooms.close')}
                               </button>
                             )}
                           </td>
@@ -489,7 +509,7 @@ export function AdminConsole() {
         {activeSubTab === 'matches' && (
           <div className="space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-purple-400">
-              Completed & Active Match History
+              {t('admin:matches.title')}
             </h3>
 
             {isMatchesLoading ? (
@@ -498,7 +518,7 @@ export function AdminConsole() {
               </div>
             ) : !matchesData || matchesData.items.length === 0 ? (
               <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl p-8 text-center text-slate-500 text-xs">
-                No match records found.
+                {t('admin:matches.empty')}
               </div>
             ) : (
               <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl overflow-hidden">
@@ -506,11 +526,13 @@ export function AdminConsole() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-800/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-950/20">
-                        <th className="py-3.5 px-4">Match ID</th>
-                        <th className="py-3.5 px-4">Room ID</th>
-                        <th className="py-3.5 px-4">End Mode</th>
-                        <th className="py-3.5 px-4">Status</th>
-                        <th className="py-3.5 px-4 text-right">Actions</th>
+                        <th className="py-3.5 px-4">{t('admin:matches.columns.matchId')}</th>
+                        <th className="py-3.5 px-4">{t('admin:matches.columns.roomId')}</th>
+                        <th className="py-3.5 px-4">{t('admin:matches.columns.endMode')}</th>
+                        <th className="py-3.5 px-4">{t('admin:matches.columns.status')}</th>
+                        <th className="py-3.5 px-4 text-right">
+                          {t('admin:matches.columns.actions')}
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/40 text-xs text-slate-350">
@@ -527,20 +549,20 @@ export function AdminConsole() {
                                   : 'bg-emerald-900/20 text-emerald-450 border border-emerald-900/30'
                               }`}
                             >
-                              {m.void_reason ? 'Voided' : m.status}
+                              {m.void_reason ? t('admin:matches.voided') : m.status}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-right">
                             {!m.void_reason && m.status !== 'active' && (
                               <button
                                 onClick={() => {
-                                  if (confirm('Void match? Ratings will be recalculated.')) {
+                                  if (confirm(t('admin:matches.confirmVoid'))) {
                                     voidMatchMutation.mutate(m.match_id);
                                   }
                                 }}
                                 className="h-8 px-2 bg-rose-950/50 hover:bg-rose-900/80 text-rose-300 border border-rose-900/30 rounded text-[10px] font-bold uppercase transition-all cursor-pointer"
                               >
-                                Void Match
+                                {t('admin:matches.void')}
                               </button>
                             )}
                           </td>
@@ -558,7 +580,7 @@ export function AdminConsole() {
         {activeSubTab === 'chats' && (
           <div className="space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-purple-400">
-              Lobby & Table Chat Archive
+              {t('admin:chats.title')}
             </h3>
 
             {isChatsLoading ? (
@@ -567,7 +589,7 @@ export function AdminConsole() {
               </div>
             ) : !chatsData || chatsData.items.length === 0 ? (
               <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl p-8 text-center text-slate-500 text-xs">
-                No chat logs archived.
+                {t('admin:chats.empty')}
               </div>
             ) : (
               <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl overflow-hidden">
@@ -575,11 +597,11 @@ export function AdminConsole() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-800/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-950/20">
-                        <th className="py-3.5 px-4">Room ID</th>
-                        <th className="py-3.5 px-4">Sender ID</th>
-                        <th className="py-3.5 px-4">Type</th>
-                        <th className="py-3.5 px-4">Content</th>
-                        <th className="py-3.5 px-4">Timestamp</th>
+                        <th className="py-3.5 px-4">{t('admin:chats.columns.roomId')}</th>
+                        <th className="py-3.5 px-4">{t('admin:chats.columns.senderId')}</th>
+                        <th className="py-3.5 px-4">{t('admin:chats.columns.type')}</th>
+                        <th className="py-3.5 px-4">{t('admin:chats.columns.content')}</th>
+                        <th className="py-3.5 px-4">{t('admin:chats.columns.timestamp')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/40 text-xs text-slate-350">
@@ -606,7 +628,7 @@ export function AdminConsole() {
         {activeSubTab === 'audits' && (
           <div className="space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-purple-400">
-              Administrator Audit logs
+              {t('admin:audits.title')}
             </h3>
 
             {isAuditsLoading ? (
@@ -615,7 +637,7 @@ export function AdminConsole() {
               </div>
             ) : !auditsData || auditsData.items.length === 0 ? (
               <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl p-8 text-center text-slate-500 text-xs">
-                No audit logs found.
+                {t('admin:audits.empty')}
               </div>
             ) : (
               <div className="space-y-3">
@@ -641,7 +663,7 @@ export function AdminConsole() {
 
             <h3 className="text-base font-bold uppercase tracking-wider text-purple-400 mb-6 flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Bootstrap Account
+              {t('admin:createModal.title')}
             </h3>
 
             {errorMsg && (
@@ -653,11 +675,11 @@ export function AdminConsole() {
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               <div>
                 <label className="block text-[10px] uppercase font-bold text-slate-450 mb-2">
-                  Login Name
+                  {t('admin:createModal.loginName')}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. johndoe"
+                  placeholder={t('admin:createModal.loginNamePlaceholder')}
                   value={loginName}
                   onChange={(e) => setLoginName(e.target.value)}
                   className="w-full h-11 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-xl px-3.5 text-xs outline-none"
@@ -667,11 +689,11 @@ export function AdminConsole() {
 
               <div>
                 <label className="block text-[10px] uppercase font-bold text-slate-450 mb-2">
-                  Display Name (Optional)
+                  {t('admin:createModal.displayName')}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. John"
+                  placeholder={t('admin:createModal.displayNamePlaceholder')}
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   className="w-full h-11 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-xl px-3.5 text-xs outline-none"
@@ -680,11 +702,11 @@ export function AdminConsole() {
 
               <div>
                 <label className="block text-[10px] uppercase font-bold text-slate-450 mb-2">
-                  Plaintext Password
+                  {t('admin:createModal.password')}
                 </label>
                 <input
                   type="password"
-                  placeholder="Password"
+                  placeholder={t('admin:createModal.passwordPlaceholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full h-11 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-xl px-3.5 text-xs outline-none"
@@ -693,15 +715,15 @@ export function AdminConsole() {
 
               <div>
                 <label className="block text-[10px] uppercase font-bold text-slate-450 mb-2">
-                  Role Type
+                  {t('admin:createModal.role')}
                 </label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as AccountRole)}
                   className="w-full h-11 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-xl px-3 text-xs outline-none text-slate-300"
                 >
-                  <option value="player">Player</option>
-                  <option value="administrator">Administrator</option>
+                  <option value="player">{t('admin:createModal.rolePlayer')}</option>
+                  <option value="administrator">{t('admin:createModal.roleAdministrator')}</option>
                 </select>
               </div>
 
@@ -711,7 +733,7 @@ export function AdminConsole() {
                   onClick={() => setShowCreateModal(false)}
                   className="flex-1 h-11 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold uppercase transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {t('common:actions.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -721,7 +743,7 @@ export function AdminConsole() {
                   {createAccountMutation.isPending ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   ) : (
-                    'Create Account'
+                    t('admin:createModal.submit')
                   )}
                 </button>
               </div>
@@ -743,7 +765,7 @@ export function AdminConsole() {
 
             <h3 className="text-base font-bold uppercase tracking-wider text-purple-400 mb-6 flex items-center gap-2">
               <KeyRound className="h-5 w-5" />
-              Force Reset Password
+              {t('admin:resetModal.title')}
             </h3>
 
             {errorMsg && (
@@ -755,11 +777,11 @@ export function AdminConsole() {
             <form onSubmit={handleResetSubmit} className="space-y-4">
               <div>
                 <label className="block text-[10px] uppercase font-bold text-slate-450 mb-2">
-                  New Plaintext Password
+                  {t('admin:resetModal.newPassword')}
                 </label>
                 <input
                   type="password"
-                  placeholder="New Password"
+                  placeholder={t('admin:resetModal.newPasswordPlaceholder')}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full h-11 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-xl px-3.5 text-xs outline-none"
@@ -773,7 +795,7 @@ export function AdminConsole() {
                   onClick={() => setShowResetModal(false)}
                   className="flex-1 h-11 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold uppercase transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {t('common:actions.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -783,7 +805,7 @@ export function AdminConsole() {
                   {resetPasswordMutation.isPending ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   ) : (
-                    'Reset Password'
+                    t('admin:resetModal.submit')
                   )}
                 </button>
               </div>
@@ -797,6 +819,8 @@ export function AdminConsole() {
 
 function AuditLogRow({ audit }: { audit: AuditLogResponse }) {
   const [showJson, setShowJson] = useState(false);
+  const { t } = useTranslation('admin');
+  const enumLabel = useEnumLabel();
   const { formatDateTime } = useFormatters();
 
   return (
@@ -804,21 +828,21 @@ function AuditLogRow({ audit }: { audit: AuditLogResponse }) {
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-xs text-purple-400 capitalize">
-              {audit.action.replace(/_/g, ' ')}
+            <span className="font-bold text-xs text-purple-400">
+              {enumLabel('auditAction', audit.action)}
             </span>
             <span className="text-[10px] text-slate-500 font-mono">
-              Log ID: {audit.audit_log_id.slice(0, 8)}...
+              {t('audits.logId', { id: `${audit.audit_log_id.slice(0, 8)}...` })}
             </span>
           </div>
 
           <p className="text-[10px] text-slate-400">
-            Admin ID:{' '}
+            {t('audits.adminId')}{' '}
             <span className="font-semibold text-slate-200">{audit.administrator_account_id}</span>
             {audit.target_account_id && (
               <>
                 {' '}
-                | Target ID:{' '}
+                | {t('audits.targetId')}{' '}
                 <span className="font-semibold text-slate-200">{audit.target_account_id}</span>
               </>
             )}
@@ -836,11 +860,11 @@ function AuditLogRow({ audit }: { audit: AuditLogResponse }) {
           >
             {showJson ? (
               <>
-                <EyeOff className="h-3.5 w-3.5" /> Hide State
+                <EyeOff className="h-3.5 w-3.5" /> {t('audits.hideState')}
               </>
             ) : (
               <>
-                <Eye className="h-3.5 w-3.5" /> View State
+                <Eye className="h-3.5 w-3.5" /> {t('audits.viewState')}
               </>
             )}
           </button>
@@ -851,18 +875,22 @@ function AuditLogRow({ audit }: { audit: AuditLogResponse }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-850 pt-3 text-[10px] font-mono leading-relaxed overflow-x-auto bg-slate-950/45 p-3 rounded-lg border border-slate-800/40">
           <div className="space-y-1">
             <span className="text-rose-500 font-bold uppercase tracking-wider block">
-              Before State
+              {t('audits.beforeState')}
             </span>
             <pre className="text-slate-450 whitespace-pre-wrap">
-              {audit.before_state ? JSON.stringify(audit.before_state, null, 2) : 'None (Created)'}
+              {audit.before_state
+                ? JSON.stringify(audit.before_state, null, 2)
+                : t('audits.noBeforeState')}
             </pre>
           </div>
           <div className="space-y-1">
             <span className="text-emerald-500 font-bold uppercase tracking-wider block">
-              After State
+              {t('audits.afterState')}
             </span>
             <pre className="text-slate-350 whitespace-pre-wrap">
-              {audit.after_state ? JSON.stringify(audit.after_state, null, 2) : 'None (Deleted)'}
+              {audit.after_state
+                ? JSON.stringify(audit.after_state, null, 2)
+                : t('audits.noAfterState')}
             </pre>
           </div>
         </div>

@@ -1,0 +1,114 @@
+{
+  "panelTitle": "Control Panel",
+  "tabs": {
+    "accounts": "Accounts Console",
+    "rooms": "Active Rooms",
+    "matches": "Match Logs",
+    "chats": "Chat Audits",
+    "audits": "Audit Logs"
+  },
+  "accounts": {
+    "searchPlaceholder": "Search accounts...",
+    "create": "Create Account",
+    "empty": "No accounts found.",
+    "columns": {
+      "accountId": "Account ID",
+      "loginName": "Login Name",
+      "displayName": "Display Name",
+      "role": "Role",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "noDisplayName": "N/A",
+    "roleOptions": {
+      "player": "Player",
+      "administrator": "Admin"
+    },
+    "statusOptions": {
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "resetPass": "Reset Pass",
+    "deleteAccount": "Delete account",
+    "confirmDelete": "Delete account {{name}}?",
+    "updateFailed": "Failed to update account setting"
+  },
+  "rooms": {
+    "title": "Active Tables Registry",
+    "empty": "No active rooms found.",
+    "columns": {
+      "roomId": "Room ID",
+      "name": "Name",
+      "hostId": "Host ID",
+      "players": "Players",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "close": "Close Table",
+    "confirmClose": "Close room {{name}}?"
+  },
+  "matches": {
+    "title": "Completed & Active Match History",
+    "empty": "No match records found.",
+    "columns": {
+      "matchId": "Match ID",
+      "roomId": "Room ID",
+      "endMode": "End Mode",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "voided": "Voided",
+    "void": "Void Match",
+    "confirmVoid": "Void match? Ratings will be recalculated.",
+    "voidSuccess": "Match voided successfully",
+    "voidFailed": "Failed to void match"
+  },
+  "chats": {
+    "title": "Lobby & Table Chat Archive",
+    "empty": "No chat logs archived.",
+    "columns": {
+      "roomId": "Room ID",
+      "senderId": "Sender ID",
+      "type": "Type",
+      "content": "Content",
+      "timestamp": "Timestamp"
+    }
+  },
+  "audits": {
+    "title": "Administrator Audit logs",
+    "empty": "No audit logs found.",
+    "logId": "Log ID: {{id}}",
+    "adminId": "Admin ID:",
+    "targetId": "Target ID:",
+    "hideState": "Hide State",
+    "viewState": "View State",
+    "beforeState": "Before State",
+    "afterState": "After State",
+    "noBeforeState": "None (Created)",
+    "noAfterState": "None (Deleted)"
+  },
+  "createModal": {
+    "title": "Bootstrap Account",
+    "loginName": "Login Name",
+    "loginNamePlaceholder": "e.g. johndoe",
+    "displayName": "Display Name (Optional)",
+    "displayNamePlaceholder": "e.g. John",
+    "password": "Plaintext Password",
+    "passwordPlaceholder": "Password",
+    "role": "Role Type",
+    "rolePlayer": "Player",
+    "roleAdministrator": "Administrator",
+    "submit": "Create Account",
+    "missingFields": "Login name and Password are required",
+    "createFailed": "Failed to create account"
+  },
+  "resetModal": {
+    "title": "Force Reset Password",
+    "newPassword": "New Plaintext Password",
+    "newPasswordPlaceholder": "New Password",
+    "submit": "Reset Password",
+    "missingPassword": "New password is required",
+    "success": "Password reset successful",
+    "failed": "Failed to reset password"
+  }
+}

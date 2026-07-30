@@ -2,6 +2,7 @@ import i18next from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
 
+import enAdmin from './locales/en/admin.json';
 import enAuth from './locales/en/auth.json';
 import enCommon from './locales/en/common.json';
 import enEnums from './locales/en/enums.json';
@@ -11,6 +12,7 @@ import enLeaderboard from './locales/en/leaderboard.json';
 import enLobby from './locales/en/lobby.json';
 import enProfile from './locales/en/profile.json';
 import enRoom from './locales/en/room.json';
+import zhAdmin from './locales/zh/admin.json';
 import zhAuth from './locales/zh/auth.json';
 import zhCommon from './locales/zh/common.json';
 import zhEnums from './locales/zh/enums.json';
@@ -34,6 +36,7 @@ export const LANGUAGE_STORAGE_KEY = 'dokerface.language';
 export const DEFAULT_NAMESPACE = 'common';
 
 const englishResources = {
+  admin: enAdmin,
   auth: enAuth,
   common: enCommon,
   enums: enEnums,
@@ -46,6 +49,7 @@ const englishResources = {
 };
 
 const chineseResources = {
+  admin: zhAdmin,
   auth: zhAuth,
   common: zhCommon,
   enums: zhEnums,
