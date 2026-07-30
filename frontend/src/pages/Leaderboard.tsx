@@ -3,8 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { leaderboardApiV1LeaderboardGet } from '../contracts/rest';
 import { Search, Trophy, Medal, Award, Flame, Filter } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useFormatters } from '../i18n/useFormatters';
 
 export function Leaderboard() {
+  const { t } = useTranslation('leaderboard');
+  const { formatPercent } = useFormatters();
   const [search, setSearch] = useState('');
   const [rankFilter, setRankFilter] = useState('');
   const [onlyWithMatches, setOnlyWithMatches] = useState(false);
@@ -49,11 +53,9 @@ export function Leaderboard() {
       <section className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
         <div>
           <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent">
-            Global Leaderboard
+            {t('title')}
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Compare Elo ratings, win rates, and ranking performance against top players.
-          </p>
+          <p className="text-xs text-slate-400 mt-1">{t('subtitle')}</p>
         </div>
       </section>
 
@@ -66,27 +68,33 @@ export function Leaderboard() {
             </div>
             <div>
               <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400">
-                Your Current Standing
+                {t('standing.label')}
               </span>
               <h3 className="text-lg font-bold text-slate-100 mt-0.5">
-                {currentStats.rank ? `Ranked #${currentStats.rank}` : 'Unranked'}
+                {currentStats.rank
+                  ? t('standing.ranked', { rank: currentStats.rank })
+                  : t('standing.unranked')}
               </h3>
             </div>
           </div>
 
           <div className="flex gap-6 sm:gap-10 text-center sm:text-left">
             <div>
-              <span className="text-[10px] text-slate-400 font-medium">Rating</span>
+              <span className="text-[10px] text-slate-400 font-medium">{t('standing.rating')}</span>
               <p className="text-lg font-bold text-slate-200 mt-0.5">{currentStats.rating}</p>
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 font-medium">Peak Rating</span>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {t('standing.peakRating')}
+              </span>
               <p className="text-lg font-bold text-slate-200 mt-0.5">
                 {currentStats.highest_rating}
               </p>
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 font-medium">Matches</span>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {t('standing.matches')}
+              </span>
               <p className="text-lg font-bold text-slate-200 mt-0.5">
                 {currentStats.completed_matches}
               </p>
@@ -95,10 +103,10 @@ export function Leaderboard() {
               currentStats.diff_to_previous_player > 0 && (
                 <div>
                   <span className="text-[10px] text-purple-400 font-semibold flex items-center gap-1">
-                    <Flame className="h-3 w-3" /> Next Tier
+                    <Flame className="h-3 w-3" /> {t('standing.nextTier')}
                   </span>
                   <p className="text-lg font-bold text-purple-300 mt-0.5">
-                    +{currentStats.diff_to_previous_player} pts
+                    {t('standing.pointsToNext', { points: currentStats.diff_to_previous_player })}
                   </p>
                 </div>
               )}
@@ -112,7 +120,7 @@ export function Leaderboard() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
           <input
             type="text"
-            placeholder="Search players by name..."
+            placeholder={t('filters.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full h-11 pl-10 pr-4 bg-slate-950/60 border border-slate-800 focus:border-purple-500/50 rounded-xl text-sm outline-none transition-all placeholder-slate-600"
@@ -127,7 +135,7 @@ export function Leaderboard() {
               onChange={(e) => setRankFilter(e.target.value)}
               className="h-11 px-4 pr-8 bg-slate-950/60 border border-slate-800 focus:border-purple-500/50 rounded-xl text-sm outline-none appearance-none transition-all text-slate-300 cursor-pointer"
             >
-              <option value="">All Badges</option>
+              <option value="">{t('filters.allBadges')}</option>
               <option value="Bronze">Bronze</option>
               <option value="Silver">Silver</option>
               <option value="Gold">Gold</option>
@@ -147,7 +155,7 @@ export function Leaderboard() {
               onChange={(e) => setOnlyWithMatches(e.target.checked)}
               className="rounded border-slate-800 bg-slate-950 text-purple-600 focus:ring-purple-500 focus:ring-offset-slate-950 h-4 w-4"
             />
-            <span>Active Players Only</span>
+            <span>{t('filters.activeOnly')}</span>
           </label>
         </div>
       </section>
@@ -158,7 +166,7 @@ export function Leaderboard() {
         </div>
       ) : items.length === 0 ? (
         <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl p-12 text-center text-slate-500 text-sm">
-          No players match the filter criteria.
+          {t('empty')}
         </div>
       ) : (
         <div className="space-y-8 animate-fadeIn">
@@ -172,7 +180,7 @@ export function Leaderboard() {
                   className="bg-slate-900/30 border border-slate-800/80 hover:border-slate-700 rounded-2xl p-6 flex flex-col items-center text-center relative order-2 md:order-1 h-[240px] justify-between transition-all hover:scale-[1.02]"
                 >
                   <div className="absolute top-4 left-4 bg-slate-800 text-slate-350 font-bold px-2 py-0.5 rounded text-[10px] border border-slate-700">
-                    2ND
+                    {t('podium.second')}
                   </div>
                   <div
                     className="h-16 w-16 min-w-0 rounded-full flex items-center justify-center overflow-hidden px-1 text-center break-all whitespace-pre-wrap leading-tight text-white font-black text-2xl border-2 border-slate-400 shadow-md"
@@ -191,7 +199,9 @@ export function Leaderboard() {
                   <div>
                     <p className="text-xl font-black text-slate-100">{topThree[1].rating}</p>
                     <p className="text-[10px] text-slate-500 font-medium">
-                      Win Rate: {(topThree[1].win_rate * 100).toFixed(0)}%
+                      {t('podium.winRate', {
+                        value: formatPercent(topThree[1].win_rate, 0),
+                      })}
                     </p>
                   </div>
                 </Link>
@@ -204,7 +214,7 @@ export function Leaderboard() {
                   className="bg-purple-900/10 border-2 border-purple-500/30 hover:border-purple-500/50 rounded-2xl p-6 flex flex-col items-center text-center relative order-1 md:order-2 h-[270px] justify-between shadow-xl shadow-purple-950/10 transition-all hover:scale-[1.02]"
                 >
                   <div className="absolute top-4 left-4 bg-amber-500/10 text-amber-400 font-black px-2.5 py-0.5 rounded text-[10px] border border-amber-500/20 flex items-center gap-1">
-                    <Trophy className="h-3 w-3" /> CHAMP
+                    <Trophy className="h-3 w-3" /> {t('podium.champion')}
                   </div>
                   <div
                     className="h-20 w-20 min-w-0 rounded-full flex items-center justify-center overflow-hidden px-1 text-center break-all whitespace-pre-wrap leading-tight text-white font-black text-2xl border-2 border-amber-400 shadow-lg shadow-purple-500/20"
@@ -223,7 +233,9 @@ export function Leaderboard() {
                   <div>
                     <p className="text-2xl font-black text-amber-400">{topThree[0].rating}</p>
                     <p className="text-[10px] text-slate-400 font-medium">
-                      Win Rate: {(topThree[0].win_rate * 100).toFixed(0)}%
+                      {t('podium.winRate', {
+                        value: formatPercent(topThree[0].win_rate, 0),
+                      })}
                     </p>
                   </div>
                 </Link>
@@ -236,7 +248,7 @@ export function Leaderboard() {
                   className="bg-slate-900/30 border border-slate-800/80 hover:border-slate-700 rounded-2xl p-6 flex flex-col items-center text-center relative order-3 md:order-3 h-[220px] justify-between transition-all hover:scale-[1.02]"
                 >
                   <div className="absolute top-4 left-4 bg-slate-800 text-amber-700 font-bold px-2 py-0.5 rounded text-[10px] border border-slate-700">
-                    3RD
+                    {t('podium.third')}
                   </div>
                   <div
                     className="h-14 w-14 min-w-0 rounded-full flex items-center justify-center overflow-hidden px-1 text-center break-all whitespace-pre-wrap leading-tight text-white font-black text-xl border-2 border-amber-700 shadow-sm"
@@ -255,7 +267,9 @@ export function Leaderboard() {
                   <div>
                     <p className="text-lg font-black text-slate-250">{topThree[2].rating}</p>
                     <p className="text-[10px] text-slate-500 font-medium">
-                      Win Rate: {(topThree[2].win_rate * 100).toFixed(0)}%
+                      {t('podium.winRate', {
+                        value: formatPercent(topThree[2].win_rate, 0),
+                      })}
                     </p>
                   </div>
                 </Link>
@@ -270,13 +284,13 @@ export function Leaderboard() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-800/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-950/20">
-                      <th className="py-4 px-6 text-center w-16">Rank</th>
-                      <th className="py-4 px-6">Player</th>
-                      <th className="py-4 px-6 text-center">Badge</th>
-                      <th className="py-4 px-6 text-right">Rating</th>
-                      <th className="py-4 px-6 text-right">Highest Rating</th>
-                      <th className="py-4 px-6 text-right">Matches</th>
-                      <th className="py-4 px-6 text-right">Win Rate</th>
+                      <th className="py-4 px-6 text-center w-16">{t('table.rank')}</th>
+                      <th className="py-4 px-6">{t('table.player')}</th>
+                      <th className="py-4 px-6 text-center">{t('table.badge')}</th>
+                      <th className="py-4 px-6 text-right">{t('table.rating')}</th>
+                      <th className="py-4 px-6 text-right">{t('table.highestRating')}</th>
+                      <th className="py-4 px-6 text-right">{t('table.matches')}</th>
+                      <th className="py-4 px-6 text-right">{t('table.winRate')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/40 text-xs">
@@ -314,7 +328,7 @@ export function Leaderboard() {
                           {p.completed_matches}
                         </td>
                         <td className="py-4 px-6 text-right font-bold text-emerald-400">
-                          {(p.win_rate * 100).toFixed(0)}%
+                          {formatPercent(p.win_rate, 0)}
                         </td>
                       </tr>
                     ))}

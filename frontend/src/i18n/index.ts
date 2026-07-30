@@ -7,6 +7,7 @@ import enCommon from './locales/en/common.json';
 import enEnums from './locales/en/enums.json';
 import enErrors from './locales/en/errors.json';
 import enGame from './locales/en/game.json';
+import enLeaderboard from './locales/en/leaderboard.json';
 import enLobby from './locales/en/lobby.json';
 import enProfile from './locales/en/profile.json';
 import enRoom from './locales/en/room.json';
@@ -15,6 +16,7 @@ import zhCommon from './locales/zh/common.json';
 import zhEnums from './locales/zh/enums.json';
 import zhErrors from './locales/zh/errors.json';
 import zhGame from './locales/zh/game.json';
+import zhLeaderboard from './locales/zh/leaderboard.json';
 import zhLobby from './locales/zh/lobby.json';
 import zhProfile from './locales/zh/profile.json';
 import zhRoom from './locales/zh/room.json';
@@ -37,6 +39,7 @@ const englishResources = {
   enums: enEnums,
   errors: enErrors,
   game: enGame,
+  leaderboard: enLeaderboard,
   lobby: enLobby,
   profile: enProfile,
   room: enRoom,
@@ -48,6 +51,7 @@ const chineseResources = {
   enums: zhEnums,
   errors: zhErrors,
   game: zhGame,
+  leaderboard: zhLeaderboard,
   lobby: zhLobby,
   profile: zhProfile,
   room: zhRoom,

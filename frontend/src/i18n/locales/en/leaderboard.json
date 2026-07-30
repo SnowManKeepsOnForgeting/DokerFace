@@ -1,0 +1,35 @@
+{
+  "title": "Global Leaderboard",
+  "subtitle": "Compare Elo ratings, win rates, and ranking performance against top players.",
+  "standing": {
+    "label": "Your Current Standing",
+    "ranked": "Ranked #{{rank}}",
+    "unranked": "Unranked",
+    "rating": "Rating",
+    "peakRating": "Peak Rating",
+    "matches": "Matches",
+    "nextTier": "Next Tier",
+    "pointsToNext": "+{{points}} pts"
+  },
+  "filters": {
+    "searchPlaceholder": "Search players by name...",
+    "allBadges": "All Badges",
+    "activeOnly": "Active Players Only"
+  },
+  "empty": "No players match the filter criteria.",
+  "podium": {
+    "second": "2ND",
+    "champion": "CHAMP",
+    "third": "3RD",
+    "winRate": "Win Rate: {{value}}"
+  },
+  "table": {
+    "rank": "Rank",
+    "player": "Player",
+    "badge": "Badge",
+    "rating": "Rating",
+    "highestRating": "Highest Rating",
+    "matches": "Matches",
+    "winRate": "Win Rate"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "title": "全球排行榜",
+  "subtitle": "对比 Elo 评分、胜率与排名表现。",
+  "standing": {
+    "label": "你的当前排名",
+    "ranked": "第 {{rank}} 名",
+    "unranked": "暂无排名",
+    "rating": "评分",
+    "peakRating": "历史最高",
+    "matches": "对局场数",
+    "nextTier": "追赶上一名",
+    "pointsToNext": "+{{points}} 分"
+  },
+  "filters": {
+    "searchPlaceholder": "按名称搜索玩家…",
+    "allBadges": "全部徽章",
+    "activeOnly": "仅显示有对局的玩家"
+  },
+  "empty": "没有符合筛选条件的玩家。",
+  "podium": {
+    "second": "亚军",
+    "champion": "冠军",
+    "third": "季军",
+    "winRate": "胜率：{{value}}"
+  },
+  "table": {
+    "rank": "排名",
+    "player": "玩家",
+    "badge": "徽章",
+    "rating": "评分",
+    "highestRating": "历史最高",
+    "matches": "对局场数",
+    "winRate": "胜率"
+  }
+}

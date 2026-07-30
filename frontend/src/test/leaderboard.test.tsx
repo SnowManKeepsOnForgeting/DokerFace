@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Leaderboard } from '../pages/Leaderboard';
+import i18n from '../i18n';
 import { AuthProvider } from '../api/auth';
 import { MemoryRouter } from 'react-router';
 import userEvent from '@testing-library/user-event';
@@ -155,5 +156,53 @@ describe('Leaderboard Page View and Filtering', () => {
     await userEvent.click(checkbox);
 
     await waitFor(() => expect(capturedActiveOnly).toBe('true'));
+  });
+
+  it('renders the leaderboard in Chinese', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/v1/me', () => {
+        return HttpResponse.json(
+          {
+            account_id: 1,
+            login_name: 'alice',
+            role: 'player',
+            status: 'active',
+            display_name: 'Alice',
+          },
+          { status: 200 },
+        );
+      }),
+      http.get('http://localhost:8080/api/v1/leaderboard', () => {
+        return HttpResponse.json(mockLeaderboardResponse, { status: 200 });
+      }),
+    );
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Leaderboard />
+          </AuthProvider>
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByText('Global Leaderboard')).toBeInTheDocument());
+
+    await i18n.changeLanguage('zh');
+
+    await waitFor(() => expect(screen.getByText('全球排行榜')).toBeInTheDocument());
+    expect(screen.getByText('你的当前排名')).toBeInTheDocument();
+    expect(screen.getByText('第 2 名')).toBeInTheDocument();
+    expect(screen.getByText('+40 分')).toBeInTheDocument();
+    expect(screen.getByText('仅显示有对局的玩家')).toBeInTheDocument();
+    expect(screen.getByText('冠军')).toBeInTheDocument();
+    expect(screen.getByText('徽章')).toBeInTheDocument();
+    // Badge themes are user data, so they stay untranslated.
+    expect(screen.getAllByText('Platinum').length).toBeGreaterThan(0);
   });
 });
