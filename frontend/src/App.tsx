@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { AuthProvider } from './api/auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthenticatedRoute, GuestRoute, AdministratorRoute } from './components/RouteGuards';
@@ -10,6 +11,27 @@ import { PlayerProfile } from './pages/PlayerProfile';
 import { RoomContainer } from './pages/RoomContainer';
 import { Leaderboard } from './pages/Leaderboard';
 import { AdminConsole } from './pages/AdminConsole';
+
+function NotFound() {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-100 p-6">
+      <div className="max-w-md text-center font-sans">
+        <h1 className="text-3xl font-bold tracking-tight text-purple-500 mb-2">
+          {t('routes.notFoundTitle')}
+        </h1>
+        <p className="text-slate-400 mb-6">{t('routes.notFoundDescription')}</p>
+        <a
+          href="/"
+          className="inline-flex h-10 items-center justify-center rounded-md bg-purple-600 px-6 font-medium text-white hover:bg-purple-500 transition-colors"
+        >
+          {t('routes.returnToLobby')}
+        </a>
+      </div>
+    </div>
+  );
+}
 
 const router = createBrowserRouter([
   // Guest only routes
@@ -77,20 +99,7 @@ const router = createBrowserRouter([
   // Catch-all route (404)
   {
     path: '*',
-    element: (
-      <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-100 p-6">
-        <div className="max-w-md text-center font-sans">
-          <h1 className="text-3xl font-bold tracking-tight text-purple-500 mb-2">404 Not Found</h1>
-          <p className="text-slate-400 mb-6">The page you are looking for does not exist.</p>
-          <a
-            href="/"
-            className="inline-flex h-10 items-center justify-center rounded-md bg-purple-600 px-6 font-medium text-white hover:bg-purple-500 transition-colors"
-          >
-            Return to Lobby
-          </a>
-        </div>
-      </div>
-    ),
+    element: <NotFound />,
   },
 ]);
 

@@ -2,7 +2,9 @@ import i18next from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
 
+import enAuth from './locales/en/auth.json';
 import enCommon from './locales/en/common.json';
+import zhAuth from './locales/zh/auth.json';
 import zhCommon from './locales/zh/common.json';
 
 /** Every language the interface supports. Simplified Chinese only, without regional variants. */
@@ -18,10 +20,12 @@ export const LANGUAGE_STORAGE_KEY = 'dokerface.language';
 export const DEFAULT_NAMESPACE = 'common';
 
 const englishResources = {
+  auth: enAuth,
   common: enCommon,
 };
 
 const chineseResources = {
+  auth: zhAuth,
   common: zhCommon,
 } satisfies typeof englishResources;
 

@@ -20,5 +20,15 @@
   },
   "actions": {
     "logout": "Logout"
+  },
+  "states": {
+    "loadingSession": "Loading session..."
+  },
+  "routes": {
+    "forbiddenTitle": "403 Forbidden",
+    "forbiddenDescription": "You do not have permission to access the administrator console.",
+    "notFoundTitle": "404 Not Found",
+    "notFoundDescription": "The page you are looking for does not exist.",
+    "returnToLobby": "Return to Lobby"
   }
 }

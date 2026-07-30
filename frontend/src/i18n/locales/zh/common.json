@@ -20,5 +20,15 @@
   },
   "actions": {
     "logout": "退出登录"
+  },
+  "states": {
+    "loadingSession": "正在加载会话…"
+  },
+  "routes": {
+    "forbiddenTitle": "403 无权访问",
+    "forbiddenDescription": "你没有访问管理后台的权限。",
+    "notFoundTitle": "404 页面不存在",
+    "notFoundDescription": "你访问的页面不存在。",
+    "returnToLobby": "返回大厅"
   }
 }
