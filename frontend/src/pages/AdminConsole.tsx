@@ -352,7 +352,7 @@ export function AdminConsole() {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/40 text-xs text-slate-350">
+                    <tbody className="divide-y divide-slate-800/40 text-xs text-slate-300">
                       {filteredAccounts.map((acc) => (
                         <tr key={acc.account_id} className="hover:bg-slate-900/10">
                           <td className="py-3 px-4 font-mono">{acc.account_id}</td>
@@ -473,7 +473,7 @@ export function AdminConsole() {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/40 text-xs text-slate-350">
+                    <tbody className="divide-y divide-slate-800/40 text-xs text-slate-300">
                       {roomsData.items.map((room) => (
                         <tr key={room.room_id} className="hover:bg-slate-900/10">
                           <td className="py-3 px-4 font-mono">{room.room_id}</td>
@@ -535,7 +535,7 @@ export function AdminConsole() {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/40 text-xs text-slate-350">
+                    <tbody className="divide-y divide-slate-800/40 text-xs text-slate-300">
                       {matchesData.items.map((m) => (
                         <tr key={m.match_id} className="hover:bg-slate-900/10">
                           <td className="py-3 px-4 font-mono">{m.match_id.slice(0, 8)}...</td>
@@ -545,8 +545,8 @@ export function AdminConsole() {
                             <span
                               className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
                                 m.void_reason
-                                  ? 'bg-rose-900/20 text-rose-450 border border-rose-900/30'
-                                  : 'bg-emerald-900/20 text-emerald-450 border border-emerald-900/30'
+                                  ? 'bg-rose-900/20 text-rose-400 border border-rose-900/30'
+                                  : 'bg-emerald-900/20 text-emerald-400 border border-emerald-900/30'
                               }`}
                             >
                               {m.void_reason
@@ -606,7 +606,7 @@ export function AdminConsole() {
                         <th className="py-3.5 px-4">{t('admin:chats.columns.timestamp')}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/40 text-xs text-slate-350">
+                    <tbody className="divide-y divide-slate-800/40 text-xs text-slate-300">
                       {chatsData.items.map((chat) => (
                         <tr key={chat.message_id} className="hover:bg-slate-900/10">
                           <td className="py-3 px-4 font-mono">{chat.room_id}</td>
@@ -658,7 +658,7 @@ export function AdminConsole() {
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative">
             <button
               onClick={() => setShowCreateModal(false)}
-              className="absolute top-4 right-4 text-slate-500 hover:text-slate-350 cursor-pointer"
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 cursor-pointer"
             >
               <XCircle className="h-6 w-6" />
             </button>
@@ -676,7 +676,7 @@ export function AdminConsole() {
 
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-450 mb-2">
+                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-2">
                   {t('admin:createModal.loginName')}
                 </label>
                 <input
@@ -690,7 +690,7 @@ export function AdminConsole() {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-450 mb-2">
+                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-2">
                   {t('admin:createModal.displayName')}
                 </label>
                 <input
@@ -703,7 +703,7 @@ export function AdminConsole() {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-450 mb-2">
+                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-2">
                   {t('admin:createModal.password')}
                 </label>
                 <input
@@ -716,7 +716,7 @@ export function AdminConsole() {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-450 mb-2">
+                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-2">
                   {t('admin:createModal.role')}
                 </label>
                 <select
@@ -760,7 +760,7 @@ export function AdminConsole() {
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative">
             <button
               onClick={() => setShowResetModal(false)}
-              className="absolute top-4 right-4 text-slate-500 hover:text-slate-350 cursor-pointer"
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 cursor-pointer"
             >
               <XCircle className="h-6 w-6" />
             </button>
@@ -778,7 +778,7 @@ export function AdminConsole() {
 
             <form onSubmit={handleResetSubmit} className="space-y-4">
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-450 mb-2">
+                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-2">
                   {t('admin:resetModal.newPassword')}
                 </label>
                 <input
@@ -874,12 +874,12 @@ function AuditLogRow({ audit }: { audit: AuditLogResponse }) {
       </div>
 
       {showJson && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-850 pt-3 text-[10px] font-mono leading-relaxed overflow-x-auto bg-slate-950/45 p-3 rounded-lg border border-slate-800/40">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-800 pt-3 text-[10px] font-mono leading-relaxed overflow-x-auto bg-slate-950/45 p-3 rounded-lg border border-slate-800/40">
           <div className="space-y-1">
             <span className="text-rose-500 font-bold uppercase tracking-wider block">
               {t('audits.beforeState')}
             </span>
-            <pre className="text-slate-450 whitespace-pre-wrap">
+            <pre className="text-slate-400 whitespace-pre-wrap">
               {audit.before_state
                 ? JSON.stringify(audit.before_state, null, 2)
                 : t('audits.noBeforeState')}
@@ -889,7 +889,7 @@ function AuditLogRow({ audit }: { audit: AuditLogResponse }) {
             <span className="text-emerald-500 font-bold uppercase tracking-wider block">
               {t('audits.afterState')}
             </span>
-            <pre className="text-slate-350 whitespace-pre-wrap">
+            <pre className="text-slate-300 whitespace-pre-wrap">
               {audit.after_state
                 ? JSON.stringify(audit.after_state, null, 2)
                 : t('audits.noAfterState')}

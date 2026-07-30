@@ -61,7 +61,7 @@ export function Leaderboard() {
 
       {/* Current Player Personal Stats Card */}
       {currentStats && (
-        <section className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 border border-purple-500/20 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 animate-slideDown shadow-lg shadow-purple-950/10">
+        <section className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 border border-purple-500/20 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 animate-slide-down shadow-lg shadow-purple-950/10">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
               <Award className="h-6 w-6" />
@@ -169,7 +169,7 @@ export function Leaderboard() {
           {t('empty')}
         </div>
       ) : (
-        <div className="space-y-8 animate-fadeIn">
+        <div className="space-y-8 animate-fade-in">
           {/* Top 3 Podium Visual Layout */}
           {topThree.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end pt-6 max-w-4xl mx-auto w-full">
@@ -179,7 +179,7 @@ export function Leaderboard() {
                   to={`/players/${topThree[1].account_id}`}
                   className="bg-slate-900/30 border border-slate-800/80 hover:border-slate-700 rounded-2xl p-6 flex flex-col items-center text-center relative order-2 md:order-1 h-[240px] justify-between transition-all hover:scale-[1.02]"
                 >
-                  <div className="absolute top-4 left-4 bg-slate-800 text-slate-350 font-bold px-2 py-0.5 rounded text-[10px] border border-slate-700">
+                  <div className="absolute top-4 left-4 bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded text-[10px] border border-slate-700">
                     {t('podium.second')}
                   </div>
                   <div
@@ -265,7 +265,7 @@ export function Leaderboard() {
                     </span>
                   </div>
                   <div>
-                    <p className="text-lg font-black text-slate-250">{topThree[2].rating}</p>
+                    <p className="text-lg font-black text-slate-200">{topThree[2].rating}</p>
                     <p className="text-[10px] text-slate-500 font-medium">
                       {t('podium.winRate', {
                         value: formatPercent(topThree[2].win_rate, 0),
@@ -314,7 +314,7 @@ export function Leaderboard() {
                           </Link>
                         </td>
                         <td className="py-4 px-6 text-center">
-                          <span className="inline-flex px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded bg-slate-900 text-slate-450 border border-slate-800/80">
+                          <span className="inline-flex px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded bg-slate-900 text-slate-400 border border-slate-800/80">
                             {p.rank_badge_theme}
                           </span>
                         </td>

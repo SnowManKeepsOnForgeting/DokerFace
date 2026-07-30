@@ -278,7 +278,7 @@ export function PlayerProfile() {
 
       {/* Editing Form Sheet */}
       {isEditing && (
-        <section className="bg-slate-900 border border-purple-500/20 rounded-2xl p-6 space-y-4 animate-slideDown">
+        <section className="bg-slate-900 border border-purple-500/20 rounded-2xl p-6 space-y-4 animate-slide-down">
           <h3 className="font-bold text-sm uppercase tracking-wider text-purple-400">
             {t('profile:edit.title')}
           </h3>
@@ -485,7 +485,7 @@ export function PlayerProfile() {
                 {t('profile:stats.empty')}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 animate-fadeIn">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 animate-fade-in">
                 <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                     {t('profile:stats.matchesPlayed')}
@@ -617,7 +617,7 @@ export function PlayerProfile() {
               {t('profile:history.empty')}
             </div>
           ) : (
-            <div className="space-y-3 animate-fadeIn">
+            <div className="space-y-3 animate-fade-in">
               {matches.items.map((m) => (
                 <div
                   key={m.match_id}
@@ -736,7 +736,7 @@ function MatchDetailModal({ matchId, onClose }: MatchDetailModalProps) {
   });
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl relative overflow-hidden">
         {/* Top bar */}
         <header className="px-6 py-4 border-b border-slate-800/80 flex justify-between items-center shrink-0">
@@ -751,7 +751,7 @@ function MatchDetailModal({ matchId, onClose }: MatchDetailModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="h-8 w-8 flex items-center justify-center text-slate-500 hover:text-slate-350 hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
+            className="h-8 w-8 flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -883,7 +883,7 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
 
       {/* Expanded panel details */}
       {expanded && (
-        <div className="border-t border-slate-800 p-4 bg-slate-950/20 space-y-4 animate-slideDown">
+        <div className="border-t border-slate-800 p-4 bg-slate-950/20 space-y-4 animate-slide-down">
           {/* Actions log list */}
           <div className="space-y-2">
             <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">

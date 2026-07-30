@@ -369,8 +369,8 @@ export function Lobby() {
       {/* Private Room Password Entry Dialog */}
       <Dialog.Root open={isPasswordOpen} onOpenChange={setIsPasswordOpen}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fadeIn" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl z-50 font-sans animate-scaleIn">
+          <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fade-in" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl z-50 font-sans animate-scale-in">
             <div className="flex justify-between items-start mb-4">
               <Dialog.Title className="font-bold text-lg text-slate-100">
                 {t('lobby:password.title')}
@@ -408,8 +408,8 @@ export function Lobby() {
       {/* Room Creation dialog */}
       <Dialog.Root open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fadeIn" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl z-50 font-sans animate-scaleIn">
+          <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fade-in" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl z-50 font-sans animate-scale-in">
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-2">
                 <Sliders className="h-5 w-5 text-purple-400" />
@@ -478,7 +478,7 @@ export function Lobby() {
 
               {/* Password prompt if visibility === 'password' */}
               {visibility === 'password' && (
-                <div className="animate-slideDown">
+                <div className="animate-slide-down">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
                     {t('lobby:create.passcode')}
                   </label>
@@ -637,7 +637,7 @@ export function Lobby() {
                 </div>
 
                 {endMode === 'fixed_hands' && (
-                  <div className="animate-slideDown">
+                  <div className="animate-slide-down">
                     <label className="block text-xs font-semibold text-slate-400 mb-2">
                       {t('lobby:create.handLimit')}
                     </label>

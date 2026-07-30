@@ -65,7 +65,7 @@ export function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg px-4 py-3 text-sm font-medium animate-fadeIn">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg px-4 py-3 text-sm font-medium animate-fade-in">
               {error}
             </div>
           )}

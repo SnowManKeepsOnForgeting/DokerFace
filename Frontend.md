@@ -319,11 +319,16 @@ ack 的 `ok/error` 显示结果，不假定 `emit` 即成功。
 
 - 大厅、资料和管理页采用安静、紧凑、易扫描的工作型界面；牌桌可以更具表现力但不牺牲信息层级。
 - 使用语义颜色区分成功、警告、危险、连接和行动状态，不用单一色相覆盖整个应用。
-- 卡片、弹窗和面板圆角不超过 8px；页面区段不堆叠嵌套卡片。
+- 颜色、圆角、间距和动画统一由 `src/index.css` 的 Tailwind 4 `@theme` token 定义，页面不再逐处
+  挑选原始色阶。语义 token 命名为 `surface`、`border-subtle`、`accent`、`success/warning/danger`
+  和牌桌专用的 `felt`、`rail`、`chip`、`card-*`。
+- 圆角分层：卡片、弹窗和面板不超过 12px（`rounded-panel`）；按钮、输入框等控件不超过 8px
+  （`rounded-control`）；徽章、筹码和头像可用 pill 或全圆。页面区段不堆叠嵌套卡片。
 - 图标按钮使用 Lucide 图标和 tooltip；二元配置使用 switch/checkbox，枚举使用 select/radio。
 - 头像文字水平垂直居中、允许换行，并用容器测量限制最长内容，不使用视口宽度缩放字体。
 - 键盘可完成登录、建房、准备和牌局操作；焦点状态清晰，Dialog 正确锁定和恢复焦点。
-- 尊重系统 `prefers-reduced-motion`，减少位移动画但不隐藏结算信息。
+- 尊重系统 `prefers-reduced-motion`，减少位移动画但不隐藏结算信息。CSS 层统一把位移和缩放降为
+  不透明度过渡，组件层用 `useReducedMotion` 跳过 Motion 编排和发牌错峰延迟。
 
 ## 10. 协议开工门禁
 

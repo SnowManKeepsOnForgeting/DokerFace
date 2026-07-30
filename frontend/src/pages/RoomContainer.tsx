@@ -204,7 +204,7 @@ export function RoomContainer() {
         <div
           role="status"
           aria-live="polite"
-          className="bg-amber-600 text-white text-xs font-bold text-center py-2 px-4 flex items-center justify-center gap-2 animate-slideDown shrink-0"
+          className="bg-amber-600 text-white text-xs font-bold text-center py-2 px-4 flex items-center justify-center gap-2 animate-slide-down shrink-0"
         >
           <div className="h-3 w-3 animate-ping rounded-full bg-white opacity-75 shrink-0" />
           {connectionMessage}

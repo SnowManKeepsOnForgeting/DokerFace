@@ -227,7 +227,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
     return (
       <div
-        className={`${cardSize} ${cardPadding} flex flex-col justify-between rounded-lg border border-slate-300 bg-white text-left font-sans text-slate-900 shadow-md select-none animate-scaleUp`}
+        className={`${cardSize} ${cardPadding} flex flex-col justify-between rounded-lg border border-slate-300 bg-white text-left font-sans text-slate-900 shadow-md select-none animate-deal-in`}
       >
         <div className={`${rankSize} font-black leading-none`}>{rank}</div>
         <div className={`${suitSize} text-center font-bold leading-none ${suit.color}`}>
@@ -339,7 +339,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
       {/* Floating Emote panel */}
       {showEmotesMenu && (
-        <div className="absolute top-16 right-6 bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-xl z-20 flex gap-2 animate-slideDown">
+        <div className="absolute top-16 right-6 bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-xl z-20 flex gap-2 animate-slide-down">
           {emotes.map((emoji) => (
             <button
               key={emoji}
@@ -561,7 +561,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       {showActionBar && privateSnapshot && (
         <section
           data-testid="action-bar"
-          className="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-slate-800 bg-slate-900 p-3 animate-slideUp sm:gap-4 sm:p-4 lg:static"
+          className="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-slate-800 bg-slate-900 p-3 animate-slide-up sm:gap-4 sm:p-4 lg:static"
         >
           {lastCommandError && (
             <div
@@ -668,8 +668,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
       {/* Hand Settlement payoff overlay */}
       {handSettled && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-30 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-850/80 rounded-2xl p-6 max-w-md w-full shadow-2xl relative overflow-hidden text-center">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-30 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 max-w-md w-full shadow-2xl relative overflow-hidden text-center">
             {/* Glow */}
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-500 to-indigo-500" />
             <h3 className="text-xl font-bold text-slate-100 flex items-center justify-center gap-2">
@@ -709,7 +709,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
       {/* Match Settled Leaderboard final overlay */}
       {matchSettled && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-40 flex items-center justify-center p-4 animate-fadeIn">
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-40 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl relative overflow-hidden">
             {/* Header */}
             <div className="text-center mb-6">

@@ -1,9 +1,266 @@
 @import 'tailwindcss';
 
-/* Keep Latin metrics first, then add Simplified Chinese fallbacks before the emoji families. */
+/*
+ * DokerFace design tokens.
+ *
+ * Tailwind 4 is configured CSS-first, so every token below becomes a utility:
+ * `--color-surface-raised` yields `bg-surface-raised`, `--radius-panel` yields
+ * `rounded-panel`, and `--animate-fade-in` yields `animate-fade-in`.
+ *
+ * The palette keeps the existing purple/slate identity. Semantic names exist so
+ * surfaces, borders and status colors stop being re-picked per page.
+ */
 @theme {
+  /* Keep Latin metrics first, then add Simplified Chinese fallbacks before the emoji families. */
   --font-sans:
     ui-sans-serif, system-ui, sans-serif, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC',
     'Source Han Sans SC', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+  /* Surfaces, from the page background up to the highest overlay. */
+  --color-canvas: var(--color-slate-950);
+  --color-surface: --alpha(var(--color-slate-900) / 40%);
+  --color-surface-raised: var(--color-slate-900);
+  --color-surface-sunken: --alpha(var(--color-slate-950) / 60%);
+  --color-surface-hover: --alpha(var(--color-slate-800) / 60%);
+
+  /* Borders. `strong` is for focused or emphasised edges. */
+  --color-border-subtle: --alpha(var(--color-slate-800) / 80%);
+  --color-border-strong: var(--color-slate-700);
+
+  /* Brand accent. */
+  --color-accent: var(--color-purple-500);
+  --color-accent-strong: var(--color-purple-600);
+  --color-accent-muted: --alpha(var(--color-purple-500) / 10%);
+  --color-accent-border: --alpha(var(--color-purple-500) / 20%);
+  --color-accent-text: var(--color-purple-400);
+
+  /* Status colors. Used for connection, settlement and validation states. */
+  --color-success: var(--color-emerald-400);
+  --color-success-surface: --alpha(var(--color-emerald-500) / 10%);
+  --color-success-border: --alpha(var(--color-emerald-500) / 20%);
+  --color-warning: var(--color-amber-400);
+  --color-warning-surface: --alpha(var(--color-amber-500) / 10%);
+  --color-warning-border: --alpha(var(--color-amber-500) / 20%);
+  --color-danger: var(--color-rose-400);
+  --color-danger-surface: --alpha(var(--color-rose-500) / 10%);
+  --color-danger-border: --alpha(var(--color-rose-500) / 20%);
+
+  /* Table-specific colors. */
+  --color-felt-light: var(--color-emerald-800);
+  --color-felt-dark: var(--color-emerald-950);
+  --color-felt-line: --alpha(var(--color-emerald-700) / 30%);
+  --color-rail: var(--color-amber-900);
+  --color-chip: var(--color-yellow-500);
+  --color-card-face: #ffffff;
+  --color-card-edge: var(--color-slate-300);
+  --color-card-back: var(--color-rose-500);
+
+  /*
+   * Radii. Panels and dialogs stay at 12px, interactive controls at 8px.
+   * Frontend.md section 9.3 records this split.
+   */
+  --radius-panel: 0.75rem;
+  --radius-control: 0.5rem;
+
+  /* Motion. Durations stay short so the table never feels laggy. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-fade-in: fade-in 200ms var(--ease-out-soft) both;
+  --animate-slide-up: slide-up 220ms var(--ease-out-soft) both;
+  --animate-slide-down: slide-down 220ms var(--ease-out-soft) both;
+  --animate-scale-in: scale-in 180ms var(--ease-out-soft) both;
+  --animate-deal-in: deal-in 260ms var(--ease-out-soft) both;
+  --animate-emote-float: emote-float 4s ease-out both;
+  --animate-pulse-ring: pulse-ring 1.8s ease-out infinite;
+  --animate-chip-to-pot: chip-to-pot 420ms var(--ease-out-soft) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Cards arrive from the deck: slightly raised, rotated and scaled down. */
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem) scale(0.9) rotate(-4deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+/* Emotes rise above a seat and fade, never crossing into the felt. */
+@keyframes emote-float {
+  0% {
+    opacity: 0;
+    transform: translateY(0.25rem) scale(0.8);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(-0.25rem) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(-0.5rem) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-1rem) scale(0.95);
+  }
+}
+
+/* Expanding ring behind the seat that owns the action. */
+@keyframes pulse-ring {
+  0% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+/* Chips leaving a seat toward the pot. Offsets are supplied per seat. */
+@keyframes chip-to-pot {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(var(--chip-dx, 0), var(--chip-dy, 0), 0) scale(0.6);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -150% 0;
+  }
+  to {
+    background-position: 250% 0;
+  }
+}
+
+@layer utilities {
+  /*
+   * Slim scrollbar for chat, history and dialog bodies. `scrollbar-thin` was
+   * already used across the app before this rule existed, so every one of those
+   * call sites starts working now.
+   */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-slate-700) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 0.375rem;
+    height: 0.375rem;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: var(--color-slate-700);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-slate-600);
+  }
+
+  /* One consistent keyboard focus treatment for every interactive surface. */
+  .focus-ring {
+    &:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  /* Loading placeholder sweep, paired with `animate-shimmer`. */
+  .shimmer-surface {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      --alpha(var(--color-slate-700) / 35%) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+  }
+}
+
+/*
+ * Respect the system reduced-motion preference: drop travel and scale, keep the
+ * opacity change so settlement information still announces itself.
+ * Frontend.md section 9.3 requires reduced movement without hidden results.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-slide-down,
+  .animate-scale-in,
+  .animate-deal-in {
+    animation: fade-in 150ms ease both !important;
+  }
+
+  .animate-emote-float {
+    animation: fade-in 150ms ease both !important;
+  }
 }
