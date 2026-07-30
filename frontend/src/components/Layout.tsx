@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../api/auth-context';
+import { useEnumLabel } from '../i18n/useEnumLabel';
 import { PlayerAvatar } from './PlayerAvatar';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { LayoutDashboard, Trophy, User, LogOut, ShieldAlert } from 'lucide-react';
@@ -10,6 +11,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const enumLabel = useEnumLabel();
 
   const handleLogout = async () => {
     try {
@@ -81,7 +83,9 @@ export function Layout({ children }: { children: ReactNode }) {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">{user.display_name}</p>
-                  <p className="text-xs text-slate-400 truncate capitalize">{user.role}</p>
+                  <p className="text-xs text-slate-400 truncate">
+                    {enumLabel('accountRole', user.role)}
+                  </p>
                 </div>
               </div>
               <button

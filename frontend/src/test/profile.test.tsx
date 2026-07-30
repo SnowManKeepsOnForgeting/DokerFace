@@ -213,8 +213,8 @@ describe('PlayerProfile View and Editing', () => {
     const handRow = screen.getByText('Hand #1');
     await userEvent.click(handRow);
 
-    // Verify Street actions are displayed (CSS capitalize is visual-only, DOM text is lowercase)
-    await waitFor(() => expect(screen.getByText('bet or raise')).toBeInTheDocument());
+    // Verify Street actions are displayed using the shared enum dictionary
+    await waitFor(() => expect(screen.getByText('Bet or raise')).toBeInTheDocument());
     expect(screen.getByText('100')).toBeInTheDocument();
     expect(screen.getByText('♠')).toHaveClass('text-slate-800');
     expect(screen.getByText('♦')).toHaveClass('text-rose-500');

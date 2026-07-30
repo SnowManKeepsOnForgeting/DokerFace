@@ -32,6 +32,8 @@ import {
   Award,
   KeyRound,
 } from 'lucide-react';
+import { useEnumLabel } from '../i18n/useEnumLabel';
+import { useFormatters } from '../i18n/useFormatters';
 
 // Backend cards use standard poker shorthand, where "T" is the ten.
 const RANK_LABELS: Record<string, string> = { T: '10' };
@@ -41,6 +43,8 @@ export function PlayerProfile() {
   const { user: currentUser, refetch: refetchAuth } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const enumLabel = useEnumLabel();
+  const { formatDate, formatDateTime } = useFormatters();
 
   const accountId = parseInt(playerId || '0');
   const isOwnProfile = currentUser?.account_id === accountId;
@@ -590,13 +594,13 @@ export function PlayerProfile() {
                       )}
                     </div>
                     <p className="text-[10px] text-slate-500">
-                      Started: {new Date(m.started_at).toLocaleString()}
+                      Started: {formatDateTime(m.started_at)}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3 mt-2 sm:mt-0 text-xs">
                     <span className="text-slate-400 uppercase tracking-wide text-[10px] font-semibold bg-slate-950/40 border border-slate-800 px-2 py-0.5 rounded">
-                      {m.end_mode.replace(/_/g, ' ')}
+                      {enumLabel('endMode', m.end_mode)}
                     </span>
                     <span className="text-slate-500">{m.players?.length || 0} players</span>
                   </div>
@@ -632,7 +636,7 @@ export function PlayerProfile() {
                     </span>
                     <span className="text-[10px] text-slate-500 flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {record.created_at ? new Date(record.created_at).toLocaleDateString() : 'N/A'}
+                      {record.created_at ? formatDate(record.created_at) : 'N/A'}
                     </span>
                   </div>
 
@@ -672,6 +676,7 @@ interface MatchDetailModalProps {
 }
 
 function MatchDetailModal({ matchId, onClose }: MatchDetailModalProps) {
+  const { formatChips } = useFormatters();
   const { data: detail, isLoading } = useQuery({
     queryKey: ['match-detail', matchId],
     queryFn: () =>
@@ -719,7 +724,7 @@ function MatchDetailModal({ matchId, onClose }: MatchDetailModalProps) {
                       <span className="font-semibold text-slate-300">Player #{p.account_id}</span>
                       <span className="text-slate-400 font-mono">
                         {p.final_chips !== null && p.final_chips !== undefined
-                          ? `${p.final_chips.toLocaleString()} chips`
+                          ? `${formatChips(p.final_chips)} chips`
                           : 'Spectator'}
                       </span>
                     </div>
@@ -749,6 +754,8 @@ function MatchDetailModal({ matchId, onClose }: MatchDetailModalProps) {
 
 function HandRow({ hand }: { hand: HandHistoryResponse }) {
   const [expanded, setExpanded] = useState(false);
+  const enumLabel = useEnumLabel();
+  const { formatChips } = useFormatters();
 
   // Render cards helper
   const renderMiniCard = (cardStr: string) => {
@@ -825,17 +832,15 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
                   >
                     <div className="flex gap-2">
                       <span className="text-[10px] text-slate-500 uppercase font-mono w-14 shrink-0">
-                        {act.street}
+                        {enumLabel('street', act.street)}
                       </span>
                       <span className="font-semibold text-slate-300">Player #{act.account_id}</span>
-                      <span className="text-purple-400 font-bold capitalize">
-                        {act.action.replace(/_/g, ' ')}
+                      <span className="text-purple-400 font-bold">
+                        {enumLabel('action', act.action)}
                       </span>
                     </div>
                     {act.amount !== null && act.amount !== undefined && (
-                      <span className="text-slate-400 font-mono">
-                        {act.amount.toLocaleString()}
-                      </span>
+                      <span className="text-slate-400 font-mono">{formatChips(act.amount)}</span>
                     )}
                   </div>
                 ))
@@ -859,7 +864,7 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
                       <span className="text-slate-400">Player #{accId}</span>
                       <span className={payout >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
                         {payout >= 0 ? '+' : ''}
-                        {payout.toLocaleString()} chips
+                        {formatChips(payout)} chips
                       </span>
                     </div>
                   );

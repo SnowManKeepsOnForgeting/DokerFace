@@ -28,6 +28,8 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
+import { useEnumLabel } from '../i18n/useEnumLabel';
+import { useFormatters } from '../i18n/useFormatters';
 
 const errorMessage = (error: unknown, fallback: string): string =>
   error instanceof Error ? error.message : fallback;
@@ -37,6 +39,8 @@ export function AdminConsole() {
     'accounts' | 'rooms' | 'matches' | 'chats' | 'audits'
   >('accounts');
   const queryClient = useQueryClient();
+  const enumLabel = useEnumLabel();
+  const { formatDateTime } = useFormatters();
 
   // Dialog/Form states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -456,7 +460,7 @@ export function AdminConsole() {
                           <td className="py-3 px-4 font-semibold text-slate-200">{room.name}</td>
                           <td className="py-3 px-4 font-mono">{room.host_account_id}</td>
                           <td className="py-3 px-4">{room.player_count}</td>
-                          <td className="py-3 px-4 capitalize">{room.status}</td>
+                          <td className="py-3 px-4">{enumLabel('roomStatus', room.status)}</td>
                           <td className="py-3 px-4 text-right">
                             {room.status !== 'closed' && (
                               <button
@@ -514,7 +518,7 @@ export function AdminConsole() {
                         <tr key={m.match_id} className="hover:bg-slate-900/10">
                           <td className="py-3 px-4 font-mono">{m.match_id.slice(0, 8)}...</td>
                           <td className="py-3 px-4 font-mono">{m.room_id}</td>
-                          <td className="py-3 px-4 capitalize">{m.end_mode.replace(/_/g, ' ')}</td>
+                          <td className="py-3 px-4">{enumLabel('endMode', m.end_mode)}</td>
                           <td className="py-3 px-4">
                             <span
                               className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
@@ -583,11 +587,11 @@ export function AdminConsole() {
                         <tr key={chat.message_id} className="hover:bg-slate-900/10">
                           <td className="py-3 px-4 font-mono">{chat.room_id}</td>
                           <td className="py-3 px-4 font-mono">{chat.account_id}</td>
-                          <td className="py-3 px-4 capitalize">{chat.message_type}</td>
-                          <td className="py-3 px-4 font-medium text-slate-200">{chat.content}</td>
                           <td className="py-3 px-4">
-                            {new Date(chat.created_at).toLocaleString()}
+                            {enumLabel('messageType', chat.message_type)}
                           </td>
+                          <td className="py-3 px-4 font-medium text-slate-200">{chat.content}</td>
+                          <td className="py-3 px-4">{formatDateTime(chat.created_at)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -793,6 +797,7 @@ export function AdminConsole() {
 
 function AuditLogRow({ audit }: { audit: AuditLogResponse }) {
   const [showJson, setShowJson] = useState(false);
+  const { formatDateTime } = useFormatters();
 
   return (
     <div className="bg-slate-900/20 border border-slate-800/80 rounded-xl p-4 flex flex-col gap-3">
@@ -822,7 +827,7 @@ function AuditLogRow({ audit }: { audit: AuditLogResponse }) {
 
         <div className="flex items-center gap-3">
           <span className="text-[10px] text-slate-500 font-mono">
-            {new Date(audit.created_at).toLocaleString()}
+            {formatDateTime(audit.created_at)}
           </span>
 
           <button

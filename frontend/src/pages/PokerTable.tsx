@@ -15,6 +15,8 @@ import {
   Smile,
   X,
 } from 'lucide-react';
+import { useEnumLabel } from '../i18n/useEnumLabel';
+import { useFormatters } from '../i18n/useFormatters';
 
 interface PokerTableProps {
   roomId: string;
@@ -46,6 +48,8 @@ const SEAT_POSITION_CLASSES = [
 
 export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const { user } = useAuth();
+  const enumLabel = useEnumLabel();
+  const { formatChips, formatTime } = useFormatters();
   const {
     publicSnapshot,
     privateSnapshot,
@@ -270,8 +274,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       {/* Hand status / stats bar */}
       <header className="z-10 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-3 border-b border-slate-800/80 bg-slate-900/60 px-3 py-3 sm:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-          <span className="min-w-0 max-w-full rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-xs font-semibold capitalize leading-tight text-purple-400">
-            Street: {street}
+          <span className="min-w-0 max-w-full rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-xs font-semibold leading-tight text-purple-400">
+            Street: {enumLabel('street', street)}
           </span>
           <span className="shrink-0 text-xs font-semibold text-slate-400">Hand #{hand_number}</span>
         </div>
@@ -378,12 +382,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                         ? 'You'
                         : message.display_name || `Player #${message.account_id}`}
                     </span>
-                    <span className="shrink-0">
-                      {new Date(message.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
+                    <span className="shrink-0">{formatTime(message.created_at)}</span>
                   </div>
                   <p className="rounded-lg border border-slate-800/60 bg-slate-950/60 px-2.5 py-2 text-slate-200">
                     {message.content}
@@ -448,7 +447,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-black/40 px-3 py-1 text-slate-200 shadow-md md:px-4 md:py-1.5">
                 <Coins className="h-3.5 w-3.5 text-yellow-500 md:h-4 md:w-4" />
                 <span className="text-xs font-bold text-slate-100 md:text-sm">
-                  Pot: {totalPot.toLocaleString()}
+                  Pot: {formatChips(totalPot)}
                 </span>
               </div>
 
@@ -516,7 +515,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                   {player.display_name}
                 </span>
                 <span className="rounded-full bg-black/40 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400 md:text-[10px]">
-                  {player.stack.toLocaleString()}
+                  {formatChips(player.stack)}
                 </span>
 
                 <div
@@ -534,7 +533,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                 {player.bet > 0 && (
                   <div className="flex items-center gap-1 rounded-full border border-yellow-500/20 bg-black/40 px-1.5 py-0.5 text-[9px] font-bold text-yellow-400 md:px-2 md:text-[10px]">
                     <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
-                    {player.bet.toLocaleString()}
+                    {formatChips(player.bet)}
                   </div>
                 )}
 
@@ -569,7 +568,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           {betAction && (
             <div className="mx-auto flex w-full max-w-2xl items-center gap-2 sm:gap-4">
               <span className="w-10 shrink-0 text-right text-[10px] font-semibold text-slate-400 sm:w-12 sm:text-xs">
-                {minBetAmount.toLocaleString()}
+                {formatChips(minBetAmount)}
               </span>
               <input
                 type="range"
@@ -589,7 +588,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                 className="flex-1 accent-purple-500 bg-slate-950 h-2 rounded-lg cursor-pointer"
               />
               <span className="w-10 shrink-0 text-[10px] font-semibold text-slate-400 sm:w-12 sm:text-xs">
-                {maxBetAmount.toLocaleString()}
+                {formatChips(maxBetAmount)}
               </span>
               <input
                 type="number"
@@ -643,11 +642,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                   {(actionLabel === 'call' || act.action === 'bet_or_raise') && (
                     <span className="bg-black/25 px-1.5 py-0.5 rounded text-[10px] font-black">
                       {actionLabel === 'call'
-                        ? (myPlayer
-                            ? Math.min(myPlayer.stack, act.min_amount ?? 0)
-                            : 0
-                          ).toLocaleString()
-                        : effectiveBetAmount.toLocaleString()}
+                        ? formatChips(myPlayer ? Math.min(myPlayer.stack, act.min_amount ?? 0) : 0)
+                        : formatChips(effectiveBetAmount)}
                     </span>
                   )}
                 </button>
@@ -683,7 +679,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                     </span>
                     <span className={payoff > 0 ? 'text-emerald-400' : 'text-rose-400'}>
                       {payoff > 0 ? '+' : ''}
-                      {payoff.toLocaleString()} chips
+                      {formatChips(payoff)} chips
                     </span>
                   </div>
                 );
@@ -724,7 +720,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                       </span>
                     </div>
                     <span className="text-sm font-bold text-emerald-400">
-                      {stack.toLocaleString()} chips
+                      {formatChips(stack)} chips
                     </span>
                   </div>
                 );

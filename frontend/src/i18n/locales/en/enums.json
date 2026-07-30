@@ -1,0 +1,45 @@
+{
+  "accountRole": {
+    "player": "Player",
+    "administrator": "Administrator"
+  },
+  "accountStatus": {
+    "active": "Active",
+    "disabled": "Disabled",
+    "deleted": "Deleted"
+  },
+  "roomStatus": {
+    "waiting": "Waiting",
+    "active": "In progress",
+    "closed": "Closed"
+  },
+  "roomVisibility": {
+    "public": "Public",
+    "password": "Password",
+    "invite": "Invite only"
+  },
+  "endMode": {
+    "winner_takes_all": "Winner takes all",
+    "fixed_hands": "Fixed hands"
+  },
+  "messageType": {
+    "text": "Text",
+    "quick": "Quick phrase",
+    "custom_quick": "Custom phrase"
+  },
+  "street": {
+    "preflop": "Preflop",
+    "flop": "Flop",
+    "turn": "Turn",
+    "river": "River",
+    "showdown": "Showdown",
+    "settlement": "Settlement"
+  },
+  "action": {
+    "fold": "Fold",
+    "check_or_call": "Check or call",
+    "bet_or_raise": "Bet or raise",
+    "show": "Show",
+    "muck": "Muck"
+  }
+}

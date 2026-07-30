@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Smile,
 } from 'lucide-react';
+import { useFormatters } from '../i18n/useFormatters';
 
 interface WaitingRoomProps {
   roomId: string;
@@ -24,6 +25,7 @@ interface WaitingRoomProps {
 
 export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
   const { user: currentUser } = useAuth();
+  const { formatTime } = useFormatters();
   const {
     currentRoom,
     toggleReady,
@@ -227,12 +229,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
                       ? 'You'
                       : msg.display_name || `Player #${msg.account_id}`}
                   </span>
-                  <span>
-                    {new Date(msg.created_at).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
+                  <span>{formatTime(msg.created_at)}</span>
                 </div>
                 <p className="bg-slate-950/40 border border-slate-800/40 rounded-lg px-2.5 py-1.5 text-slate-200">
                   {msg.content}

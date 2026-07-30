@@ -19,11 +19,15 @@ import {
   Sliders,
   AlertCircle,
 } from 'lucide-react';
+import { useEnumLabel } from '../i18n/useEnumLabel';
+import { useFormatters } from '../i18n/useFormatters';
 
 export function Lobby() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const enumLabel = useEnumLabel();
+  const { formatChips } = useFormatters();
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
@@ -328,13 +332,13 @@ export function Lobby() {
                 <div className="flex justify-between">
                   <span>Starting Chips:</span>
                   <span className="font-semibold text-slate-300">
-                    {room.rules.starting_chips.toLocaleString()}
+                    {formatChips(room.rules.starting_chips)}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Match Mode:</span>
-                  <span className="font-semibold text-slate-300 capitalize">
-                    {room.rules.end_mode.replace(/_/g, ' ')}
+                  <span className="font-semibold text-slate-300">
+                    {enumLabel('endMode', room.rules.end_mode)}
                   </span>
                 </div>
                 <div className="flex justify-between">

@@ -272,7 +272,7 @@ describe('AdminConsole Page Interactions', () => {
     const matchesTab = screen.getByText('Match Logs');
     await userEvent.click(matchesTab);
 
-    await waitFor(() => expect(screen.getByText(/winner takes all/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Winner takes all/)).toBeInTheDocument());
 
     const voidBtn = screen.getByText('Void Match');
     await userEvent.click(voidBtn);

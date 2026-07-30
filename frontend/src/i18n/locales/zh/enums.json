@@ -1,0 +1,45 @@
+{
+  "accountRole": {
+    "player": "玩家",
+    "administrator": "管理员"
+  },
+  "accountStatus": {
+    "active": "正常",
+    "disabled": "已停用",
+    "deleted": "已删除"
+  },
+  "roomStatus": {
+    "waiting": "等待中",
+    "active": "进行中",
+    "closed": "已关闭"
+  },
+  "roomVisibility": {
+    "public": "公开",
+    "password": "密码",
+    "invite": "仅邀请"
+  },
+  "endMode": {
+    "winner_takes_all": "一人通吃",
+    "fixed_hands": "固定手数"
+  },
+  "messageType": {
+    "text": "文本",
+    "quick": "快捷短语",
+    "custom_quick": "自定义短语"
+  },
+  "street": {
+    "preflop": "翻牌前",
+    "flop": "翻牌",
+    "turn": "转牌",
+    "river": "河牌",
+    "showdown": "亮牌",
+    "settlement": "结算"
+  },
+  "action": {
+    "fold": "弃牌",
+    "check_or_call": "看牌或跟注",
+    "bet_or_raise": "下注或加注",
+    "show": "亮牌",
+    "muck": "盖牌"
+  }
+}

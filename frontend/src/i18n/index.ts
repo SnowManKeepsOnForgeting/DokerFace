@@ -4,8 +4,10 @@ import { initReactI18next } from 'react-i18next';
 
 import enAuth from './locales/en/auth.json';
 import enCommon from './locales/en/common.json';
+import enEnums from './locales/en/enums.json';
 import zhAuth from './locales/zh/auth.json';
 import zhCommon from './locales/zh/common.json';
+import zhEnums from './locales/zh/enums.json';
 
 /** Every language the interface supports. Simplified Chinese only, without regional variants. */
 export const SUPPORTED_LANGUAGES = ['en', 'zh'] as const;
@@ -22,11 +24,13 @@ export const DEFAULT_NAMESPACE = 'common';
 const englishResources = {
   auth: enAuth,
   common: enCommon,
+  enums: enEnums,
 };
 
 const chineseResources = {
   auth: zhAuth,
   common: zhCommon,
+  enums: zhEnums,
 } satisfies typeof englishResources;
 
 export const resources = {
