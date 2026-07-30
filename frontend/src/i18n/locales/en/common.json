@@ -1,0 +1,12 @@
+{
+  "appName": "DokerFace",
+  "appTitle": "DokerFace - Texas Hold'em",
+  "language": {
+    "label": "Language",
+    "switchLabel": "Change language",
+    "options": {
+      "en": "English",
+      "zh": "简体中文"
+    }
+  }
+}

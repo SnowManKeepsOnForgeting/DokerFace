@@ -1,0 +1,76 @@
+import i18next from 'i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import { initReactI18next } from 'react-i18next';
+
+import enCommon from './locales/en/common.json';
+import zhCommon from './locales/zh/common.json';
+
+/** Every language the interface supports. Simplified Chinese only, without regional variants. */
+export const SUPPORTED_LANGUAGES = ['en', 'zh'] as const;
+
+export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+
+export const DEFAULT_LANGUAGE: SupportedLanguage = 'en';
+
+/** Browser storage key holding the explicit user language choice. */
+export const LANGUAGE_STORAGE_KEY = 'dokerface.language';
+
+export const DEFAULT_NAMESPACE = 'common';
+
+const englishResources = {
+  common: enCommon,
+};
+
+const chineseResources = {
+  common: zhCommon,
+} satisfies typeof englishResources;
+
+export const resources = {
+  en: englishResources,
+  zh: chineseResources,
+};
+
+function isSupportedLanguage(code: string): code is SupportedLanguage {
+  return (SUPPORTED_LANGUAGES as readonly string[]).includes(code);
+}
+
+/**
+ * Reduce any language tag to a supported language.
+ *
+ * Regional and script subtags are dropped, so `zh-CN`, `zh-SG`, `zh-TW`, and `zh-Hant-HK` all
+ * resolve to Simplified Chinese. Unsupported languages fall back to English.
+ */
+export function normalizeLanguage(code: string | null | undefined): SupportedLanguage {
+  if (!code) {
+    return DEFAULT_LANGUAGE;
+  }
+
+  const base = code.toLowerCase().split(/[-_]/)[0];
+  return isSupportedLanguage(base) ? base : DEFAULT_LANGUAGE;
+}
+
+void i18next
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources,
+    supportedLngs: SUPPORTED_LANGUAGES,
+    fallbackLng: DEFAULT_LANGUAGE,
+    defaultNS: DEFAULT_NAMESPACE,
+    load: 'languageOnly',
+    initAsync: false,
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'],
+      lookupLocalStorage: LANGUAGE_STORAGE_KEY,
+      convertDetectedLanguage: normalizeLanguage,
+    },
+    interpolation: {
+      escapeValue: false,
+    },
+    react: {
+      useSuspense: false,
+    },
+  });
+
+export default i18next;

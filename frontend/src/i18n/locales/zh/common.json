@@ -1,0 +1,12 @@
+{
+  "appName": "DokerFace",
+  "appTitle": "DokerFace - 德州扑克",
+  "language": {
+    "label": "语言",
+    "switchLabel": "切换语言",
+    "options": {
+      "en": "English",
+      "zh": "简体中文"
+    }
+  }
+}

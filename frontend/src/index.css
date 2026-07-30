@@ -1,1 +1,9 @@
 @import 'tailwindcss';
+
+/* Keep Latin metrics first, then add Simplified Chinese fallbacks before the emoji families. */
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, sans-serif, 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC',
+    'Source Han Sans SC', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
