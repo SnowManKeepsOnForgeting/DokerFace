@@ -8,5 +8,17 @@
       "en": "English",
       "zh": "简体中文"
     }
+  },
+  "nav": {
+    "lobby": "大厅",
+    "leaderboard": "排行榜",
+    "profile": "我的资料",
+    "admin": "管理后台"
+  },
+  "sidebar": {
+    "avatarLabel": "你的头像"
+  },
+  "actions": {
+    "logout": "退出登录"
   }
 }

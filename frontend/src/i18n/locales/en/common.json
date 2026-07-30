@@ -8,5 +8,17 @@
       "en": "English",
       "zh": "简体中文"
     }
+  },
+  "nav": {
+    "lobby": "Lobby",
+    "leaderboard": "Leaderboard",
+    "profile": "My Profile",
+    "admin": "Admin Console"
+  },
+  "sidebar": {
+    "avatarLabel": "Your avatar"
+  },
+  "actions": {
+    "logout": "Logout"
   }
 }

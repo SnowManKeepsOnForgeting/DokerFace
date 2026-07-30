@@ -74,3 +74,22 @@ void i18next
   });
 
 export default i18next;
+
+/**
+ * Mirror the active language onto the document.
+ *
+ * Registered as an i18next listener so startup detection and later user switches both update the
+ * `lang` attribute assistive technology relies on, plus the browser tab title.
+ */
+function syncDocumentLanguage(language: string): void {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const normalized = normalizeLanguage(language);
+  document.documentElement.lang = normalized;
+  document.title = i18next.t('appTitle', { lng: normalized });
+}
+
+i18next.on('languageChanged', syncDocumentLanguage);
+syncDocumentLanguage(i18next.resolvedLanguage ?? i18next.language ?? DEFAULT_LANGUAGE);
