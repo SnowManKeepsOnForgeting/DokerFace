@@ -7,6 +7,7 @@ import { PlayerProfile } from '../pages/PlayerProfile';
 import { AuthProvider } from '../api/auth';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import userEvent from '@testing-library/user-event';
+import { LANGUAGE_STORAGE_KEY } from '../i18n';
 import '../api/client';
 
 const server = setupServer();
@@ -281,5 +282,59 @@ describe('PlayerProfile View and Editing', () => {
       current_password: 'correct password',
       new_password: 'new password',
     });
+  });
+
+  it('switches the interface language from the profile preferences section', async () => {
+    server.use(
+      http.get('http://localhost:8080/api/v1/me', () => {
+        return HttpResponse.json(
+          {
+            account_id: 1,
+            login_name: 'alice',
+            role: 'player',
+            status: 'active',
+            display_name: 'Alice',
+          },
+          { status: 200 },
+        );
+      }),
+      http.get('http://localhost:8080/api/v1/players/1', () => {
+        return HttpResponse.json(mockPlayer, { status: 200 });
+      }),
+      http.get('http://localhost:8080/api/v1/players/1/statistics', () => {
+        return HttpResponse.json(mockStats, { status: 200 });
+      }),
+      http.get('http://localhost:8080/api/v1/players/1/ratings', () => {
+        return HttpResponse.json({ items: mockRatings }, { status: 200 });
+      }),
+    );
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/players/1']}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Routes>
+              <Route path="/players/:playerId" element={<PlayerProfile />} />
+            </Routes>
+          </AuthProvider>
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByText('Preferences')).toBeInTheDocument());
+    expect(screen.getByText('Account Security')).toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByLabelText('Change language'), 'zh');
+
+    await waitFor(() => expect(screen.getByText('偏好设置')).toBeInTheDocument());
+    expect(screen.getByText('账号安全')).toBeInTheDocument();
+    expect(screen.getByText('数据统计')).toBeInTheDocument();
+    expect(screen.getByText('入池率（VPIP）')).toBeInTheDocument();
+    expect(screen.getByText('编辑资料')).toBeInTheDocument();
+    expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('zh');
   });
 });

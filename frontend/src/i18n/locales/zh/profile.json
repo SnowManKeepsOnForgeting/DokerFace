@@ -1,0 +1,90 @@
+{
+  "notFound": "未找到该玩家资料。",
+  "online": "在线",
+  "offline": "离线",
+  "accountId": "账号 ID：{{id}}",
+  "editProfile": "编辑资料",
+  "edit": {
+    "title": "编辑头像与昵称",
+    "displayName": "昵称",
+    "displayNamePlaceholder": "昵称",
+    "avatarText": "头像文字 / Emoji",
+    "avatarTextPlaceholder": "头像文字",
+    "avatarColor": "头像背景色",
+    "avatarColorPlaceholder": "#ffffff",
+    "save": "保存资料",
+    "cancel": "取消编辑资料",
+    "nameRequired": "请输入昵称",
+    "avatarRequired": "请输入头像文字",
+    "colorInvalid": "头像背景色必须是六位十六进制颜色值",
+    "updateFailed": "更新资料失败"
+  },
+  "preferences": {
+    "title": "偏好设置",
+    "languageHint": "语言设置只保存在当前浏览器。"
+  },
+  "security": {
+    "title": "账号安全",
+    "currentPassword": "当前密码",
+    "newPassword": "新密码",
+    "confirmPassword": "确认新密码",
+    "submit": "修改密码",
+    "submitting": "正在修改…",
+    "missingFields": "请输入当前密码和新密码",
+    "mismatch": "两次输入的新密码不一致",
+    "changeFailed": "修改密码失败"
+  },
+  "tabs": {
+    "stats": "数据统计",
+    "history": "对局历史"
+  },
+  "stats": {
+    "empty": "该玩家暂无统计数据。",
+    "insufficient": "数据不足",
+    "matchesPlayed": "对局场数",
+    "profitable": "盈利场次占比：{{value}}",
+    "handsDealt": "参与手数",
+    "handsWon": "获胜：{{won}}（{{rate}}）",
+    "vpip": "入池率（VPIP）",
+    "vpipHint": "主动投入筹码的比例",
+    "pfr": "翻牌前加注率（PFR）",
+    "pfrHint": "进攻性指标",
+    "threeBet": "3-Bet 率",
+    "threeBetHint": "再加注机会占比",
+    "showdownWin": "摊牌胜率",
+    "showdownRate": "摊牌率：{{value}}",
+    "averagePot": "平均底池",
+    "averagePotHint": "赢得筹码的平均规模",
+    "foldRate": "弃牌率",
+    "foldRateHint": "全部决策中的弃牌占比",
+    "allIns": "全下次数",
+    "allInsHint": "承担摊牌风险的手数"
+  },
+  "history": {
+    "empty": "暂无已完成的对局。",
+    "matchId": "对局 ID：{{id}}",
+    "void": "已作废",
+    "started": "开始时间：{{value}}",
+    "players": "{{value}} 名玩家"
+  },
+  "elo": {
+    "title": "Elo 历史",
+    "empty": "暂无评分记录。",
+    "bootstrap": "初始分",
+    "unknownDate": "未知"
+  },
+  "matchDetail": {
+    "title": "对局排名",
+    "id": "ID：{{id}}",
+    "missing": "对局详情缺失。",
+    "endStandings": "最终排名",
+    "chips": "{{amount}} 筹码",
+    "spectator": "观战者",
+    "handsPlayed": "已进行手数（{{value}}）",
+    "hand": "第 {{number}} 手",
+    "blinds": "盲注：{{small}}/{{big}}",
+    "actionsLog": "各阶段操作记录",
+    "noActions": "本手牌没有操作记录。",
+    "payouts": "本手结算收益"
+  }
+}

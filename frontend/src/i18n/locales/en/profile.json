@@ -1,0 +1,90 @@
+{
+  "notFound": "Player profile not found.",
+  "online": "Online",
+  "offline": "Offline",
+  "accountId": "Account ID: {{id}}",
+  "editProfile": "Edit Profile",
+  "edit": {
+    "title": "Edit Custom Avatar & Nickname",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "Name",
+    "avatarText": "Avatar Text / Emoji",
+    "avatarTextPlaceholder": "Avatar text",
+    "avatarColor": "Avatar BG Color",
+    "avatarColorPlaceholder": "#ffffff",
+    "save": "Save profile",
+    "cancel": "Cancel profile editing",
+    "nameRequired": "Display name is required",
+    "avatarRequired": "Avatar text is required",
+    "colorInvalid": "Avatar background color must be a valid six-digit hex code",
+    "updateFailed": "Failed to update profile"
+  },
+  "preferences": {
+    "title": "Preferences",
+    "languageHint": "The language is stored in this browser only."
+  },
+  "security": {
+    "title": "Account Security",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "submit": "Change Password",
+    "submitting": "Changing...",
+    "missingFields": "Current and new passwords are required",
+    "mismatch": "New passwords do not match",
+    "changeFailed": "Failed to change password"
+  },
+  "tabs": {
+    "stats": "Stats",
+    "history": "Match History"
+  },
+  "stats": {
+    "empty": "No statistics records available for this player.",
+    "insufficient": "Insufficient data",
+    "matchesPlayed": "Matches Played",
+    "profitable": "Profitable: {{value}}",
+    "handsDealt": "Hands Dealt",
+    "handsWon": "Won: {{won}} ({{rate}})",
+    "vpip": "VPIP Rate",
+    "vpipHint": "Voluntary Put Chips In Pot",
+    "pfr": "Pre-flop Raise (PFR)",
+    "pfrHint": "Aggression indicator",
+    "threeBet": "3-Bet Rate",
+    "threeBetHint": "Re-raise opportunities",
+    "showdownWin": "Showdown Win Rate",
+    "showdownRate": "Rate: {{value}}",
+    "averagePot": "Average Pot",
+    "averagePotHint": "Total won chips size",
+    "foldRate": "Fold Rate",
+    "foldRateHint": "Total decisions folds",
+    "allIns": "Total All-ins",
+    "allInsHint": "Total hands showdown risk"
+  },
+  "history": {
+    "empty": "No completed matches found.",
+    "matchId": "Match ID: {{id}}",
+    "void": "Void",
+    "started": "Started: {{value}}",
+    "players": "{{value}} players"
+  },
+  "elo": {
+    "title": "Elo History",
+    "empty": "No rating batches records found.",
+    "bootstrap": "Bootstrap",
+    "unknownDate": "N/A"
+  },
+  "matchDetail": {
+    "title": "Match Standings",
+    "id": "ID: {{id}}",
+    "missing": "Match details missing.",
+    "endStandings": "End Standings",
+    "chips": "{{amount}} chips",
+    "spectator": "Spectator",
+    "handsPlayed": "Hands Played ({{value}})",
+    "hand": "Hand #{{number}}",
+    "blinds": "Blinds: {{small}}/{{big}}",
+    "actionsLog": "Street Actions Log",
+    "noActions": "No actions recorded for this hand.",
+    "payouts": "Hand settlement payouts"
+  }
+}

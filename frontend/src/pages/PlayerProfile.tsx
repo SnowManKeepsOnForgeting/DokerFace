@@ -31,7 +31,10 @@ import {
   ChevronUp,
   Award,
   KeyRound,
+  Languages,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { useEnumLabel } from '../i18n/useEnumLabel';
 import { useFormatters } from '../i18n/useFormatters';
 
@@ -43,6 +46,7 @@ export function PlayerProfile() {
   const { user: currentUser, refetch: refetchAuth } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useTranslation(['profile', 'common']);
   const enumLabel = useEnumLabel();
   const { formatDate, formatDateTime } = useFormatters();
 
@@ -125,7 +129,7 @@ export function PlayerProfile() {
       refetchAuth();
     },
     onError: (err) => {
-      setValidationError(err.message || 'Failed to update profile');
+      setValidationError(err.message || t('profile:edit.updateFailed'));
     },
   });
 
@@ -141,7 +145,7 @@ export function PlayerProfile() {
       navigate('/login', { replace: true });
     },
     onError: (err) => {
-      setPasswordError(err.message || 'Failed to change password');
+      setPasswordError(err.message || t('profile:security.changeFailed'));
     },
   });
 
@@ -161,15 +165,15 @@ export function PlayerProfile() {
 
     // Validation checks
     if (!editDisplayName.trim()) {
-      setValidationError('Display name is required');
+      setValidationError(t('profile:edit.nameRequired'));
       return;
     }
     if (!editAvatarText.trim()) {
-      setValidationError('Avatar text is required');
+      setValidationError(t('profile:edit.avatarRequired'));
       return;
     }
     if (!/^#[0-9A-Fa-f]{6}$/.test(editAvatarColor)) {
-      setValidationError('Avatar background color must be a valid six-digit hex code');
+      setValidationError(t('profile:edit.colorInvalid'));
       return;
     }
 
@@ -184,11 +188,11 @@ export function PlayerProfile() {
     e.preventDefault();
     setPasswordError(null);
     if (!currentPassword || !newPassword) {
-      setPasswordError('Current and new passwords are required');
+      setPasswordError(t('profile:security.missingFields'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match');
+      setPasswordError(t('profile:security.mismatch'));
       return;
     }
     changePasswordMutation.mutate();
@@ -205,13 +209,13 @@ export function PlayerProfile() {
   if (playerError || !player) {
     return (
       <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-6 py-4 text-sm font-semibold max-w-lg mx-auto mt-6 text-center">
-        Player profile not found.
+        {t('profile:notFound')}
       </div>
     );
   }
 
   const formatPercent = (val: number | null | undefined) => {
-    if (val === null || val === undefined) return 'Insufficient data';
+    if (val === null || val === undefined) return t('profile:stats.insufficient');
     return `${(val * 100).toFixed(1)}%`;
   };
 
@@ -245,7 +249,7 @@ export function PlayerProfile() {
                     : 'bg-slate-800 text-slate-500 border-slate-700/50'
                 }`}
               >
-                {player.is_online ? 'Online' : 'Offline'}
+                {player.is_online ? t('profile:online') : t('profile:offline')}
               </span>
 
               {player.rank_badge_theme && (
@@ -256,7 +260,9 @@ export function PlayerProfile() {
             </div>
           </div>
 
-          <p className="text-slate-400 text-xs">Account ID: {player.account_id}</p>
+          <p className="text-slate-400 text-xs">
+            {t('profile:accountId', { id: player.account_id })}
+          </p>
 
           {isOwnProfile && !isEditing && (
             <button
@@ -264,7 +270,7 @@ export function PlayerProfile() {
               className="inline-flex h-9 items-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/60 px-4 text-xs font-semibold transition-colors cursor-pointer mt-2"
             >
               <Edit2 className="h-3.5 w-3.5" />
-              Edit Profile
+              {t('profile:editProfile')}
             </button>
           )}
         </div>
@@ -274,7 +280,7 @@ export function PlayerProfile() {
       {isEditing && (
         <section className="bg-slate-900 border border-purple-500/20 rounded-2xl p-6 space-y-4 animate-slideDown">
           <h3 className="font-bold text-sm uppercase tracking-wider text-purple-400">
-            Edit Custom Avatar & Nickname
+            {t('profile:edit.title')}
           </h3>
 
           {validationError && (
@@ -286,26 +292,26 @@ export function PlayerProfile() {
           <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div>
               <label className="block text-xs text-slate-400 font-semibold mb-2">
-                Display Name
+                {t('profile:edit.displayName')}
               </label>
               <input
                 type="text"
                 value={editDisplayName}
                 onChange={(e) => setEditDisplayName(e.target.value)}
-                placeholder="Name"
+                placeholder={t('profile:edit.displayNamePlaceholder')}
                 className="w-full h-10 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-lg px-3 text-sm"
               />
             </div>
 
             <div>
               <label className="block text-xs text-slate-400 font-semibold mb-2">
-                Avatar Text / Emoji
+                {t('profile:edit.avatarText')}
               </label>
               <input
                 type="text"
                 value={editAvatarText}
                 onChange={(e) => setEditAvatarText(e.target.value)}
-                placeholder="Avatar text"
+                placeholder={t('profile:edit.avatarTextPlaceholder')}
                 className="w-full h-10 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-lg px-3 text-sm"
               />
             </div>
@@ -313,7 +319,7 @@ export function PlayerProfile() {
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="block text-xs text-slate-400 font-semibold mb-2">
-                  Avatar BG Color
+                  {t('profile:edit.avatarColor')}
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -326,7 +332,7 @@ export function PlayerProfile() {
                     type="text"
                     value={editAvatarColor}
                     onChange={(e) => setEditAvatarColor(e.target.value)}
-                    placeholder="#ffffff"
+                    placeholder={t('profile:edit.avatarColorPlaceholder')}
                     className="flex-1 h-10 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-lg px-3 text-sm text-center uppercase"
                   />
                 </div>
@@ -335,7 +341,7 @@ export function PlayerProfile() {
               <div className="flex gap-2 shrink-0">
                 <button
                   type="submit"
-                  aria-label="Save profile"
+                  aria-label={t('profile:edit.save')}
                   disabled={updateProfileMutation.isPending}
                   className="h-10 w-10 flex items-center justify-center bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors cursor-pointer"
                 >
@@ -343,7 +349,7 @@ export function PlayerProfile() {
                 </button>
                 <button
                   type="button"
-                  aria-label="Cancel profile editing"
+                  aria-label={t('profile:edit.cancel')}
                   onClick={() => setIsEditing(false)}
                   className="h-10 w-10 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg transition-colors cursor-pointer"
                 >
@@ -358,8 +364,26 @@ export function PlayerProfile() {
       {isOwnProfile && (
         <section className="border-y border-slate-800/80 py-6">
           <div className="mb-4 flex items-center gap-2">
+            <Languages className="h-4 w-4 text-purple-400" />
+            <h3 className="text-sm font-bold uppercase text-purple-400">
+              {t('profile:preferences.title')}
+            </h3>
+          </div>
+
+          <div className="flex max-w-2xl flex-col gap-2">
+            <LanguageSwitcher className="max-w-xs" />
+            <p className="text-[10px] text-slate-500">{t('profile:preferences.languageHint')}</p>
+          </div>
+        </section>
+      )}
+
+      {isOwnProfile && (
+        <section className="border-b border-slate-800/80 pb-6">
+          <div className="mb-4 flex items-center gap-2">
             <KeyRound className="h-4 w-4 text-purple-400" />
-            <h3 className="text-sm font-bold uppercase text-purple-400">Account Security</h3>
+            <h3 className="text-sm font-bold uppercase text-purple-400">
+              {t('profile:security.title')}
+            </h3>
           </div>
 
           {passwordError && (
@@ -376,7 +400,7 @@ export function PlayerProfile() {
             className="grid max-w-4xl grid-cols-1 items-end gap-4 md:grid-cols-4"
           >
             <label className="text-xs font-semibold text-slate-400">
-              Current Password
+              {t('profile:security.currentPassword')}
               <input
                 type="password"
                 autoComplete="current-password"
@@ -386,7 +410,7 @@ export function PlayerProfile() {
               />
             </label>
             <label className="text-xs font-semibold text-slate-400">
-              New Password
+              {t('profile:security.newPassword')}
               <input
                 type="password"
                 autoComplete="new-password"
@@ -396,7 +420,7 @@ export function PlayerProfile() {
               />
             </label>
             <label className="text-xs font-semibold text-slate-400">
-              Confirm New Password
+              {t('profile:security.confirmPassword')}
               <input
                 type="password"
                 autoComplete="new-password"
@@ -410,7 +434,9 @@ export function PlayerProfile() {
               disabled={changePasswordMutation.isPending}
               className="h-10 rounded-lg bg-purple-600 px-4 text-xs font-bold uppercase text-white transition-colors hover:bg-purple-500 disabled:cursor-wait disabled:opacity-60"
             >
-              {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
+              {changePasswordMutation.isPending
+                ? t('profile:security.submitting')
+                : t('profile:security.submit')}
             </button>
           </form>
         </section>
@@ -430,7 +456,7 @@ export function PlayerProfile() {
                   : 'border-transparent text-slate-500 hover:text-slate-300'
               }`}
             >
-              Stats
+              {t('profile:tabs.stats')}
             </button>
             <button
               onClick={() => setActiveTab('history')}
@@ -440,7 +466,7 @@ export function PlayerProfile() {
                   : 'border-transparent text-slate-500 hover:text-slate-300'
               }`}
             >
-              Match History
+              {t('profile:tabs.history')}
             </button>
           </div>
 
@@ -456,114 +482,131 @@ export function PlayerProfile() {
               </div>
             ) : !stats ? (
               <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-8 text-center text-slate-500 text-sm">
-                No statistics records available for this player.
+                {t('profile:stats.empty')}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 animate-fadeIn">
                 <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    Matches Played
+                    {t('profile:stats.matchesPlayed')}
                   </span>
                   <span className="text-2xl font-bold mt-2 text-slate-200">
                     {stats.matches_played}
                   </span>
                   <span className="text-[10px] text-slate-500 mt-1">
-                    Profitable:{' '}
-                    {stats.matches_played > 0
-                      ? `${((stats.profitable_matches / stats.matches_played) * 100).toFixed(0)}%`
-                      : '0%'}
+                    {t('profile:stats.profitable', {
+                      value:
+                        stats.matches_played > 0
+                          ? `${((stats.profitable_matches / stats.matches_played) * 100).toFixed(0)}%`
+                          : '0%',
+                    })}
                   </span>
                 </div>
 
                 <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    Hands Dealt
+                    {t('profile:stats.handsDealt')}
                   </span>
                   <span className="text-2xl font-bold mt-2 text-slate-200">
                     {stats.dealt_hands}
                   </span>
                   <span className="text-[10px] text-slate-500 mt-1">
-                    Won: {stats.won_hands} (
-                    {stats.dealt_hands > 0
-                      ? `${((stats.won_hands / stats.dealt_hands) * 100).toFixed(1)}%`
-                      : '0%'}
-                    )
+                    {t('profile:stats.handsWon', {
+                      won: stats.won_hands,
+                      rate:
+                        stats.dealt_hands > 0
+                          ? `${((stats.won_hands / stats.dealt_hands) * 100).toFixed(1)}%`
+                          : '0%',
+                    })}
                   </span>
                 </div>
 
                 <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    VPIP Rate
+                    {t('profile:stats.vpip')}
                   </span>
                   <span className="text-2xl font-bold mt-2 text-slate-200">
                     {formatPercent(stats.vpip_rate)}
                   </span>
                   <span className="text-[10px] text-slate-500 mt-1">
-                    Voluntary Put Chips In Pot
+                    {t('profile:stats.vpipHint')}
                   </span>
                 </div>
 
                 <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    Pre-flop Raise (PFR)
+                    {t('profile:stats.pfr')}
                   </span>
                   <span className="text-2xl font-bold mt-2 text-slate-200">
                     {formatPercent(stats.pfr_rate)}
                   </span>
-                  <span className="text-[10px] text-slate-500 mt-1">Aggression indicator</span>
+                  <span className="text-[10px] text-slate-500 mt-1">
+                    {t('profile:stats.pfrHint')}
+                  </span>
                 </div>
 
                 <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    3-Bet Rate
+                    {t('profile:stats.threeBet')}
                   </span>
                   <span className="text-2xl font-bold mt-2 text-slate-200">
                     {formatPercent(stats.three_bet_rate)}
                   </span>
-                  <span className="text-[10px] text-slate-500 mt-1">Re-raise opportunities</span>
+                  <span className="text-[10px] text-slate-500 mt-1">
+                    {t('profile:stats.threeBetHint')}
+                  </span>
                 </div>
 
                 <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    Showdown Win Rate
+                    {t('profile:stats.showdownWin')}
                   </span>
                   <span className="text-2xl font-bold mt-2 text-slate-200">
                     {formatPercent(stats.showdown_win_rate)}
                   </span>
                   <span className="text-[10px] text-slate-500 mt-1">
-                    Rate:{' '}
-                    {stats.showdown_rate ? `${(stats.showdown_rate * 100).toFixed(0)}%` : '0%'}
+                    {t('profile:stats.showdownRate', {
+                      value: stats.showdown_rate
+                        ? `${(stats.showdown_rate * 100).toFixed(0)}%`
+                        : '0%',
+                    })}
                   </span>
                 </div>
 
                 <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    Average Pot
+                    {t('profile:stats.averagePot')}
                   </span>
                   <span className="text-2xl font-bold mt-2 text-slate-200">
                     {stats.average_pot !== null && stats.average_pot !== undefined
                       ? `${stats.average_pot.toFixed(0)}`
-                      : 'Insufficient data'}
+                      : t('profile:stats.insufficient')}
                   </span>
-                  <span className="text-[10px] text-slate-500 mt-1">Total won chips size</span>
+                  <span className="text-[10px] text-slate-500 mt-1">
+                    {t('profile:stats.averagePotHint')}
+                  </span>
                 </div>
 
                 <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    Fold Rate
+                    {t('profile:stats.foldRate')}
                   </span>
                   <span className="text-2xl font-bold mt-2 text-slate-200">
                     {formatPercent(stats.fold_rate)}
                   </span>
-                  <span className="text-[10px] text-slate-500 mt-1">Total decisions folds</span>
+                  <span className="text-[10px] text-slate-500 mt-1">
+                    {t('profile:stats.foldRateHint')}
+                  </span>
                 </div>
 
                 <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    Total All-ins
+                    {t('profile:stats.allIns')}
                   </span>
                   <span className="text-2xl font-bold mt-2 text-slate-200">{stats.all_ins}</span>
-                  <span className="text-[10px] text-slate-500 mt-1">Total hands showdown risk</span>
+                  <span className="text-[10px] text-slate-500 mt-1">
+                    {t('profile:stats.allInsHint')}
+                  </span>
                 </div>
               </div>
             )
@@ -571,7 +614,7 @@ export function PlayerProfile() {
             <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-8 h-48 animate-pulse" />
           ) : !matches || !matches.items || matches.items.length === 0 ? (
             <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-8 text-center text-slate-500 text-sm">
-              No completed matches found.
+              {t('profile:history.empty')}
             </div>
           ) : (
             <div className="space-y-3 animate-fadeIn">
@@ -585,16 +628,16 @@ export function PlayerProfile() {
                     <div className="flex items-center gap-2">
                       <History className="h-4 w-4 text-purple-400" />
                       <span className="font-bold text-sm text-slate-200">
-                        Match ID: {m.match_id.slice(0, 8)}...
+                        {t('profile:history.matchId', { id: `${m.match_id.slice(0, 8)}...` })}
                       </span>
                       {m.void_reason && (
                         <span className="text-[9px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
-                          Void
+                          {t('profile:history.void')}
                         </span>
                       )}
                     </div>
                     <p className="text-[10px] text-slate-500">
-                      Started: {formatDateTime(m.started_at)}
+                      {t('profile:history.started', { value: formatDateTime(m.started_at) })}
                     </p>
                   </div>
 
@@ -602,7 +645,9 @@ export function PlayerProfile() {
                     <span className="text-slate-400 uppercase tracking-wide text-[10px] font-semibold bg-slate-950/40 border border-slate-800 px-2 py-0.5 rounded">
                       {enumLabel('endMode', m.end_mode)}
                     </span>
-                    <span className="text-slate-500">{m.players?.length || 0} players</span>
+                    <span className="text-slate-500">
+                      {t('profile:history.players', { value: m.players?.length || 0 })}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -614,14 +659,14 @@ export function PlayerProfile() {
         <section className="space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <Trophy className="h-5 w-5 text-purple-400" />
-            <h3 className="font-bold text-lg">Elo History</h3>
+            <h3 className="font-bold text-lg">{t('profile:elo.title')}</h3>
           </div>
 
           {isRatingsLoading ? (
             <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-6 h-64 animate-pulse"></div>
           ) : !ratings || !ratings.items || ratings.items.length === 0 ? (
             <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-8 text-center text-slate-500 text-sm">
-              No rating batches records found.
+              {t('profile:elo.empty')}
             </div>
           ) : (
             <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl divide-y divide-slate-800 overflow-hidden">
@@ -632,11 +677,17 @@ export function PlayerProfile() {
                 >
                   <div className="flex flex-col gap-0.5">
                     <span className="text-xs font-semibold text-slate-300">
-                      Match ID: {record.match_id ? record.match_id.slice(0, 8) : 'Bootstrap'}
+                      {t('profile:history.matchId', {
+                        id: record.match_id
+                          ? record.match_id.slice(0, 8)
+                          : t('profile:elo.bootstrap'),
+                      })}
                     </span>
                     <span className="text-[10px] text-slate-500 flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {record.created_at ? formatDate(record.created_at) : 'N/A'}
+                      {record.created_at
+                        ? formatDate(record.created_at)
+                        : t('profile:elo.unknownDate')}
                     </span>
                   </div>
 
@@ -676,6 +727,7 @@ interface MatchDetailModalProps {
 }
 
 function MatchDetailModal({ matchId, onClose }: MatchDetailModalProps) {
+  const { t } = useTranslation(['profile', 'common']);
   const { formatChips } = useFormatters();
   const { data: detail, isLoading } = useQuery({
     queryKey: ['match-detail', matchId],
@@ -691,9 +743,11 @@ function MatchDetailModal({ matchId, onClose }: MatchDetailModalProps) {
           <div>
             <h3 className="font-bold text-slate-100 flex items-center gap-2">
               <Award className="h-5 w-5 text-purple-400" />
-              Match Standings
+              {t('profile:matchDetail.title')}
             </h3>
-            <p className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {matchId}</p>
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+              {t('profile:matchDetail.id', { id: matchId })}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -710,22 +764,28 @@ function MatchDetailModal({ matchId, onClose }: MatchDetailModalProps) {
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
             </div>
           ) : !detail ? (
-            <div className="text-center text-slate-500 text-xs py-12">Match details missing.</div>
+            <div className="text-center text-slate-500 text-xs py-12">
+              {t('profile:matchDetail.missing')}
+            </div>
           ) : (
             <>
               {/* Standings */}
               <div className="bg-slate-950/40 border border-slate-800 p-4 rounded-xl space-y-3">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                  <Info className="h-3.5 w-3.5" /> End Standings
+                  <Info className="h-3.5 w-3.5" /> {t('profile:matchDetail.endStandings')}
                 </h4>
                 <div className="divide-y divide-slate-800/60 text-xs">
                   {detail.players.map((p) => (
                     <div key={p.account_id} className="flex justify-between py-2 items-center">
-                      <span className="font-semibold text-slate-300">Player #{p.account_id}</span>
+                      <span className="font-semibold text-slate-300">
+                        {t('common:playerFallback', { id: p.account_id })}
+                      </span>
                       <span className="text-slate-400 font-mono">
                         {p.final_chips !== null && p.final_chips !== undefined
-                          ? `${formatChips(p.final_chips)} chips`
-                          : 'Spectator'}
+                          ? t('profile:matchDetail.chips', {
+                              amount: formatChips(p.final_chips),
+                            })
+                          : t('profile:matchDetail.spectator')}
                       </span>
                     </div>
                   ))}
@@ -735,7 +795,7 @@ function MatchDetailModal({ matchId, onClose }: MatchDetailModalProps) {
               {/* Played Hands List */}
               <div className="space-y-3">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400">
-                  Hands Played ({detail.hands?.length || 0})
+                  {t('profile:matchDetail.handsPlayed', { value: detail.hands?.length || 0 })}
                 </h4>
 
                 <div className="space-y-3">
@@ -754,6 +814,7 @@ function MatchDetailModal({ matchId, onClose }: MatchDetailModalProps) {
 
 function HandRow({ hand }: { hand: HandHistoryResponse }) {
   const [expanded, setExpanded] = useState(false);
+  const { t } = useTranslation(['profile', 'common']);
   const enumLabel = useEnumLabel();
   const { formatChips } = useFormatters();
 
@@ -789,9 +850,14 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
         className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-900/20 transition-colors select-none"
       >
         <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-slate-300">Hand #{hand.hand_number}</span>
+          <span className="text-xs font-bold text-slate-300">
+            {t('profile:matchDetail.hand', { number: hand.hand_number })}
+          </span>
           <span className="text-[10px] text-slate-500">
-            Blinds: {hand.small_blind}/{hand.big_blind}
+            {t('profile:matchDetail.blinds', {
+              small: hand.small_blind,
+              big: hand.big_blind,
+            })}
           </span>
         </div>
 
@@ -821,7 +887,7 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
           {/* Actions log list */}
           <div className="space-y-2">
             <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              Street Actions Log
+              {t('profile:matchDetail.actionsLog')}
             </h5>
             <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
               {hand.actions && hand.actions.length > 0 ? (
@@ -834,7 +900,9 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
                       <span className="text-[10px] text-slate-500 uppercase font-mono w-14 shrink-0">
                         {enumLabel('street', act.street)}
                       </span>
-                      <span className="font-semibold text-slate-300">Player #{act.account_id}</span>
+                      <span className="font-semibold text-slate-300">
+                        {t('common:playerFallback', { id: act.account_id })}
+                      </span>
                       <span className="text-purple-400 font-bold">
                         {enumLabel('action', act.action)}
                       </span>
@@ -845,7 +913,7 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-slate-600">No actions recorded for this hand.</div>
+                <div className="text-xs text-slate-600">{t('profile:matchDetail.noActions')}</div>
               )}
             </div>
           </div>
@@ -854,17 +922,19 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
           {hand.settlement_summary && (
             <div className="border-t border-slate-800/60 pt-3">
               <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                Hand settlement payouts
+                {t('profile:matchDetail.payouts')}
               </h5>
               <div className="space-y-1 text-xs">
                 {Object.entries(hand.settlement_summary).map(([accId, payout]) => {
                   if (typeof payout !== 'number') return null;
                   return (
                     <div key={accId} className="flex justify-between items-center font-semibold">
-                      <span className="text-slate-400">Player #{accId}</span>
+                      <span className="text-slate-400">
+                        {t('common:playerFallback', { id: accId })}
+                      </span>
                       <span className={payout >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
                         {payout >= 0 ? '+' : ''}
-                        {formatChips(payout)} chips
+                        {t('profile:matchDetail.chips', { amount: formatChips(payout) })}
                       </span>
                     </div>
                   );

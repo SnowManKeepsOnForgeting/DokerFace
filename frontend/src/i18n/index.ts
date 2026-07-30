@@ -8,6 +8,7 @@ import enEnums from './locales/en/enums.json';
 import enErrors from './locales/en/errors.json';
 import enGame from './locales/en/game.json';
 import enLobby from './locales/en/lobby.json';
+import enProfile from './locales/en/profile.json';
 import enRoom from './locales/en/room.json';
 import zhAuth from './locales/zh/auth.json';
 import zhCommon from './locales/zh/common.json';
@@ -15,6 +16,7 @@ import zhEnums from './locales/zh/enums.json';
 import zhErrors from './locales/zh/errors.json';
 import zhGame from './locales/zh/game.json';
 import zhLobby from './locales/zh/lobby.json';
+import zhProfile from './locales/zh/profile.json';
 import zhRoom from './locales/zh/room.json';
 
 /** Every language the interface supports. Simplified Chinese only, without regional variants. */
@@ -36,6 +38,7 @@ const englishResources = {
   errors: enErrors,
   game: enGame,
   lobby: enLobby,
+  profile: enProfile,
   room: enRoom,
 };
 
@@ -46,6 +49,7 @@ const chineseResources = {
   errors: zhErrors,
   game: zhGame,
   lobby: zhLobby,
+  profile: zhProfile,
   room: zhRoom,
 } satisfies typeof englishResources;
 
