@@ -12,6 +12,7 @@ import userEvent from '@testing-library/user-event';
 import { socket } from '../api/socket';
 import { createCommandId } from '../api/command-id';
 import { useGameStore } from '../store/game';
+import i18n from '../i18n';
 import type { RoomSnapshot } from '../contracts/realtime';
 import '../api/client';
 
@@ -973,5 +974,87 @@ describe('WaitingRoom and PokerTable Flow', () => {
     // Final standings identify players by nickname instead of account id.
     expect(screen.queryByText(/Player #/)).not.toBeInTheDocument();
     expect(screen.getAllByText('Bob').length).toBeGreaterThan(0);
+  });
+
+  it('renders the table in Chinese', async () => {
+    restoreSocket = mockConnectedSocket();
+    server.use(
+      http.get('http://localhost:8080/api/v1/players/1', () => {
+        return HttpResponse.json(mockPlayerInfo, { status: 200 });
+      }),
+      http.get('http://localhost:8080/api/v1/players/2', () => {
+        return HttpResponse.json(
+          { ...mockPlayerInfo, account_id: 2, display_name: 'Bob' },
+          { status: 200 },
+        );
+      }),
+    );
+
+    const matchId = '00000000-0000-4000-8000-000000000012';
+    const handId = '00000000-0000-4000-8000-000000000013';
+    useGameStore.setState({
+      privateSnapshot: {
+        schema_version: 1,
+        match_id: matchId,
+        hand_id: handId,
+        hand_number: 3,
+        state_version: 1,
+        street: 'flop',
+        button_account_id: 2,
+        actor_account_id: 1,
+        board: ['Qc', 'Jh', '2d'],
+        pot_amounts: [1230],
+        complete: false,
+        players: [
+          {
+            account_id: 1,
+            seat: 0,
+            display_name: 'Alice',
+            stack: 990,
+            bet: 10,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+          {
+            account_id: 2,
+            seat: 1,
+            display_name: 'Bob',
+            stack: 980,
+            bet: 20,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+        ],
+        server_time: '2026-07-17T00:00:00Z',
+        actions: [],
+        action_deadline_at: null,
+        account_id: 1,
+        hole_cards: ['As', 'Kd'],
+        legal_actions: [
+          { action: 'fold' },
+          { action: 'check_or_call', min_amount: 10, max_amount: 10 },
+          { action: 'bet_or_raise', min_amount: 40, max_amount: 990 },
+        ],
+      },
+    });
+
+    renderPokerTable();
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'raise40' })).toBeInTheDocument(),
+    );
+
+    await i18n.changeLanguage('zh');
+
+    await waitFor(() => expect(screen.getByText('阶段：翻牌')).toBeInTheDocument());
+    expect(screen.getByText('第 3 手')).toBeInTheDocument();
+    expect(screen.getByText('底池：1,230')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '弃牌' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '跟注10' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '加注40' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: '下注或加注金额' })).toBeInTheDocument();
+    expect(screen.getByLabelText('你的手牌')).toBeInTheDocument();
   });
 });

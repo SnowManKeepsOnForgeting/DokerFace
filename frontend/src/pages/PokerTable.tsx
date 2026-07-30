@@ -15,8 +15,10 @@ import {
   Smile,
   X,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEnumLabel } from '../i18n/useEnumLabel';
 import { useFormatters } from '../i18n/useFormatters';
+import { useRealtimeError } from '../i18n/useRealtimeError';
 
 interface PokerTableProps {
   roomId: string;
@@ -48,8 +50,10 @@ const SEAT_POSITION_CLASSES = [
 
 export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const { user } = useAuth();
+  const { t } = useTranslation(['game', 'room', 'common']);
   const enumLabel = useEnumLabel();
   const { formatChips, formatTime } = useFormatters();
+  const realtimeError = useRealtimeError();
   const {
     publicSnapshot,
     privateSnapshot,
@@ -114,8 +118,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
     } else {
       setLeaveError(
         response.error === 'room_active'
-          ? 'You cannot leave while a match is active.'
-          : `Unable to leave room: ${response.error ?? 'realtime_error'}`,
+          ? t('room:leaveError.active')
+          : t('room:leaveError.generic', { reason: realtimeError(response.error) }),
       );
     }
     setIsLeaving(false);
@@ -137,7 +141,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       onLeave();
       return;
     }
-    setLeaveError(`Unable to quit match: ${response.error ?? 'realtime_error'}`);
+    setLeaveError(t('game:quitError', { reason: realtimeError(response.error) }));
     setIsQuitting(false);
   };
 
@@ -161,7 +165,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       <div className="flex-1 flex flex-col items-center justify-center gap-4">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
         <p className="text-slate-500 text-xs font-semibold uppercase tracking-widest">
-          Dealing next hand...
+          {t('game:table.dealing')}
         </p>
       </div>
     );
@@ -275,22 +279,24 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       <header className="z-10 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-3 border-b border-slate-800/80 bg-slate-900/60 px-3 py-3 sm:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
           <span className="min-w-0 max-w-full rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-xs font-semibold leading-tight text-purple-400">
-            Street: {enumLabel('street', street)}
+            {t('game:header.street', { street: enumLabel('street', street) })}
           </span>
-          <span className="shrink-0 text-xs font-semibold text-slate-400">Hand #{hand_number}</span>
+          <span className="shrink-0 text-xs font-semibold text-slate-400">
+            {t('game:header.hand', { number: hand_number })}
+          </span>
         </div>
 
         <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
           <button
             onClick={toggleChat}
-            aria-label={showChat ? 'Hide table chat' : 'Show table chat'}
+            aria-label={showChat ? t('game:header.hideChat') : t('game:header.showChat')}
             className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
           >
             <MessageSquare className="h-4.5 w-4.5" />
             {hasUnreadChat && (
               <span
                 data-testid="chat-unread-badge"
-                aria-label="Unread table chat"
+                aria-label={t('game:header.unreadChat')}
                 className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-slate-900 bg-purple-500"
               />
             )}
@@ -298,7 +304,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           {/* Quick emotes menu toggle */}
           <button
             onClick={() => setShowEmotesMenu(!showEmotesMenu)}
-            aria-label={showEmotesMenu ? 'Hide emotes' : 'Show emotes'}
+            aria-label={showEmotesMenu ? t('game:header.hideEmotes') : t('game:header.showEmotes')}
             className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
           >
             <Smile className="h-4.5 w-4.5" />
@@ -309,7 +315,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
             className="flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-rose-800/70 bg-rose-950/70 px-3 text-xs font-bold uppercase text-rose-200 transition-all hover:border-rose-600 hover:bg-rose-900 hover:text-white disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:px-4"
           >
             <LogOut className="h-3.5 w-3.5" />
-            {isQuitting ? 'Quitting...' : 'Quit'}
+            {isQuitting ? t('game:header.quitting') : t('game:header.quit')}
           </button>
           <button
             onClick={() => void handleLeave()}
@@ -317,7 +323,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
             className="flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-700/60 bg-slate-800 px-3 text-xs font-bold uppercase text-slate-300 transition-all hover:bg-slate-700 disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:px-4"
           >
             <DoorOpen className="h-3.5 w-3.5" />
-            {isLeaving ? 'Leaving...' : 'Leave'}
+            {isLeaving ? t('game:header.leaving') : t('game:header.leave')}
           </button>
         </div>
       </header>
@@ -354,11 +360,11 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           <div className="mb-3 flex shrink-0 items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-purple-400">
               <MessageSquare className="h-4 w-4" />
-              Table Chat
+              {t('game:chat.title')}
             </h2>
             <button
               onClick={closeChat}
-              aria-label="Close table chat"
+              aria-label={t('game:chat.close')}
               className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-100"
             >
               <X className="h-4 w-4" />
@@ -371,7 +377,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           >
             {chatMessages.length === 0 ? (
               <div className="flex h-full items-center justify-center text-xs font-semibold uppercase text-slate-600">
-                No chat messages.
+                {t('game:chat.empty')}
               </div>
             ) : (
               chatMessages.map((message) => (
@@ -379,8 +385,9 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                   <div className="flex items-baseline justify-between gap-3 text-[10px] text-slate-500">
                     <span className="truncate font-bold text-purple-400">
                       {message.account_id === user?.account_id
-                        ? 'You'
-                        : message.display_name || `Player #${message.account_id}`}
+                        ? t('common:you')
+                        : message.display_name ||
+                          t('common:playerFallback', { id: message.account_id })}
                     </span>
                     <span className="shrink-0">{formatTime(message.created_at)}</span>
                   </div>
@@ -407,15 +414,15 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           <form onSubmit={handleSendChat} className="flex shrink-0 gap-2">
             <input
               type="text"
-              aria-label="Table chat message"
-              placeholder="Type a message..."
+              aria-label={t('game:chat.inputLabel')}
+              placeholder={t('game:chat.placeholder')}
               value={chatInput}
               onChange={(event) => setChatInput(event.target.value)}
               className="h-10 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100 outline-none focus:border-purple-500/60"
             />
             <button
               type="submit"
-              aria-label="Send table chat message"
+              aria-label={t('game:chat.send')}
               className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-purple-600 text-white hover:bg-purple-500"
             >
               <Send className="h-4 w-4" />
@@ -447,7 +454,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-black/40 px-3 py-1 text-slate-200 shadow-md md:px-4 md:py-1.5">
                 <Coins className="h-3.5 w-3.5 text-yellow-500 md:h-4 md:w-4" />
                 <span className="text-xs font-bold text-slate-100 md:text-sm">
-                  Pot: {formatChips(totalPot)}
+                  {t('game:table.pot', { amount: formatChips(totalPot) })}
                 </span>
               </div>
 
@@ -506,7 +513,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                 <PlayerAvatar
                   accountId={player.account_id}
                   fallbackName={player.display_name}
-                  label={`${player.display_name} avatar`}
+                  label={t('game:table.avatarLabel', { name: player.display_name })}
                   className={`h-7 w-7 border text-[9px] sm:h-8 sm:w-8 sm:text-[10px] md:h-10 md:w-10 md:text-xs ${
                     isActive ? 'border-amber-400 ring-2 ring-amber-500/20' : 'border-white/10'
                   }`}
@@ -521,7 +528,9 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                 <div
                   data-testid={isHero ? 'hero-hole-cards' : `hole-cards-${player.account_id}`}
                   className={`flex items-center justify-center gap-0.5 ${player.folded ? 'opacity-40' : ''}`}
-                  aria-label={isHero ? 'Your hole cards' : 'Hidden hole cards'}
+                  aria-label={
+                    isHero ? t('game:table.heroHoleCards') : t('game:table.hiddenHoleCards')
+                  }
                 >
                   {hasVisibleHoleCards
                     ? privateSnapshot?.hole_cards?.map((card, idx) => (
@@ -539,7 +548,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
                 {!player.connected && (
                   <span className="absolute -bottom-2 rounded border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[8px] font-bold text-rose-400">
-                    DC
+                    {t('game:table.disconnected')}
                   </span>
                 )}
               </article>
@@ -560,7 +569,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               aria-live="polite"
               className="mx-auto w-full max-w-2xl rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-center text-xs font-semibold text-rose-300"
             >
-              Action failed: {lastCommandError}
+              {t('game:action.failed', { reason: realtimeError(lastCommandError) })}
             </div>
           )}
 
@@ -572,7 +581,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               </span>
               <input
                 type="range"
-                aria-label="Bet or raise amount"
+                aria-label={t('game:action.amountLabel')}
                 min={minBetAmount}
                 max={maxBetAmount}
                 step={10}
@@ -592,7 +601,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               </span>
               <input
                 type="number"
-                aria-label="Bet or raise amount"
+                aria-label={t('game:action.amountLabel')}
                 min={minBetAmount}
                 max={maxBetAmount}
                 value={effectiveBetAmount}
@@ -622,14 +631,18 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
               const btnTheme = themeMap[act.action] || 'bg-slate-800 text-slate-200';
 
-              // Dynamic label split for check/call and bet/raise
-              let actionLabel: string = act.action;
+              // Dynamic label split for check/call and bet/raise. The English labels stay
+              // lowercase because the button applies `uppercase` for display.
+              let actionKey: 'fold' | 'check' | 'call' | 'bet' | 'raise' | 'show' | 'muck' = 'fold';
               if (act.action === 'check_or_call') {
-                actionLabel = act.min_amount && act.min_amount > 0 ? 'call' : 'check';
+                actionKey = act.min_amount && act.min_amount > 0 ? 'call' : 'check';
               } else if (act.action === 'bet_or_raise') {
                 const isRaise = players.some((p) => p.bet > 0);
-                actionLabel = isRaise ? 'raise' : 'bet';
+                actionKey = isRaise ? 'raise' : 'bet';
+              } else if (act.action === 'show' || act.action === 'muck') {
+                actionKey = act.action;
               }
+              const actionLabel = t(`game:action.${actionKey}`);
 
               return (
                 <button
@@ -639,9 +652,9 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                   className={`flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 text-[11px] font-bold uppercase tracking-wider shadow-md transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:gap-2 sm:px-6 sm:text-xs ${btnTheme}`}
                 >
                   {actionLabel}
-                  {(actionLabel === 'call' || act.action === 'bet_or_raise') && (
+                  {(actionKey === 'call' || act.action === 'bet_or_raise') && (
                     <span className="bg-black/25 px-1.5 py-0.5 rounded text-[10px] font-black">
-                      {actionLabel === 'call'
+                      {actionKey === 'call'
                         ? formatChips(myPlayer ? Math.min(myPlayer.stack, act.min_amount ?? 0) : 0)
                         : formatChips(effectiveBetAmount)}
                     </span>
@@ -661,7 +674,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-500 to-indigo-500" />
             <h3 className="text-xl font-bold text-slate-100 flex items-center justify-center gap-2">
               <Shield className="h-5 w-5 text-purple-400" />
-              Hand Settled
+              {t('game:handSettled.title')}
             </h3>
 
             {/* Payoff summaries per player */}
@@ -675,11 +688,12 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                     className="flex justify-between items-center text-xs font-semibold"
                   >
                     <span className="text-slate-400">
-                      {handSettled.display_names?.[idx] || `Player #${accId}`}
+                      {handSettled.display_names?.[idx] ||
+                        t('common:playerFallback', { id: accId })}
                     </span>
                     <span className={payoff > 0 ? 'text-emerald-400' : 'text-rose-400'}>
                       {payoff > 0 ? '+' : ''}
-                      {formatChips(payoff)} chips
+                      {t('game:handSettled.chips', { amount: formatChips(payoff) })}
                     </span>
                   </div>
                 );
@@ -687,7 +701,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
             </div>
 
             <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-widest animate-pulse">
-              Dealing next hand shortly...
+              {t('game:handSettled.next')}
             </p>
           </div>
         </div>
@@ -700,9 +714,9 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
             {/* Header */}
             <div className="text-center mb-6">
               <h3 className="text-2xl font-black text-slate-100 bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent">
-                Match Completed
+                {t('game:matchSettled.title')}
               </h3>
-              <p className="text-xs text-slate-500 mt-1">Final standings & chip counts</p>
+              <p className="text-xs text-slate-500 mt-1">{t('game:matchSettled.subtitle')}</p>
             </div>
 
             {/* Standings table */}
@@ -716,11 +730,12 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                         {idx + 1}
                       </span>
                       <span className="text-sm font-semibold text-slate-200">
-                        {matchSettled.display_names?.[idx] || `Player #${accId}`}
+                        {matchSettled.display_names?.[idx] ||
+                          t('common:playerFallback', { id: accId })}
                       </span>
                     </div>
                     <span className="text-sm font-bold text-emerald-400">
-                      {formatChips(stack)} chips
+                      {t('game:matchSettled.chips', { amount: formatChips(stack) })}
                     </span>
                   </div>
                 );
@@ -733,7 +748,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                 disabled={isLeaving}
                 className="flex-1 h-11 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-sm font-semibold uppercase tracking-wider transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-60"
               >
-                {isLeaving ? 'Leaving...' : 'Back to Lobby'}
+                {isLeaving ? t('game:header.leaving') : t('game:matchSettled.backToLobby')}
               </button>
             </div>
           </div>
@@ -745,6 +760,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
 // Sub-component for client timer countdown
 function TimerCountdown({ deadline }: { deadline: string }) {
+  const { t } = useTranslation('game');
   const [secs, setSecs] = useState<number>(0);
 
   useEffect(() => {
@@ -757,6 +773,6 @@ function TimerCountdown({ deadline }: { deadline: string }) {
     return () => clearInterval(interval);
   }, [deadline]);
 
-  return <span>{secs}s</span>;
+  return <span>{t('table.timer', { seconds: secs })}</span>;
 }
 export default PokerTable;

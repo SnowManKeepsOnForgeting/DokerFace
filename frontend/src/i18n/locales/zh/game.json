@@ -1,0 +1,55 @@
+{
+  "header": {
+    "street": "阶段：{{street}}",
+    "hand": "第 {{number}} 手",
+    "hideChat": "隐藏牌桌聊天",
+    "showChat": "显示牌桌聊天",
+    "unreadChat": "有未读牌桌聊天",
+    "hideEmotes": "隐藏表情",
+    "showEmotes": "显示表情",
+    "quit": "退出对局",
+    "quitting": "正在退出…",
+    "leave": "离开",
+    "leaving": "正在离开…"
+  },
+  "chat": {
+    "title": "牌桌聊天",
+    "close": "关闭牌桌聊天",
+    "empty": "暂无聊天消息。",
+    "inputLabel": "牌桌聊天消息",
+    "placeholder": "输入消息…",
+    "send": "发送牌桌聊天消息"
+  },
+  "table": {
+    "pot": "底池：{{amount}}",
+    "dealing": "正在发下一手牌…",
+    "avatarLabel": "{{name}} 的头像",
+    "heroHoleCards": "你的手牌",
+    "hiddenHoleCards": "未公开的手牌",
+    "disconnected": "掉线",
+    "timer": "{{seconds}} 秒"
+  },
+  "action": {
+    "failed": "操作失败：{{reason}}",
+    "amountLabel": "下注或加注金额",
+    "fold": "弃牌",
+    "check": "看牌",
+    "call": "跟注",
+    "bet": "下注",
+    "raise": "加注",
+    "show": "亮牌",
+    "muck": "盖牌"
+  },
+  "handSettled": {
+    "title": "本手结算",
+    "chips": "{{amount}} 筹码",
+    "next": "即将发下一手牌…"
+  },
+  "matchSettled": {
+    "title": "对局结束",
+    "subtitle": "最终排名与筹码",
+    "chips": "{{amount}} 筹码",
+    "backToLobby": "返回大厅"
+  },
+  "quitError": "退出对局失败：{{reason}}"
+}

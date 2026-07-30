@@ -1,0 +1,55 @@
+{
+  "header": {
+    "street": "Street: {{street}}",
+    "hand": "Hand #{{number}}",
+    "hideChat": "Hide table chat",
+    "showChat": "Show table chat",
+    "unreadChat": "Unread table chat",
+    "hideEmotes": "Hide emotes",
+    "showEmotes": "Show emotes",
+    "quit": "Quit",
+    "quitting": "Quitting...",
+    "leave": "Leave",
+    "leaving": "Leaving..."
+  },
+  "chat": {
+    "title": "Table Chat",
+    "close": "Close table chat",
+    "empty": "No chat messages.",
+    "inputLabel": "Table chat message",
+    "placeholder": "Type a message...",
+    "send": "Send table chat message"
+  },
+  "table": {
+    "pot": "Pot: {{amount}}",
+    "dealing": "Dealing next hand...",
+    "avatarLabel": "{{name}} avatar",
+    "heroHoleCards": "Your hole cards",
+    "hiddenHoleCards": "Hidden hole cards",
+    "disconnected": "DC",
+    "timer": "{{seconds}}s"
+  },
+  "action": {
+    "failed": "Action failed: {{reason}}",
+    "amountLabel": "Bet or raise amount",
+    "fold": "fold",
+    "check": "check",
+    "call": "call",
+    "bet": "bet",
+    "raise": "raise",
+    "show": "show",
+    "muck": "muck"
+  },
+  "handSettled": {
+    "title": "Hand Settled",
+    "chips": "{{amount}} chips",
+    "next": "Dealing next hand shortly..."
+  },
+  "matchSettled": {
+    "title": "Match Completed",
+    "subtitle": "Final standings & chip counts",
+    "chips": "{{amount}} chips",
+    "backToLobby": "Back to Lobby"
+  },
+  "quitError": "Unable to quit match: {{reason}}"
+}

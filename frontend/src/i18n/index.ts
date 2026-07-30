@@ -6,12 +6,14 @@ import enAuth from './locales/en/auth.json';
 import enCommon from './locales/en/common.json';
 import enEnums from './locales/en/enums.json';
 import enErrors from './locales/en/errors.json';
+import enGame from './locales/en/game.json';
 import enLobby from './locales/en/lobby.json';
 import enRoom from './locales/en/room.json';
 import zhAuth from './locales/zh/auth.json';
 import zhCommon from './locales/zh/common.json';
 import zhEnums from './locales/zh/enums.json';
 import zhErrors from './locales/zh/errors.json';
+import zhGame from './locales/zh/game.json';
 import zhLobby from './locales/zh/lobby.json';
 import zhRoom from './locales/zh/room.json';
 
@@ -32,6 +34,7 @@ const englishResources = {
   common: enCommon,
   enums: enEnums,
   errors: enErrors,
+  game: enGame,
   lobby: enLobby,
   room: enRoom,
 };
@@ -41,6 +44,7 @@ const chineseResources = {
   common: zhCommon,
   enums: zhEnums,
   errors: zhErrors,
+  game: zhGame,
   lobby: zhLobby,
   room: zhRoom,
 } satisfies typeof englishResources;
