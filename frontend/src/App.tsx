@@ -1,30 +1,34 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { AuthProvider } from './api/auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthenticatedRoute, GuestRoute, AdministratorRoute } from './components/RouteGuards';
 import { Layout } from './components/Layout';
-import { Login } from './pages/Login';
-import { Lobby } from './pages/Lobby';
-import { PlayerProfile } from './pages/PlayerProfile';
-import { RoomContainer } from './pages/RoomContainer';
-import { Leaderboard } from './pages/Leaderboard';
-import { AdminConsole } from './pages/AdminConsole';
+import { LoadingState } from './components/ui/Skeleton';
+import { SoundProvider } from './sound';
+
+const LazyLogin = lazy(() => import('./pages/Login').then((module) => ({ default: module.Login })));
+const LazyLobby = lazy(() => import('./pages/Lobby'));
+const LazyPlayerProfile = lazy(() => import('./pages/PlayerProfile'));
+const LazyRoomContainer = lazy(() => import('./pages/RoomContainer'));
+const LazyLeaderboard = lazy(() => import('./pages/Leaderboard'));
+const LazyAdminConsole = lazy(() => import('./pages/AdminConsole'));
 
 function NotFound() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-100 p-6">
+    <div className="flex min-h-dvh w-full items-center justify-center bg-canvas p-6 text-slate-100">
       <div className="max-w-md text-center font-sans">
-        <h1 className="text-3xl font-bold tracking-tight text-purple-500 mb-2">
+        <div className="mb-4 text-4xl font-black text-accent-text">404</div>
+        <h1 className="text-xl font-bold tracking-tight text-slate-100">
           {t('routes.notFoundTitle')}
         </h1>
-        <p className="text-slate-400 mb-6">{t('routes.notFoundDescription')}</p>
+        <p className="mt-2 text-sm text-slate-400">{t('routes.notFoundDescription')}</p>
         <a
           href="/"
-          className="inline-flex h-10 items-center justify-center rounded-md bg-purple-600 px-6 font-medium text-white hover:bg-purple-500 transition-colors"
+          className="focus-ring mt-6 inline-flex h-10 items-center justify-center rounded-control bg-accent-strong px-6 text-sm font-semibold text-white transition-colors hover:bg-accent"
         >
           {t('routes.returnToLobby')}
         </a>
@@ -33,70 +37,55 @@ function NotFound() {
   );
 }
 
+function PageFallback() {
+  const { t } = useTranslation();
+  return <LoadingState label={t('states.loadingSession')} />;
+}
+
+function withSuspense(element: ReactNode) {
+  return <Suspense fallback={<PageFallback />}>{element}</Suspense>;
+}
+
 const router = createBrowserRouter([
-  // Guest only routes
   {
     element: <GuestRoute />,
     children: [
       {
         path: '/login',
-        element: <Login />,
+        element: withSuspense(<LazyLogin />),
       },
     ],
   },
-  // Authenticated player routes
   {
     element: <AuthenticatedRoute />,
     children: [
       {
         path: '/',
-        element: (
-          <Layout>
-            <Lobby />
-          </Layout>
-        ),
+        element: <Layout>{withSuspense(<LazyLobby />)}</Layout>,
       },
       {
         path: '/leaderboard',
-        element: (
-          <Layout>
-            <Leaderboard />
-          </Layout>
-        ),
+        element: <Layout>{withSuspense(<LazyLeaderboard />)}</Layout>,
       },
       {
         path: '/players/:playerId',
-        element: (
-          <Layout>
-            <PlayerProfile />
-          </Layout>
-        ),
+        element: <Layout>{withSuspense(<LazyPlayerProfile />)}</Layout>,
       },
       {
         path: '/rooms/:roomId',
-        element: (
-          <Layout>
-            <RoomContainer />
-          </Layout>
-        ),
+        element: <Layout>{withSuspense(<LazyRoomContainer />)}</Layout>,
       },
     ],
   },
-  // Authenticated administrator routes
   {
     element: <AdministratorRoute />,
     children: [
       {
         path: '/admin/*',
-        element: (
-          <Layout>
-            <AdminConsole />
-          </Layout>
-        ),
+        element: <Layout>{withSuspense(<LazyAdminConsole />)}</Layout>,
       },
     ],
   },
-  // Catch-all route (404)
   {
     path: '*',
     element: <NotFound />,
@@ -118,9 +107,11 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
+      <SoundProvider>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </SoundProvider>
     </QueryClientProvider>
   );
 }

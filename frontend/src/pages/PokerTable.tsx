@@ -3,6 +3,10 @@ import { useGameStore } from '../store/game';
 import { useAuth } from '../api/auth-context';
 import { createCommandId } from '../api/command-id';
 import { PlayerAvatar } from '../components/PlayerAvatar';
+import { PlayingCard, CardBack } from '../components/PlayingCard';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { useReducedMotion } from '../lib/useReducedMotion';
 import type { ActionType } from '../contracts/realtime';
 import {
   Clock,
@@ -13,12 +17,17 @@ import {
   Send,
   Shield,
   Smile,
+  Sparkles,
+  Volume2,
+  VolumeX,
+  WifiOff,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useEnumLabel } from '../i18n/useEnumLabel';
 import { useFormatters } from '../i18n/useFormatters';
 import { useRealtimeError } from '../i18n/useRealtimeError';
+import { deriveSettlementCue, deriveSoundCues, useSound, type GameSnapshot } from '../sound';
 
 interface PokerTableProps {
   roomId: string;
@@ -33,20 +42,65 @@ const QUICK_PHRASES = [
   'Deal me in!',
 ];
 
-// Backend cards use standard poker shorthand, where "T" is the ten.
-const RANK_LABELS: Record<string, string> = { T: '10' };
+/*
+ * Seat order is rotated so the current player is always index 0 at the bottom.
+ * Each player count gets a balanced ring; heads-up therefore reads like a real
+ * table instead of putting the opponent on the lower-left edge.
+ */
+const SEAT_POSITION_CLASSES_BY_COUNT: Record<number, string[]> = {
+  2: ['bottom-0 left-1/2 -translate-x-1/2', 'top-0 left-1/2 -translate-x-1/2'],
+  3: [
+    'bottom-0 left-1/2 -translate-x-1/2',
+    'top-[8%] left-[18%] -translate-x-1/2',
+    'top-[8%] right-[18%] translate-x-1/2',
+  ],
+  4: [
+    'bottom-0 left-1/2 -translate-x-1/2',
+    'top-1/2 left-0 -translate-y-1/2',
+    'top-0 left-1/2 -translate-x-1/2',
+    'top-1/2 right-0 translate-y-1/2',
+  ],
+  5: [
+    'bottom-0 left-1/2 -translate-x-1/2',
+    'bottom-[10%] left-[4%]',
+    'top-[8%] left-[18%] -translate-x-1/2',
+    'top-[8%] right-[18%] translate-x-1/2',
+    'bottom-[10%] right-[4%]',
+  ],
+  6: [
+    'bottom-0 left-1/2 -translate-x-1/2',
+    'bottom-[10%] left-[2%]',
+    'top-1/2 left-0 -translate-y-1/2',
+    'top-0 left-1/2 -translate-x-1/2',
+    'top-1/2 right-0 -translate-y-1/2',
+    'bottom-[10%] right-[2%]',
+  ],
+  7: [
+    'bottom-0 left-1/2 -translate-x-1/2',
+    'bottom-[10%] left-[2%]',
+    'top-[38%] left-0 -translate-y-1/2',
+    'top-[8%] left-[18%] -translate-x-1/2',
+    'top-[8%] right-[18%] translate-x-1/2',
+    'top-[38%] right-0 -translate-y-1/2',
+    'bottom-[10%] right-[2%]',
+  ],
+  8: [
+    'bottom-0 left-1/2 -translate-x-1/2',
+    'bottom-[12%] left-0',
+    'top-[38%] left-0 -translate-y-1/2',
+    'top-0 left-[25%] -translate-x-1/2',
+    'top-0 left-1/2 -translate-x-1/2',
+    'top-0 left-[75%] -translate-x-1/2',
+    'top-[38%] right-0 -translate-y-1/2',
+    'bottom-[12%] right-0',
+  ],
+};
 
-// Seat order is rotated so the current player is always seat 0 at the bottom.
-const SEAT_POSITION_CLASSES = [
-  'bottom-0 left-1/2 -translate-x-1/2',
-  'bottom-[12%] left-0',
-  'top-[38%] left-0',
-  'top-0 left-[25%] -translate-x-1/2',
-  'top-0 left-1/2 -translate-x-1/2',
-  'top-0 left-[75%] -translate-x-1/2',
-  'top-[38%] right-0',
-  'bottom-[12%] right-0',
-];
+function seatPositionClass(playerCount: number, index: number): string {
+  const positions =
+    SEAT_POSITION_CLASSES_BY_COUNT[playerCount] ?? SEAT_POSITION_CLASSES_BY_COUNT[8];
+  return positions[index] ?? positions[0];
+}
 
 export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const { user } = useAuth();
@@ -54,6 +108,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const enumLabel = useEnumLabel();
   const { formatChips, formatTime } = useFormatters();
   const realtimeError = useRealtimeError();
+  const prefersReducedMotion = useReducedMotion();
+  const { muted, toggleMuted, play, prime } = useSound();
   const {
     publicSnapshot,
     privateSnapshot,
@@ -80,6 +136,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const [isLeaving, setIsLeaving] = useState(false);
   const [isQuitting, setIsQuitting] = useState(false);
   const chatListRef = useRef<HTMLDivElement>(null);
+  const previousSnapshotRef = useRef<GameSnapshot | null>(null);
+  const playedSettlementKeysRef = useRef(new Set<string>());
   // Messages already in the list when the table mounts are not new, and the
   // stored list is capped, so the last read message id is tracked instead of a
   // message count.
@@ -106,6 +164,36 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
     }
   }, [chatMessages, showChat]);
+
+  // Sound is a pure consumer of authoritative snapshot differences. The first
+  // snapshot and reconnect jumps become a new baseline, so reconnecting never
+  // replays every missed action or deals the whole board audibly.
+  useEffect(() => {
+    const nextSnapshot = privateSnapshot ?? publicSnapshot;
+    const heroAccountId = user?.account_id;
+    if (!nextSnapshot || heroAccountId === undefined) return;
+
+    const previousSnapshot = previousSnapshotRef.current;
+    for (const soundCue of deriveSoundCues(previousSnapshot, nextSnapshot, heroAccountId)) {
+      play(soundCue.cue);
+    }
+    previousSnapshotRef.current = nextSnapshot;
+  }, [privateSnapshot, play, publicSnapshot, user?.account_id]);
+
+  useEffect(() => {
+    const heroAccountId = user?.account_id;
+    if (heroAccountId === undefined) return;
+
+    const settlements = [handSettled, matchSettled].filter(Boolean);
+    for (const settlement of settlements) {
+      if (!settlement) continue;
+      for (const soundCue of deriveSettlementCue(settlement, heroAccountId)) {
+        if (playedSettlementKeysRef.current.has(soundCue.key)) continue;
+        playedSettlementKeysRef.current.add(soundCue.key);
+        play(soundCue.cue);
+      }
+    }
+  }, [handSettled, matchSettled, play, user?.account_id]);
 
   const handleLeave = async (resetAfterSuccess = false) => {
     if (isLeaving) return;
@@ -201,57 +289,16 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
     maxBetAmount,
     Math.max(minBetAmount, betAmount || minBetAmount),
   );
+  const latestActionByAccount = new Map<
+    number,
+    NonNullable<typeof activeSnapshot.actions>[number]
+  >();
+  for (const action of activeSnapshot.actions ?? []) {
+    latestActionByAccount.set(action.account_id, action);
+  }
 
   // Emote options
   const emotes = ['👍', '👎', '🔥', '😮', '😂', '😭', '💩', '🤡'];
-
-  // Card UI helper
-  const renderCard = (cardStr: string, compact = false) => {
-    if (!cardStr || cardStr.length < 2) return null;
-    const rankCode = cardStr.slice(0, -1).toUpperCase();
-    const rank = RANK_LABELS[rankCode] ?? rankCode;
-    const suitSymbol = cardStr.slice(-1);
-    const suitsMap: Record<string, { char: string; color: string }> = {
-      s: { char: '♠', color: 'text-slate-800' },
-      h: { char: '♥', color: 'text-rose-500' },
-      d: { char: '♦', color: 'text-rose-500' },
-      c: { char: '♣', color: 'text-slate-800' },
-    };
-    const suit = suitsMap[suitSymbol] || { char: suitSymbol, color: 'text-slate-400' };
-    const cardSize = compact
-      ? 'h-7 w-5 sm:h-9 sm:w-6 md:h-14 md:w-10'
-      : 'h-9 w-[1.6rem] sm:h-14 sm:w-10 md:h-18 md:w-12';
-    const cardPadding = compact ? 'p-0.5 md:p-1.5' : 'p-0.5 sm:p-1.5';
-    const rankSize = compact ? 'text-[8px] sm:text-[9px] md:text-xs' : 'text-[9px] sm:text-xs';
-    const suitSize = compact ? 'text-xs sm:text-sm md:text-xl' : 'text-sm sm:text-lg md:text-xl';
-
-    return (
-      <div
-        className={`${cardSize} ${cardPadding} flex flex-col justify-between rounded-lg border border-slate-300 bg-white text-left font-sans text-slate-900 shadow-md select-none animate-deal-in`}
-      >
-        <div className={`${rankSize} font-black leading-none`}>{rank}</div>
-        <div className={`${suitSize} text-center font-bold leading-none ${suit.color}`}>
-          {suit.char}
-        </div>
-        <div className={`${rankSize} self-end rotate-180 font-black leading-none`}>{rank}</div>
-      </div>
-    );
-  };
-
-  const renderCardBack = (compact = false) => {
-    const cardSize = compact
-      ? 'h-7 w-5 sm:h-9 sm:w-6 md:h-14 md:w-10'
-      : 'h-9 w-[1.6rem] sm:h-14 sm:w-10 md:h-18 md:w-12';
-
-    return (
-      <div
-        aria-hidden="true"
-        className={`${cardSize} rounded-lg border-2 border-rose-200/70 bg-rose-500 p-0.5 shadow-md`}
-      >
-        <div className="h-full w-full rounded border border-rose-200/60 bg-rose-400/70" />
-      </div>
-    );
-  };
 
   const handleAction = (
     actionName: 'fold' | 'check_or_call' | 'bet_or_raise' | 'show' | 'muck',
@@ -274,23 +321,48 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   };
 
   return (
-    <div className="relative flex min-h-full w-full flex-col bg-slate-950 font-sans lg:h-full lg:min-h-0">
+    <div
+      className="relative flex min-h-full w-full flex-col bg-canvas font-sans lg:h-full lg:min-h-0"
+      onPointerDown={prime}
+    >
       {/* Hand status / stats bar */}
-      <header className="z-10 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-3 border-b border-slate-800/80 bg-slate-900/60 px-3 py-3 sm:px-6">
+      <header className="z-10 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-3 border-b border-border-subtle bg-surface-raised/90 px-3 py-3 backdrop-blur-md sm:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-          <span className="min-w-0 max-w-full rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-xs font-semibold leading-tight text-purple-400">
+          <Badge tone="accent" size="sm" className="min-w-0 max-w-full normal-case">
             {t('game:header.street', { street: enumLabel('street', street) })}
-          </span>
+          </Badge>
           <span className="shrink-0 text-xs font-semibold text-slate-400">
             {t('game:header.hand', { number: hand_number })}
+          </span>
+          <span
+            aria-label={
+              connected ? 'Realtime connection active' : 'Realtime connection unavailable'
+            }
+            className={`hidden items-center gap-1.5 text-[10px] font-semibold sm:flex ${connected ? 'text-success' : 'text-danger'}`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${connected ? 'bg-success' : 'bg-danger'}`}
+            />
+            {connected ? 'LIVE' : 'OFFLINE'}
           </span>
         </div>
 
         <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
           <button
+            type="button"
+            onClick={toggleMuted}
+            aria-pressed={muted}
+            aria-label={muted ? t('game:header.unmute') : t('game:header.mute')}
+            title={muted ? t('game:header.unmute') : t('game:header.mute')}
+            className="focus-ring flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-control border border-border-subtle bg-surface-hover text-slate-300 transition-colors hover:border-border-strong hover:text-slate-100"
+          >
+            {muted ? <VolumeX className="h-4.5 w-4.5" /> : <Volume2 className="h-4.5 w-4.5" />}
+          </button>
+          <button
+            type="button"
             onClick={toggleChat}
             aria-label={showChat ? t('game:header.hideChat') : t('game:header.showChat')}
-            className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
+            className="focus-ring relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-control border border-border-subtle bg-surface-hover text-slate-300 transition-colors hover:border-border-strong hover:text-slate-100"
           >
             <MessageSquare className="h-4.5 w-4.5" />
             {hasUnreadChat && (
@@ -303,16 +375,17 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           </button>
           {/* Quick emotes menu toggle */}
           <button
+            type="button"
             onClick={() => setShowEmotesMenu(!showEmotesMenu)}
             aria-label={showEmotesMenu ? t('game:header.hideEmotes') : t('game:header.showEmotes')}
-            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
+            className="focus-ring flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-control border border-border-subtle bg-surface-hover text-slate-300 transition-colors hover:border-border-strong hover:text-slate-100"
           >
             <Smile className="h-4.5 w-4.5" />
           </button>
           <button
             onClick={() => void handleQuit()}
             disabled={isLeaving || isQuitting || !privateSnapshot}
-            className="flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-rose-800/70 bg-rose-950/70 px-3 text-xs font-bold uppercase text-rose-200 transition-all hover:border-rose-600 hover:bg-rose-900 hover:text-white disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:px-4"
+            className="focus-ring flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-control border border-danger-border bg-danger-surface px-3 text-xs font-bold text-danger uppercase transition-all hover:border-danger hover:bg-rose-900 hover:text-white disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:px-4"
           >
             <LogOut className="h-3.5 w-3.5" />
             {isQuitting ? t('game:header.quitting') : t('game:header.quit')}
@@ -320,7 +393,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           <button
             onClick={() => void handleLeave()}
             disabled={isLeaving || isQuitting}
-            className="flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-700/60 bg-slate-800 px-3 text-xs font-bold uppercase text-slate-300 transition-all hover:bg-slate-700 disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:px-4"
+            className="focus-ring flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-control border border-border-strong/60 bg-surface-hover px-3 text-xs font-bold text-slate-300 uppercase transition-all hover:bg-slate-700 disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:px-4"
           >
             <DoorOpen className="h-3.5 w-3.5" />
             {isLeaving ? t('game:header.leaving') : t('game:header.leave')}
@@ -339,7 +412,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
       {/* Floating Emote panel */}
       {showEmotesMenu && (
-        <div className="absolute top-16 right-6 bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-xl z-20 flex gap-2 animate-slide-down">
+        <div className="absolute top-16 right-4 z-20 flex gap-2 rounded-panel border border-border-subtle bg-surface-raised p-3 shadow-2xl animate-slide-down sm:right-6">
           {emotes.map((emoji) => (
             <button
               key={emoji}
@@ -347,7 +420,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                 sendEmote(roomId, emoji);
                 setShowEmotesMenu(false);
               }}
-              className="h-9 w-9 text-lg flex items-center justify-center hover:bg-slate-800 rounded-lg transition-transform active:scale-95 cursor-pointer"
+              className="focus-ring flex h-9 w-9 cursor-pointer items-center justify-center rounded-control text-lg transition-colors hover:bg-surface-hover active:scale-95"
             >
               {emoji}
             </button>
@@ -356,7 +429,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       )}
 
       {showChat && (
-        <aside className="absolute inset-x-4 bottom-4 top-16 z-20 flex flex-col rounded-xl border border-slate-700 bg-slate-900/95 p-4 shadow-2xl backdrop-blur-md sm:left-auto sm:w-80">
+        <aside className="absolute inset-x-3 bottom-3 top-16 z-20 flex flex-col rounded-panel border border-border-strong bg-surface-raised/95 p-4 shadow-2xl backdrop-blur-md sm:right-4 sm:left-auto sm:w-80">
           <div className="mb-3 flex shrink-0 items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-purple-400">
               <MessageSquare className="h-4 w-4" />
@@ -365,7 +438,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
             <button
               onClick={closeChat}
               aria-label={t('game:chat.close')}
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+              className="focus-ring flex h-8 w-8 cursor-pointer items-center justify-center rounded-control text-slate-400 hover:bg-surface-hover hover:text-slate-100"
             >
               <X className="h-4 w-4" />
             </button>
@@ -391,7 +464,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                     </span>
                     <span className="shrink-0">{formatTime(message.created_at)}</span>
                   </div>
-                  <p className="rounded-lg border border-slate-800/60 bg-slate-950/60 px-2.5 py-2 text-slate-200">
+                  <p className="rounded-control border border-border-subtle bg-surface-sunken px-2.5 py-2 text-slate-200">
                     {message.content}
                   </p>
                 </div>
@@ -404,7 +477,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               <button
                 key={phrase}
                 onClick={() => void sendChat(roomId, phrase, 'quick')}
-                className="cursor-pointer rounded border border-slate-700/80 bg-slate-800/70 px-2 py-1 text-[10px] text-slate-300 hover:bg-slate-700"
+                className="focus-ring cursor-pointer rounded-control border border-border-strong/70 bg-surface-hover px-2 py-1 text-[10px] text-slate-300 transition-colors hover:bg-slate-700"
               >
                 {phrase}
               </button>
@@ -418,12 +491,12 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               placeholder={t('game:chat.placeholder')}
               value={chatInput}
               onChange={(event) => setChatInput(event.target.value)}
-              className="h-10 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100 outline-none focus:border-purple-500/60"
+              className="focus-ring h-10 min-w-0 flex-1 rounded-control border border-border-strong bg-surface-sunken px-3 text-xs text-slate-100 outline-none focus:border-accent/60"
             />
             <button
               type="submit"
               aria-label={t('game:chat.send')}
-              className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-purple-600 text-white hover:bg-purple-500"
+              className="focus-ring flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-control bg-accent-strong text-white transition-colors hover:bg-accent"
             >
               <Send className="h-4 w-4" />
             </button>
@@ -440,40 +513,74 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       >
         <div
           data-testid="player-rail"
-          className="relative mx-auto min-h-[30rem] w-full max-w-6xl p-3 md:min-h-[54rem] md:p-4"
+          className="relative mx-auto min-h-[30rem] w-full max-w-6xl overflow-visible p-3 md:min-h-[54rem] md:p-4"
         >
           {/* Felt Canvas */}
           <div
             data-testid="felt-table"
-            className="absolute left-1/2 top-1/2 flex aspect-[3/4] w-[52%] max-w-[15rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-[40%] border-[8px] border-double border-amber-900/80 bg-gradient-to-b from-emerald-800 to-emerald-950 p-3 shadow-2xl md:aspect-[2/1] md:w-[78%] md:max-w-4xl md:rounded-[200px] md:border-[10px] md:p-6"
+            className="absolute top-1/2 left-1/2 flex aspect-[3/4] w-[54%] max-w-[16rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-[40%] border-[7px] border-double border-rail bg-[radial-gradient(ellipse_at_center,var(--color-felt-light),var(--color-felt-dark))] p-3 shadow-[0_24px_80px_rgba(2,6,23,0.55),inset_0_0_34px_rgba(2,6,23,0.42)] md:aspect-[2/1] md:w-[78%] md:max-w-4xl md:rounded-[200px] md:border-[10px] md:p-6"
           >
-            <div className="pointer-events-none absolute inset-2 rounded-[38%] border border-emerald-700/30 md:rounded-[190px]" />
+            <div className="pointer-events-none absolute inset-2 rounded-[38%] border border-felt-line md:rounded-[190px]" />
+            <div className="pointer-events-none absolute inset-[7%] rounded-[35%] border border-white/5 md:rounded-[180px]" />
 
             {/* Center Community Board & Pot */}
             <div className="z-10 flex flex-col items-center gap-2 text-center select-none md:gap-4">
-              <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-black/40 px-3 py-1 text-slate-200 shadow-md md:px-4 md:py-1.5">
-                <Coins className="h-3.5 w-3.5 text-yellow-500 md:h-4 md:w-4" />
-                <span className="text-xs font-bold text-slate-100 md:text-sm">
+              <div className="flex min-w-28 flex-col items-center gap-0.5 rounded-control border border-white/10 bg-black/35 px-3 py-1.5 text-slate-200 shadow-md backdrop-blur-sm md:min-w-36 md:px-4 md:py-2">
+                <div className="flex items-center gap-1.5">
+                  <Coins className="h-3.5 w-3.5 text-chip md:h-4 md:w-4" />
+                  <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                    {t('game:table.potLabel')}
+                  </span>
+                </div>
+                <span className="text-sm font-black tabular-nums text-slate-50 md:text-base">
+                  {formatChips(totalPot)}
+                </span>
+                <span className="sr-only">
                   {t('game:table.pot', { amount: formatChips(totalPot) })}
                 </span>
+                {pot_amounts.length > 1 ? (
+                  <div className="mt-1 flex max-w-full flex-wrap justify-center gap-1">
+                    {pot_amounts.map((amount, index) => (
+                      <span
+                        key={`${index}-${amount}`}
+                        className="rounded-full border border-white/10 bg-black/20 px-1.5 py-0.5 text-[9px] font-semibold tabular-nums text-slate-300"
+                      >
+                        {t('game:table.potNumber', {
+                          number: index + 1,
+                          amount: formatChips(amount),
+                        })}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </div>
 
-              <div className="grid grid-cols-5 gap-1 sm:flex sm:gap-2">
+              <div
+                aria-label={t('game:table.communityCards')}
+                className="grid grid-cols-5 gap-1 sm:flex sm:gap-2"
+              >
                 {[0, 1, 2, 3, 4].map((index) => {
                   const card = board[index];
                   return card ? (
-                    <div key={index}>{renderCard(card)}</div>
+                    <div key={index}>
+                      <PlayingCard
+                        card={card}
+                        size="board"
+                        animated={!prefersReducedMotion}
+                        delayMs={index * 55}
+                      />
+                    </div>
                   ) : (
                     <div
                       key={index}
-                      className="h-9 w-[1.6rem] rounded-lg border-2 border-emerald-700/40 bg-emerald-950/20 sm:h-14 sm:w-10 md:h-18 md:w-12"
+                      className="h-9 w-[1.6rem] rounded-control border-2 border-white/10 bg-black/15 shadow-inner sm:h-14 sm:w-10 md:h-18 md:w-12"
                     />
                   );
                 })}
               </div>
 
               {action_deadline_at && (
-                <div className="flex items-center gap-1.5 rounded-full border border-amber-500/10 bg-black/40 px-3 py-1 text-xs font-bold text-amber-400">
+                <div className="flex items-center gap-1.5 rounded-full border border-warning-border bg-black/40 px-3 py-1 text-xs font-bold text-warning">
                   <Clock className="h-3.5 w-3.5 animate-spin" />
                   <TimerCountdown deadline={action_deadline_at} />
                 </div>
@@ -483,7 +590,9 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
           {orderedPlayers.map((player) => {
             const rotatedIndex = (player.seat - mySeat + 8) % 8;
+            const positionClass = seatPositionClass(players.length, rotatedIndex);
             const isActive = player.account_id === actor_account_id;
+            const latestAction = latestActionByAccount.get(player.account_id);
             const isButton = player.account_id === button_account_id;
             const isHero = player.account_id === user?.account_id;
             const memberEmotes = activeEmotes.filter((e) => e.account_id === player.account_id);
@@ -494,18 +603,30 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               <article
                 key={player.account_id}
                 data-testid={`player-card-${player.account_id}`}
-                className={`absolute z-10 flex w-14 flex-col items-center gap-0.5 rounded-xl border bg-slate-950/90 p-1 text-center shadow-xl sm:w-16 sm:gap-1 sm:p-1.5 md:w-28 md:gap-2 md:rounded-2xl md:p-2 ${SEAT_POSITION_CLASSES[rotatedIndex]} ${
-                  isActive ? 'border-amber-400 shadow-amber-500/20' : 'border-slate-800'
+                className={`absolute z-10 flex w-14 flex-col items-center gap-0.5 rounded-panel border bg-slate-950/90 p-1 text-center shadow-xl backdrop-blur-sm sm:w-16 sm:gap-1 sm:p-1.5 md:w-28 md:gap-2 md:p-2 ${positionClass} ${
+                  isActive
+                    ? 'border-warning shadow-[0_0_0_3px_rgba(251,191,36,0.12),0_12px_30px_rgba(245,158,11,0.16)]'
+                    : 'border-border-subtle'
                 }`}
               >
+                {isActive && !prefersReducedMotion ? (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 -z-10 rounded-panel border border-warning/70 animate-pulse-ring"
+                  />
+                ) : null}
+
                 {activeEmote && (
-                  <div className="absolute -top-3 right-0 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-purple-500/30 bg-slate-900 text-lg shadow-lg shadow-black/40 animate-bounce md:-top-4 md:h-8 md:w-8 md:text-xl">
+                  <div className="animate-emote-float absolute -top-4 right-0 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-accent-border bg-surface-raised text-lg shadow-lg shadow-black/40 md:-top-5 md:h-9 md:w-9 md:text-xl">
                     {activeEmote.emote}
                   </div>
                 )}
 
                 {isButton && (
-                  <div className="absolute -right-2 -top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-[9px] font-black text-slate-900 shadow md:h-6 md:w-6 md:text-[10px]">
+                  <div
+                    aria-label={t('game:table.dealerButton')}
+                    className="absolute -right-2 -top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-[9px] font-black text-slate-900 shadow md:h-6 md:w-6 md:text-[10px]"
+                  >
                     D
                   </div>
                 )}
@@ -521,7 +642,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                 <span className="w-full truncate text-[9px] font-bold text-slate-200 md:text-[11px]">
                   {player.display_name}
                 </span>
-                <span className="rounded-full bg-black/40 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400 md:text-[10px]">
+                <span className="rounded-full bg-black/40 px-1.5 py-0.5 text-[9px] font-semibold tabular-nums text-success md:text-[10px]">
                   {formatChips(player.stack)}
                 </span>
 
@@ -534,20 +655,34 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                 >
                   {hasVisibleHoleCards
                     ? privateSnapshot?.hole_cards?.map((card, idx) => (
-                        <div key={idx}>{renderCard(card, true)}</div>
+                        <PlayingCard
+                          key={idx}
+                          card={card}
+                          size="seat"
+                          animated={!prefersReducedMotion}
+                          delayMs={idx * 70}
+                        />
                       ))
-                    : [0, 1].map((index) => <div key={index}>{renderCardBack(true)}</div>)}
+                    : [0, 1].map((index) => <CardBack key={index} size="seat" />)}
                 </div>
 
+                {latestAction ? (
+                  <span className="max-w-full truncate rounded-full border border-accent-border bg-accent-muted px-1.5 py-0.5 text-[8px] font-bold text-accent-text md:text-[9px]">
+                    {enumLabel('action', latestAction.action)}
+                    {latestAction.amount ? ` ${formatChips(latestAction.amount)}` : ''}
+                  </span>
+                ) : null}
+
                 {player.bet > 0 && (
-                  <div className="flex items-center gap-1 rounded-full border border-yellow-500/20 bg-black/40 px-1.5 py-0.5 text-[9px] font-bold text-yellow-400 md:px-2 md:text-[10px]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
+                  <div className="flex items-center gap-1 rounded-full border border-warning-border bg-black/40 px-1.5 py-0.5 text-[9px] font-bold tabular-nums text-warning md:px-2 md:text-[10px]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-chip" />
                     {formatChips(player.bet)}
                   </div>
                 )}
 
                 {!player.connected && (
-                  <span className="absolute -bottom-2 rounded border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[8px] font-bold text-rose-400">
+                  <span className="absolute -bottom-2 flex items-center gap-1 rounded-control border border-danger-border bg-danger-surface px-1.5 py-0.5 text-[8px] font-bold text-danger">
+                    <WifiOff className="h-2.5 w-2.5" />
                     {t('game:table.disconnected')}
                   </span>
                 )}
@@ -561,13 +696,13 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       {showActionBar && privateSnapshot && (
         <section
           data-testid="action-bar"
-          className="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-slate-800 bg-slate-900 p-3 animate-slide-up sm:gap-4 sm:p-4 lg:static"
+          className="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-border-subtle bg-surface-raised/95 p-3 shadow-[0_-12px_30px_rgba(2,6,23,0.22)] backdrop-blur-md animate-slide-up sm:gap-4 sm:p-4 lg:static lg:shadow-none"
         >
           {lastCommandError && (
             <div
               role="status"
               aria-live="polite"
-              className="mx-auto w-full max-w-2xl rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-center text-xs font-semibold text-rose-300"
+              className="mx-auto w-full max-w-2xl rounded-control border border-danger-border bg-danger-surface px-3 py-2 text-center text-xs font-semibold text-danger"
             >
               {t('game:action.failed', { reason: realtimeError(lastCommandError) })}
             </div>
@@ -594,7 +729,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                     ),
                   )
                 }
-                className="flex-1 accent-purple-500 bg-slate-950 h-2 rounded-lg cursor-pointer"
+                className="h-2 flex-1 cursor-pointer rounded-full bg-surface-sunken accent-purple-500"
               />
               <span className="w-10 shrink-0 text-[10px] font-semibold text-slate-400 sm:w-12 sm:text-xs">
                 {formatChips(maxBetAmount)}
@@ -613,7 +748,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                     ),
                   )
                 }
-                className="h-8 w-16 shrink-0 rounded-lg border border-slate-800 bg-slate-950 text-center text-xs font-bold text-purple-400 outline-none focus:border-purple-500/50 sm:w-20"
+                className="focus-ring h-8 w-16 shrink-0 rounded-control border border-border-subtle bg-surface-sunken text-center text-xs font-bold text-accent-text outline-none focus:border-accent/60 sm:w-20"
               />
             </div>
           )}
@@ -622,11 +757,11 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           <div className="flex w-full flex-wrap justify-center gap-2 sm:gap-3">
             {privateSnapshot.legal_actions.map((act) => {
               const themeMap: Record<string, string> = {
-                fold: 'bg-rose-900/60 hover:bg-rose-900 border-rose-800 hover:border-rose-700 text-rose-200',
-                check_or_call: 'bg-purple-600 hover:bg-purple-500 border-purple-500 text-white',
+                fold: 'bg-danger-surface hover:bg-rose-900 border-danger-border hover:border-danger text-danger',
+                check_or_call: 'bg-accent-strong hover:bg-accent border-accent text-white',
                 bet_or_raise: 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white',
                 show: 'bg-amber-600 hover:bg-amber-500 border-amber-500 text-white',
-                muck: 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200',
+                muck: 'bg-surface-hover hover:bg-slate-700 border-border-strong text-slate-200',
               };
 
               const btnTheme = themeMap[act.action] || 'bg-slate-800 text-slate-200';
@@ -649,7 +784,16 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                   key={act.action}
                   onClick={() => handleAction(act.action as ActionType)}
                   disabled={!connected || Boolean(pendingAction)}
-                  className={`flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 text-[11px] font-bold uppercase tracking-wider shadow-md transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:gap-2 sm:px-6 sm:text-xs ${btnTheme}`}
+                  aria-keyshortcuts={
+                    actionKey === 'fold'
+                      ? 'F'
+                      : actionKey === 'check' || actionKey === 'call'
+                        ? 'C'
+                        : actionKey === 'bet' || actionKey === 'raise'
+                          ? 'R'
+                          : undefined
+                  }
+                  className={`focus-ring flex h-10 cursor-pointer items-center gap-1.5 rounded-control border px-3.5 text-[11px] font-bold uppercase tracking-wider shadow-md transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:gap-2 sm:px-6 sm:text-xs ${btnTheme}`}
                 >
                   {actionLabel}
                   {(actionKey === 'call' || act.action === 'bet_or_raise') && (
@@ -668,17 +812,17 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
       {/* Hand Settlement payoff overlay */}
       {handSettled && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-30 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 max-w-md w-full shadow-2xl relative overflow-hidden text-center">
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md overflow-hidden rounded-panel border border-border-subtle bg-surface-raised p-6 text-center shadow-2xl">
             {/* Glow */}
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-500 to-indigo-500" />
-            <h3 className="text-xl font-bold text-slate-100 flex items-center justify-center gap-2">
+            <div className="absolute top-0 left-0 h-1.5 w-full bg-gradient-to-r from-purple-500 to-indigo-400" />
+            <h3 className="flex items-center justify-center gap-2 text-xl font-bold text-slate-100">
               <Shield className="h-5 w-5 text-purple-400" />
               {t('game:handSettled.title')}
             </h3>
 
             {/* Payoff summaries per player */}
-            <div className="my-6 space-y-3">
+            <div className="my-6 space-y-3 rounded-control border border-border-subtle bg-surface-sunken p-3">
               {handSettled.account_ids.map((accId: number, idx: number) => {
                 const payoff = handSettled.payoffs[idx] ?? 0;
                 if (payoff === 0) return null;
@@ -700,7 +844,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
               })}
             </div>
 
-            <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-widest animate-pulse">
+            <p className="animate-pulse text-[10px] font-semibold tracking-widest text-slate-500 uppercase">
               {t('game:handSettled.next')}
             </p>
           </div>
@@ -709,18 +853,19 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
       {/* Match Settled Leaderboard final overlay */}
       {matchSettled && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-40 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-panel border border-border-subtle bg-surface-raised p-6 shadow-2xl">
             {/* Header */}
             <div className="text-center mb-6">
-              <h3 className="text-2xl font-black text-slate-100 bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent">
+              <h3 className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-300 to-indigo-300 bg-clip-text text-2xl font-black text-transparent">
+                <Sparkles className="h-5 w-5 text-warning" />
                 {t('game:matchSettled.title')}
               </h3>
               <p className="text-xs text-slate-500 mt-1">{t('game:matchSettled.subtitle')}</p>
             </div>
 
             {/* Standings table */}
-            <div className="divide-y divide-slate-800 border border-slate-800 bg-slate-950/40 rounded-xl overflow-hidden mb-6">
+            <div className="mb-6 overflow-hidden rounded-panel border border-border-subtle bg-surface-sunken">
               {matchSettled.account_ids.map((accId: number, idx: number) => {
                 const stack = matchSettled.final_stacks[idx] ?? 0;
                 return (
@@ -734,7 +879,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                           t('common:playerFallback', { id: accId })}
                       </span>
                     </div>
-                    <span className="text-sm font-bold text-emerald-400">
+                    <span className="text-sm font-bold tabular-nums text-success">
                       {t('game:matchSettled.chips', { amount: formatChips(stack) })}
                     </span>
                   </div>
@@ -743,13 +888,15 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
             </div>
 
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={() => void handleLeave(true)}
                 disabled={isLeaving}
-                className="flex-1 h-11 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-sm font-semibold uppercase tracking-wider transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-60"
+                width="full"
+                size="lg"
+                emphasis="caps"
               >
                 {isLeaving ? t('game:header.leaving') : t('game:matchSettled.backToLobby')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

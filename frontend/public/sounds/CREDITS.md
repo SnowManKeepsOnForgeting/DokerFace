@@ -1,0 +1,27 @@
+# Audio Credits
+
+All audio files in this directory are unchanged copies of original `.ogg` files from Kenney's CC0 asset packs. The destination names are logical poker-game cue names only.
+
+License: [Creative Commons Zero (CC0 1.0)](https://creativecommons.org/publicdomain/zero/1.0/). The official Kenney asset pages identify each pack as CC0.
+
+| Cue              | Source URL                                                                                                                                                                            | Original filename                             | Pack             | License |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ---------------- | ------- |
+| `new-hand.ogg`   | [Kenney Casino Audio](https://kenney.nl/assets/casino-audio) ([ZIP](https://kenney.nl/media/pages/assets/casino-audio/2472606a04-1721639069/kenney_casino-audio.zip))                 | `Audio/card-shuffle.ogg`                      | Casino Audio     | CC0 1.0 |
+| `deal-card.ogg`  | [Kenney Casino Audio](https://kenney.nl/assets/casino-audio) ([ZIP](https://kenney.nl/media/pages/assets/casino-audio/2472606a04-1721639069/kenney_casino-audio.zip))                 | `Audio/card-slide-1.ogg`                      | Casino Audio     | CC0 1.0 |
+| `check.ogg`      | [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds) ([ZIP](https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip)) | `Audio/select_001.ogg`                        | Interface Sounds | CC0 1.0 |
+| `call.ogg`       | [Kenney Casino Audio](https://kenney.nl/assets/casino-audio) ([ZIP](https://kenney.nl/media/pages/assets/casino-audio/2472606a04-1721639069/kenney_casino-audio.zip))                 | `Audio/chip-lay-1.ogg`                        | Casino Audio     | CC0 1.0 |
+| `bet.ogg`        | [Kenney Casino Audio](https://kenney.nl/assets/casino-audio) ([ZIP](https://kenney.nl/media/pages/assets/casino-audio/2472606a04-1721639069/kenney_casino-audio.zip))                 | `Audio/chip-lay-2.ogg`                        | Casino Audio     | CC0 1.0 |
+| `raise.ogg`      | [Kenney Casino Audio](https://kenney.nl/assets/casino-audio) ([ZIP](https://kenney.nl/media/pages/assets/casino-audio/2472606a04-1721639069/kenney_casino-audio.zip))                 | `Audio/chips-stack-1.ogg`                     | Casino Audio     | CC0 1.0 |
+| `fold.ogg`       | [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds) ([ZIP](https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip)) | `Audio/back_001.ogg`                          | Interface Sounds | CC0 1.0 |
+| `all-in.ogg`     | [Kenney Casino Audio](https://kenney.nl/assets/casino-audio) ([ZIP](https://kenney.nl/media/pages/assets/casino-audio/2472606a04-1721639069/kenney_casino-audio.zip))                 | `Audio/chips-collide-1.ogg`                   | Casino Audio     | CC0 1.0 |
+| `your-turn.ogg`  | [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds) ([ZIP](https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip)) | `Audio/question_001.ogg`                      | Interface Sounds | CC0 1.0 |
+| `timer-tick.ogg` | [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds) ([ZIP](https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip)) | `Audio/tick_001.ogg`                          | Interface Sounds | CC0 1.0 |
+| `hand-win.ogg`   | [Kenney Music Jingles](https://kenney.nl/assets/music-jingles) ([ZIP](https://kenney.nl/media/pages/assets/music-jingles/f37e530b9e-1677590399/kenney_music-jingles.zip))             | `Audio/Hit jingles/jingles_HIT00.ogg`         | Music Jingles    | CC0 1.0 |
+| `hand-lose.ogg`  | [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds) ([ZIP](https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip)) | `Audio/error_001.ogg`                         | Interface Sounds | CC0 1.0 |
+| `match-win.ogg`  | [Kenney Music Jingles](https://kenney.nl/assets/music-jingles) ([ZIP](https://kenney.nl/media/pages/assets/music-jingles/f37e530b9e-1677590399/kenney_music-jingles.zip))             | `Audio/Pizzicato jingles/jingles_PIZZI00.ogg` | Music Jingles    | CC0 1.0 |
+| `chat.ogg`       | [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds) ([ZIP](https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip)) | `Audio/click_001.ogg`                         | Interface Sounds | CC0 1.0 |
+| `emote.ogg`      | [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds) ([ZIP](https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip)) | `Audio/pluck_001.ogg`                         | Interface Sounds | CC0 1.0 |
+
+## Missing assets
+
+None. All 15 requested logical cues have a real, non-empty `.ogg` asset.
