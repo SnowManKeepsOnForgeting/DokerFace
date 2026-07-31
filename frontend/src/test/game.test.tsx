@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, within } from '@testing-library/react';
 import { describe, beforeAll, afterEach, afterAll, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
@@ -226,9 +226,23 @@ describe('WaitingRoom and PokerTable Flow', () => {
     expect(screen.getByText('Not Ready')).toBeInTheDocument();
 
     const waitingRoom = screen.getByTestId('waiting-room');
+    const playerList = screen.getByTestId('waiting-room-players');
+    const chatPanel = screen.getByTestId('waiting-room-chat');
+    const chatList = screen.getByTestId('waiting-room-chat-list');
     expect(waitingRoom).not.toHaveClass('overflow-hidden');
-    expect(waitingRoom).toHaveClass('lg:overflow-hidden');
+    expect(waitingRoom).not.toHaveClass('lg:flex-row');
+    expect(waitingRoom).toHaveClass('xl:flex-row', 'xl:overflow-hidden');
     expect(waitingRoom).not.toHaveClass('h-[calc(100vh-80px)]');
+    expect(playerList).not.toHaveClass('lg:grid-cols-2', 'xl:grid-cols-1');
+    expect(playerList).toHaveClass('xl:overflow-y-auto');
+    expect(chatPanel).toHaveClass(
+      'h-[min(32rem,70dvh)]',
+      'overflow-hidden',
+      'xl:h-auto',
+      'xl:min-h-0',
+      'xl:self-stretch',
+    );
+    expect(chatList).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
 
     const readyBtn = screen.getByText('Set Ready');
     await userEvent.click(readyBtn);
@@ -253,6 +267,23 @@ describe('WaitingRoom and PokerTable Flow', () => {
     expect(screen.getByText('Waiting here')).toBeInTheDocument();
     expect(screen.getByText('Bobby')).toBeInTheDocument();
     expect(screen.queryByText('Player #2')).not.toBeInTheDocument();
+
+    const cappedMessages = Array.from({ length: 100 }, (_, index) => ({
+      schema_version: 1 as const,
+      message_id: `message-${index}`,
+      room_id: roomId,
+      account_id: 2,
+      display_name: 'Bobby',
+      message_type: 'text' as const,
+      content: `Message ${index + 1}`,
+      target_account_id: null,
+      created_at: '2026-07-17T00:00:00Z',
+    }));
+    act(() => useGameStore.setState({ chatMessages: cappedMessages }));
+
+    expect(within(chatList).getAllByText(/^Message \d+$/)).toHaveLength(100);
+    expect(chatPanel).toContainElement(screen.getByTestId('waiting-room-quick-phrases'));
+    expect(chatPanel).toContainElement(screen.getByTestId('waiting-room-chat-form'));
   });
 
   it('uses the minimum legal amount before the bet control is changed', async () => {

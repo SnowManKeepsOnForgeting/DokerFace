@@ -100,10 +100,10 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
   return (
     <div
       data-testid="waiting-room"
-      className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-3 font-sans text-slate-100 sm:gap-5 sm:p-4 md:p-6 lg:min-h-0 lg:flex-row lg:overflow-hidden"
+      className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-3 font-sans text-slate-100 sm:gap-5 sm:p-4 md:p-6 xl:min-h-0 xl:flex-row xl:overflow-hidden"
     >
       {/* Left Column: Waiting Room Info & Players */}
-      <div className="flex min-w-0 flex-1 flex-col gap-4 lg:min-h-0 lg:gap-5">
+      <div className="flex min-w-0 flex-1 flex-col gap-4 xl:min-h-0 xl:gap-5">
         {/* Header summary */}
         <section className="flex shrink-0 flex-col items-start justify-between gap-4 rounded-panel border border-border-subtle bg-surface p-4 sm:p-5 md:flex-row md:items-center">
           <div>
@@ -171,12 +171,15 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
         )}
 
         {/* Players list card */}
-        <section className="flex flex-col rounded-panel border border-border-subtle bg-surface p-4 sm:p-5 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+        <section className="flex flex-col rounded-panel border border-border-subtle bg-surface p-4 sm:p-5 xl:min-h-0 xl:flex-1 xl:overflow-hidden">
           <h3 className="mb-4 flex shrink-0 items-center justify-between text-sm font-bold uppercase tracking-wider text-accent-text">
             {t('room:waiting.players', { value: members.length })}
           </h3>
 
-          <div className="grid gap-2 pr-1 sm:gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:content-start lg:overflow-y-auto xl:grid-cols-1 scrollbar-thin">
+          <div
+            data-testid="waiting-room-players"
+            className="grid gap-2 pr-1 sm:gap-3 xl:min-h-0 xl:flex-1 xl:content-start xl:overflow-y-auto scrollbar-thin"
+          >
             {members.map((member) => (
               <MemberRow
                 key={member.account_id}
@@ -213,7 +216,10 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
       </div>
 
       {/* Right Column: Chat Console */}
-      <section className="flex h-[min(32rem,70vh)] w-full shrink-0 flex-col overflow-hidden rounded-panel border border-border-subtle bg-surface p-4 sm:p-5 lg:h-full lg:w-[22rem] xl:w-96">
+      <section
+        data-testid="waiting-room-chat"
+        className="flex h-[min(32rem,70dvh)] w-full shrink-0 flex-col overflow-hidden rounded-panel border border-border-subtle bg-surface p-4 sm:p-5 xl:h-auto xl:min-h-0 xl:w-[22rem] xl:self-stretch 2xl:w-96"
+      >
         <h3 className="mb-4 flex shrink-0 items-center gap-2 text-sm font-bold uppercase tracking-wider text-accent-text">
           <MessageSquare className="h-4 w-4" />
           {t('room:waiting.chatTitle')}
@@ -222,6 +228,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
         {/* Message area */}
         <div
           ref={chatListRef}
+          data-testid="waiting-room-chat-list"
           className="mb-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin"
         >
           {chatMessages.length === 0 ? (
@@ -248,7 +255,10 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
         </div>
 
         {/* Fast phrases */}
-        <div className="mb-3 flex shrink-0 gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+        <div
+          data-testid="waiting-room-quick-phrases"
+          className="mb-3 flex shrink-0 gap-1.5 overflow-x-auto pb-1 scrollbar-thin"
+        >
           {quickPhrases.map((phrase) => (
             <button
               key={phrase}
@@ -261,7 +271,11 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
         </div>
 
         {/* Input Form */}
-        <form onSubmit={handleSendChat} className="flex gap-2 shrink-0">
+        <form
+          data-testid="waiting-room-chat-form"
+          onSubmit={handleSendChat}
+          className="flex shrink-0 gap-2"
+        >
           <input
             type="text"
             placeholder={t('room:waiting.chatPlaceholder')}
