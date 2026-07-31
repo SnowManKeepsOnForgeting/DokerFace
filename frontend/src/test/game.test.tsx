@@ -231,7 +231,12 @@ describe('WaitingRoom and PokerTable Flow', () => {
     const chatList = screen.getByTestId('waiting-room-chat-list');
     expect(waitingRoom).not.toHaveClass('overflow-hidden');
     expect(waitingRoom).not.toHaveClass('lg:flex-row');
-    expect(waitingRoom).toHaveClass('xl:flex-row', 'xl:overflow-hidden');
+    expect(waitingRoom).toHaveClass(
+      'xl:h-[calc(100dvh_-_3rem)]',
+      'xl:flex-none',
+      'xl:flex-row',
+      'xl:overflow-hidden',
+    );
     expect(waitingRoom).not.toHaveClass('h-[calc(100vh-80px)]');
     expect(playerList).not.toHaveClass('lg:grid-cols-2', 'xl:grid-cols-1');
     expect(playerList).toHaveClass('xl:overflow-y-auto');

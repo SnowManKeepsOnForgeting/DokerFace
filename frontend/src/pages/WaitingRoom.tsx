@@ -100,7 +100,7 @@ export function WaitingRoom({ roomId, onLeave }: WaitingRoomProps) {
   return (
     <div
       data-testid="waiting-room"
-      className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-3 font-sans text-slate-100 sm:gap-5 sm:p-4 md:p-6 xl:min-h-0 xl:flex-row xl:overflow-hidden"
+      className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-3 font-sans text-slate-100 sm:gap-5 sm:p-4 md:p-6 xl:h-[calc(100dvh_-_3rem)] xl:min-h-0 xl:flex-none xl:flex-row xl:overflow-hidden"
     >
       {/* Left Column: Waiting Room Info & Players */}
       <div className="flex min-w-0 flex-1 flex-col gap-4 xl:min-h-0 xl:gap-5">
