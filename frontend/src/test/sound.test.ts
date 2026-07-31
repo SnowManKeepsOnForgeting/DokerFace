@@ -7,6 +7,7 @@ import {
   loadMuted,
   loadSoundPreference,
   saveSoundPreference,
+  SOUND_ASSETS,
   SOUND_STORAGE_KEY,
   type SoundCue,
 } from '../sound';
@@ -65,6 +66,16 @@ function CuesProbe() {
     createElement('button', { type: 'button', onClick: sound.toggleMuted }, 'toggle'),
   );
 }
+
+describe('sound asset manifest', () => {
+  it('provides committed Ogg and MP3 files for every cue', () => {
+    for (const sources of Object.values(SOUND_ASSETS)) {
+      expect(sources).toHaveLength(2);
+      expect(sources[0]).toMatch(/\.ogg$/);
+      expect(sources[1]).toMatch(/\.mp3$/);
+    }
+  });
+});
 
 describe('sound preference storage', () => {
   it('defaults malformed and missing values to unmuted', () => {

@@ -20,25 +20,25 @@ export const SOUND_CUES = [
 
 export type SoundCue = (typeof SOUND_CUES)[number];
 
-/* Kenney's CC0 packs ship Ogg Vorbis. Howler's codec detection prevents a
- * request when the current browser cannot decode Ogg, and the engine silently
- * skips a cue in that browser rather than failing the game. */
+/* Prefer Kenney's original Ogg Vorbis clips and fall back to derived MP3
+ * copies for Safari/iOS versions without Ogg support. Howler selects the first
+ * codec the current browser can decode. */
 export const SOUND_ASSETS: Record<SoundCue, readonly string[]> = {
-  'new-hand': ['/sounds/new-hand.ogg'],
-  'deal-card': ['/sounds/deal-card.ogg'],
-  check: ['/sounds/check.ogg'],
-  call: ['/sounds/call.ogg'],
-  bet: ['/sounds/bet.ogg'],
-  raise: ['/sounds/raise.ogg'],
-  fold: ['/sounds/fold.ogg'],
-  'all-in': ['/sounds/all-in.ogg'],
-  'your-turn': ['/sounds/your-turn.ogg'],
-  'timer-tick': ['/sounds/timer-tick.ogg'],
-  'hand-win': ['/sounds/hand-win.ogg'],
-  'hand-lose': ['/sounds/hand-lose.ogg'],
-  'match-win': ['/sounds/match-win.ogg'],
-  chat: ['/sounds/chat.ogg'],
-  emote: ['/sounds/emote.ogg'],
+  'new-hand': ['/sounds/new-hand.ogg', '/sounds/new-hand.mp3'],
+  'deal-card': ['/sounds/deal-card.ogg', '/sounds/deal-card.mp3'],
+  check: ['/sounds/check.ogg', '/sounds/check.mp3'],
+  call: ['/sounds/call.ogg', '/sounds/call.mp3'],
+  bet: ['/sounds/bet.ogg', '/sounds/bet.mp3'],
+  raise: ['/sounds/raise.ogg', '/sounds/raise.mp3'],
+  fold: ['/sounds/fold.ogg', '/sounds/fold.mp3'],
+  'all-in': ['/sounds/all-in.ogg', '/sounds/all-in.mp3'],
+  'your-turn': ['/sounds/your-turn.ogg', '/sounds/your-turn.mp3'],
+  'timer-tick': ['/sounds/timer-tick.ogg', '/sounds/timer-tick.mp3'],
+  'hand-win': ['/sounds/hand-win.ogg', '/sounds/hand-win.mp3'],
+  'hand-lose': ['/sounds/hand-lose.ogg', '/sounds/hand-lose.mp3'],
+  'match-win': ['/sounds/match-win.ogg', '/sounds/match-win.mp3'],
+  chat: ['/sounds/chat.ogg', '/sounds/chat.mp3'],
+  emote: ['/sounds/emote.ogg', '/sounds/emote.mp3'],
 };
 
 export const SOUND_VOLUMES: Record<SoundCue, number> = {

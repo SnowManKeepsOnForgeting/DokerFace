@@ -1,8 +1,8 @@
 # Audio Credits
 
-All audio files in this directory are unchanged copies of original `.ogg` files from Kenney's CC0 asset packs. The destination names are logical poker-game cue names only.
+The `.ogg` files in this directory are unchanged copies from Kenney's CC0 asset packs. Each `.mp3` file is a mono, 44.1 kHz, 96 kbps compatibility copy derived from the matching `.ogg` file with FFmpeg; destination names are logical poker-game cue names only.
 
-License: [Creative Commons Zero (CC0 1.0)](https://creativecommons.org/publicdomain/zero/1.0/). The official Kenney asset pages identify each pack as CC0.
+License: [Creative Commons Zero (CC0 1.0)](https://creativecommons.org/publicdomain/zero/1.0/). The official Kenney asset pages identify each pack as CC0, and the derived MP3 copies remain under the same CC0 dedication.
 
 | Cue              | Source URL                                                                                                                                                                            | Original filename                             | Pack             | License |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ---------------- | ------- |
@@ -24,4 +24,4 @@ License: [Creative Commons Zero (CC0 1.0)](https://creativecommons.org/publicdom
 
 ## Missing assets
 
-None. All 15 requested logical cues have a real, non-empty `.ogg` asset.
+None. All 15 requested logical cues include the original non-empty `.ogg` asset and a derived `.mp3` compatibility copy.

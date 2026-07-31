@@ -84,7 +84,7 @@ export class HowlerSoundEngine implements SoundEngine {
     }
 
     try {
-      if (!module.Howler.codecs('ogg') && !module.Howler.codecs('wav')) {
+      if (!module.Howler.codecs('ogg') && !module.Howler.codecs('mp3')) {
         return null;
       }
       const sound = new module.Howl({

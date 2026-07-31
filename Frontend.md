@@ -255,8 +255,9 @@ Zustand store 只保存：
 不敏感偏好写入 `localStorage`；任何底牌和牌局快照不得持久化，也不增加关闭表情或特效的选项。
 牌桌音效是视觉特效之外的可访问性例外：使用 Howler.js 播放 `public/sounds/` 中的 CC0
 素材，音频默认开启但在牌桌头部提供静音按钮。仅把版本化的 `{ v: 1, muted: boolean }` 写入
-`localStorage` 的 `dokerface.sound`，不写入账户或牌局数据；音频播放失败、浏览器不支持 Ogg
-或页面处于后台时必须静默降级，不能影响牌局命令。
+`localStorage` 的 `dokerface.sound`，不写入账户或牌局数据。每个 cue 优先使用原始 Ogg 并提供
+MP3 兼容副本；音频播放失败、浏览器不支持两种格式或页面处于后台时必须静默降级，不能影响
+牌局命令。
 
 ### 8.2 快照归并规则
 
