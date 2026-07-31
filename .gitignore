@@ -17,3 +17,4 @@ deploy/backups/
 deploy/compose.yml
 deploy/Caddyfile
 deploy/.env
+.pi
