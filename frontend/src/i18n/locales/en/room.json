@@ -9,6 +9,7 @@
     "startMatch": "Start Match",
     "players": "Players ({{value}})",
     "sendEmote": "Send Emote",
+    "sendSpecificEmote": "Send {{emote}} emote",
     "chatTitle": "Room Chat",
     "chatEmpty": "No chat messages.",
     "chatPlaceholder": "Type a message...",
@@ -21,6 +22,8 @@
     "ready": "Ready",
     "notReady": "Not Ready",
     "kick": "Kick Player",
+    "host": "Host",
+    "activeEmote": "Active emote",
     "avatarLabel": "{{name}} avatar"
   },
   "leaveError": {

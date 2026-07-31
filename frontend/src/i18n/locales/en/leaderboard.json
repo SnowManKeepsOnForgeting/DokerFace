@@ -1,6 +1,7 @@
 {
   "title": "Global Leaderboard",
   "subtitle": "Compare Elo ratings, win rates, and ranking performance against top players.",
+  "loadingLabel": "Loading leaderboard…",
   "standing": {
     "label": "Your Current Standing",
     "ranked": "Ranked #{{rank}}",

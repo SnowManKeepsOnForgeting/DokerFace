@@ -1,5 +1,12 @@
 {
   "panelTitle": "管理面板",
+  "actions": {
+    "retry": "重试",
+    "close": "关闭"
+  },
+  "states": {
+    "loadFailed": "此页面加载失败"
+  },
   "tabs": {
     "accounts": "账号管理",
     "rooms": "活动房间",
@@ -8,6 +15,18 @@
     "audits": "操作日志"
   },
   "accounts": {
+    "summary": "管理账号访问、角色和状态。",
+    "stats": {
+      "total": "账号总数",
+      "active": "正常",
+      "disabled": "已停用"
+    },
+    "searchLabel": "搜索",
+    "roleFilter": "角色",
+    "statusFilter": "状态",
+    "filterAll": "全部",
+    "roleFor": "{{name}} 的角色",
+    "statusFor": "{{name}} 的状态",
     "searchPlaceholder": "搜索账号…",
     "create": "创建账号",
     "empty": "没有找到账号。",

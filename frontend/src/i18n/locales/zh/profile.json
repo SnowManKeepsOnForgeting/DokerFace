@@ -1,5 +1,6 @@
 {
   "notFound": "未找到该玩家资料。",
+  "loading": "正在加载玩家资料…",
   "online": "在线",
   "offline": "离线",
   "accountId": "账号 ID：{{id}}",

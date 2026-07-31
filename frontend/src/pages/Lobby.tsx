@@ -204,14 +204,12 @@ export function Lobby() {
   });
 
   return (
-    <div className="flex-1 flex flex-col gap-6">
+    <div className="flex flex-1 flex-col gap-5 text-slate-100">
       {/* Top action header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent">
-            {t('lobby:title')}
-          </h1>
-          <p className="text-slate-400 text-xs mt-1">{t('lobby:subtitle')}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-100">{t('lobby:title')}</h1>
+          <p className="mt-1 text-xs text-slate-400">{t('lobby:subtitle')}</p>
         </div>
 
         <button
@@ -220,32 +218,36 @@ export function Lobby() {
             setRoomName(user ? t('lobby:defaultRoomName', { name: user.display_name }) : '');
             setIsCreateOpen(true);
           }}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-purple-600 px-5 text-sm font-semibold text-white hover:bg-purple-500 shadow-md shadow-purple-900/20 transition-colors cursor-pointer self-start sm:self-auto"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-control bg-accent-strong px-5 text-sm font-semibold text-white shadow-md shadow-purple-950/20 transition-colors hover:bg-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 cursor-pointer self-start sm:self-auto"
         >
-          <Plus className="h-4.5 w-4.5" />
+          <Plus className="h-4 w-4" aria-hidden="true" />
           {t('lobby:createTable')}
         </button>
       </div>
 
       {/* Filters Toolbar */}
-      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-slate-900/40 p-3 rounded-lg border border-slate-800/80">
+      <div className="flex flex-col gap-3 rounded-panel border border-border-subtle bg-surface p-3 md:flex-row md:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Search
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+            aria-hidden="true"
+          />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label={t('lobby:searchLabel')}
             placeholder={t('lobby:searchPlaceholder')}
-            className="w-full h-10 bg-slate-950/60 border border-slate-800 focus:border-purple-500/50 rounded-lg pl-10 pr-4 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors"
+            className="h-10 w-full rounded-control border border-border-subtle bg-surface-sunken pl-10 pr-4 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-600 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15"
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="grid grid-cols-3 gap-2 md:flex md:shrink-0">
           {(['all', 'waiting', 'active'] as const).map((filter) => (
             <button
               key={filter}
               onClick={() => setStatusFilter(filter)}
-              className={`h-10 px-4 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all border ${
+              className={`h-10 rounded-control border px-4 text-xs font-semibold uppercase tracking-wider transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60 ${
                 statusFilter === filter
                   ? 'bg-purple-600/10 text-purple-400 border-purple-500/30'
                   : 'bg-slate-950/20 text-slate-400 border-slate-800 hover:text-slate-200'
@@ -259,34 +261,53 @@ export function Lobby() {
 
       {/* Rooms Grid / States */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((n) => (
+        <div
+          className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+          aria-label={t('lobby:loadingLabel')}
+        >
+          {[1, 2, 3, 4, 5, 6].map((n) => (
             <div
               key={n}
-              className="h-48 rounded-xl bg-slate-900/30 border border-slate-800 animate-pulse"
-            ></div>
+              className="flex h-56 flex-col rounded-panel border border-border-subtle bg-surface p-4 animate-shimmer"
+              aria-hidden="true"
+            >
+              <div className="flex items-center justify-between">
+                <div className="h-5 w-20 rounded-control bg-surface-raised" />
+                <div className="h-4 w-4 rounded-control bg-surface-raised" />
+              </div>
+              <div className="mt-5 h-5 w-3/5 rounded-control bg-surface-raised" />
+              <div className="mt-6 space-y-3">
+                <div className="h-3 w-full rounded-control bg-surface-raised" />
+                <div className="h-3 w-4/5 rounded-control bg-surface-raised" />
+                <div className="h-3 w-2/3 rounded-control bg-surface-raised" />
+              </div>
+              <div className="mt-auto h-10 w-full rounded-control bg-surface-raised" />
+            </div>
           ))}
         </div>
       ) : roomsError ? (
-        <div className="flex flex-col items-center justify-center p-12 bg-red-950/10 border border-red-900/20 rounded-xl text-center">
-          <AlertCircle className="h-10 w-10 text-red-500 mb-3" />
+        <div
+          className="flex flex-col items-center justify-center rounded-panel border border-danger-border bg-danger-surface p-10 text-center"
+          role="alert"
+        >
+          <AlertCircle className="mb-3 h-10 w-10 text-danger" aria-hidden="true" />
           <h2 className="font-semibold text-red-400 text-sm">{t('lobby:fetchError.title')}</h2>
           <p className="text-slate-500 text-xs mt-1">{t('lobby:fetchError.description')}</p>
         </div>
       ) : filteredRooms.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-16 bg-slate-900/10 border border-slate-800 border-dashed rounded-xl text-center">
-          <Users className="h-12 w-12 text-slate-700 mb-4" />
+        <div className="flex flex-col items-center justify-center rounded-panel border border-dashed border-border-subtle bg-surface-sunken p-12 text-center sm:p-16">
+          <Users className="mb-4 h-12 w-12 text-slate-700" aria-hidden="true" />
           <h2 className="font-semibold text-slate-300 text-sm">{t('lobby:empty.title')}</h2>
           <p className="text-slate-500 text-xs mt-1 max-w-sm">
             {searchQuery ? t('lobby:empty.filtered') : t('lobby:empty.hint')}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredRooms.map((room) => (
             <div
               key={room.room_id}
-              className="flex flex-col bg-slate-900/40 border border-slate-800/80 hover:border-slate-700/60 rounded-xl p-5 shadow-lg transition-all relative overflow-hidden"
+              className="group relative flex min-w-0 flex-col overflow-hidden rounded-panel border border-border-subtle bg-surface p-4 shadow-lg transition-all hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-raised animate-fade-in"
             >
               {/* Badge & Lock */}
               <div className="flex items-center justify-between mb-4">
@@ -299,19 +320,21 @@ export function Lobby() {
                 >
                   {room.status === 'active' ? (
                     <>
-                      <Play className="h-2.5 w-2.5 fill-current" /> {t('lobby:card.statusActive')}
+                      <Play className="h-2.5 w-2.5 fill-current" aria-hidden="true" />{' '}
+                      {t('lobby:card.statusActive')}
                     </>
                   ) : (
                     <>
-                      <Hourglass className="h-2.5 w-2.5" /> {t('lobby:card.statusWaiting')}
+                      <Hourglass className="h-2.5 w-2.5" aria-hidden="true" />{' '}
+                      {t('lobby:card.statusWaiting')}
                     </>
                   )}
                 </span>
 
                 {room.has_password ? (
-                  <Lock className="h-4 w-4 text-amber-500/80" />
+                  <Lock className="h-4 w-4 text-warning" aria-label={t('lobby:card.private')} />
                 ) : (
-                  <Unlock className="h-4 w-4 text-slate-600" />
+                  <Unlock className="h-4 w-4 text-slate-600" aria-label={t('lobby:card.public')} />
                 )}
               </div>
 
@@ -353,7 +376,7 @@ export function Lobby() {
               {/* Join Button */}
               <button
                 onClick={() => handleJoinClick(room)}
-                className={`w-full h-10 mt-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                className={`mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-control text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 cursor-pointer ${
                   room.status === 'active'
                     ? 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                     : 'bg-purple-600 hover:bg-purple-500 text-white shadow-md shadow-purple-900/10'
@@ -370,16 +393,21 @@ export function Lobby() {
       <Dialog.Root open={isPasswordOpen} onOpenChange={setIsPasswordOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fade-in" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl z-50 font-sans animate-scale-in">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[min(90vh,32rem)] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-panel border border-border-subtle bg-surface-raised p-5 font-sans shadow-2xl animate-scale-in sm:p-6 scrollbar-thin focus:outline-none">
             <div className="flex justify-between items-start mb-4">
               <Dialog.Title className="font-bold text-lg text-slate-100">
                 {t('lobby:password.title')}
               </Dialog.Title>
-              <Dialog.Close className="text-slate-400 hover:text-slate-200">
-                <X className="h-5 w-5" />
+              <Dialog.Close
+                aria-label={t('lobby:close')}
+                className="flex h-8 w-8 items-center justify-center rounded-control text-slate-400 transition-colors hover:bg-surface-hover hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"
+              >
+                <X className="h-5 w-5" aria-hidden="true" />
               </Dialog.Close>
             </div>
-            <p className="text-slate-400 text-xs mb-4">{t('lobby:password.description')}</p>
+            <Dialog.Description className="mb-4 text-xs text-slate-400">
+              {t('lobby:password.description')}
+            </Dialog.Description>
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               {passwordError && (
@@ -392,11 +420,11 @@ export function Lobby() {
                 value={roomPassword}
                 onChange={(e) => setRoomPassword(e.target.value)}
                 placeholder={t('lobby:password.placeholder')}
-                className="w-full h-11 bg-slate-950 border border-slate-800 focus:border-purple-500/50 rounded-lg px-4 text-sm text-slate-100 placeholder-slate-700 outline-none"
+                className="h-11 w-full rounded-control border border-border-subtle bg-surface-sunken px-4 text-sm text-slate-100 outline-none placeholder:text-slate-700 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15"
               />
               <button
                 type="submit"
-                className="w-full h-11 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer"
+                className="h-11 w-full rounded-control bg-accent-strong text-sm font-semibold text-white transition-colors hover:bg-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 cursor-pointer"
               >
                 {t('lobby:password.submit')}
               </button>
@@ -409,7 +437,7 @@ export function Lobby() {
       <Dialog.Root open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fade-in" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl z-50 font-sans animate-scale-in">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[min(92vh,52rem)] w-[calc(100%-1rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-panel border border-border-subtle bg-surface-raised p-4 font-sans shadow-2xl animate-scale-in sm:w-[calc(100%-2rem)] sm:p-6 scrollbar-thin focus:outline-none">
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-2">
                 <Sliders className="h-5 w-5 text-purple-400" />
@@ -417,15 +445,18 @@ export function Lobby() {
                   {t('lobby:create.title')}
                 </Dialog.Title>
               </div>
-              <Dialog.Close className="text-slate-400 hover:text-slate-200">
-                <X className="h-5 w-5" />
+              <Dialog.Close
+                aria-label={t('lobby:close')}
+                className="flex h-8 w-8 items-center justify-center rounded-control text-slate-400 transition-colors hover:bg-surface-hover hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"
+              >
+                <X className="h-5 w-5" aria-hidden="true" />
               </Dialog.Close>
             </div>
 
             <form onSubmit={handleCreateSubmit} className="space-y-6">
               {validationError && (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg px-4 py-3 text-xs font-semibold flex items-center gap-2">
-                  <AlertCircle className="h-4.5 w-4.5 shrink-0" />
+                  <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {validationError}
                 </div>
               )}
@@ -698,7 +729,7 @@ export function Lobby() {
                 <Dialog.Close asChild>
                   <button
                     type="button"
-                    className="h-10 px-5 rounded-lg text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                    className="h-10 rounded-control px-5 text-sm font-semibold text-slate-400 transition-colors hover:bg-surface-hover hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 cursor-pointer"
                   >
                     {t('common:actions.cancel')}
                   </button>
@@ -706,7 +737,7 @@ export function Lobby() {
                 <button
                   type="submit"
                   disabled={createRoomMutation.isPending}
-                  className="h-10 px-6 bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800 text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer"
+                  className="h-10 rounded-control bg-accent-strong px-6 text-sm font-semibold text-white transition-colors hover:bg-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 disabled:cursor-wait disabled:bg-purple-800 cursor-pointer"
                 >
                   {createRoomMutation.isPending
                     ? t('lobby:create.submitting')

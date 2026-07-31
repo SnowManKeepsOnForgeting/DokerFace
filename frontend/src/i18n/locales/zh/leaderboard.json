@@ -1,6 +1,7 @@
 {
   "title": "全球排行榜",
   "subtitle": "对比 Elo 评分、胜率与排名表现。",
+  "loadingLabel": "正在加载排行榜…",
   "standing": {
     "label": "你的当前排名",
     "ranked": "第 {{rank}} 名",

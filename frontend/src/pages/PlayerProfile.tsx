@@ -37,9 +37,13 @@ import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { useEnumLabel } from '../i18n/useEnumLabel';
 import { useFormatters } from '../i18n/useFormatters';
-
-// Backend cards use standard poker shorthand, where "T" is the ten.
-const RANK_LABELS: Record<string, string> = { T: '10' };
+import { ProfileAvatarBadge } from '../components/ProfileAvatarBadge';
+import { PlayingCard } from '../components/PlayingCard';
+import { Panel } from '../components/ui/Panel';
+import { Badge } from '../components/ui/Badge';
+import { StatTile } from '../components/ui/StatTile';
+import { Skeleton } from '../components/ui/Skeleton';
+import { Button } from '../components/ui/Button';
 
 export function PlayerProfile() {
   const { playerId } = useParams<{ playerId: string }>();
@@ -200,8 +204,12 @@ export function PlayerProfile() {
 
   if (isPlayerLoading) {
     return (
-      <div className="flex h-64 w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+      <div
+        className="grid w-full grid-cols-1 gap-4 md:grid-cols-[auto_1fr]"
+        aria-label={t('profile:loading')}
+      >
+        <Skeleton className="h-24 w-24" />
+        <Skeleton className="h-24" />
       </div>
     );
   }
@@ -220,65 +228,51 @@ export function PlayerProfile() {
   };
 
   return (
-    <div className="flex-1 flex flex-col gap-6 md:gap-8 font-sans text-slate-100">
-      {/* Header Profile Section */}
-      <section className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 relative overflow-hidden flex flex-col md:flex-row items-center md:items-start gap-6">
-        <div
-          className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r opacity-50"
-          style={{
-            backgroundImage: `linear-gradient(90deg, ${player.avatar_background_color || '#4f46e5'}, transparent)`,
-          }}
-        />
-
-        <div
-          className="flex h-24 w-24 min-w-0 shrink-0 items-center justify-center overflow-hidden rounded-full px-2 text-center break-all whitespace-pre-wrap leading-tight text-white font-black text-2xl shadow-xl shadow-black/20 border border-white/10"
-          style={{ backgroundColor: player.avatar_background_color || '#4f46e5' }}
-        >
-          {player.avatar_text || player.display_name.slice(0, 2).toUpperCase()}
-        </div>
-
-        <div className="flex-1 text-center md:text-left space-y-2 min-w-0">
-          <div className="flex flex-col md:flex-row md:items-center gap-3">
-            <h2 className="text-2xl font-bold truncate">{player.display_name}</h2>
-
-            <div className="flex items-center justify-center md:justify-start gap-2">
-              <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                  player.is_online
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-sm shadow-emerald-500/10 animate-pulse'
-                    : 'bg-slate-800 text-slate-500 border-slate-700/50'
-                }`}
-              >
-                {player.is_online ? t('profile:online') : t('profile:offline')}
-              </span>
-
-              {player.rank_badge_theme && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 border border-slate-700/50 text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
-                  {player.rank_badge_theme}
-                </span>
-              )}
+    <div className="flex flex-1 flex-col gap-5 font-sans text-slate-100 md:gap-6">
+      <Panel as="section" padding="roomy" className="relative overflow-hidden animate-fade-in">
+        <div className="absolute inset-x-0 top-0 h-1 bg-accent-strong opacity-70" />
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+          <ProfileAvatarBadge
+            avatarText={player.avatar_text}
+            backgroundColor={player.avatar_background_color}
+            displayName={player.display_name}
+            label={player.display_name}
+            className="h-20 w-20 border border-white/10 text-2xl shadow-xl shadow-black/20 sm:h-24 sm:w-24"
+          />
+          <div className="min-w-0 flex-1 text-center sm:text-left">
+            <div className="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap">
+              <h1 className="max-w-full truncate text-2xl font-bold text-slate-100">
+                {player.display_name}
+              </h1>
+              <div className="flex items-center gap-2">
+                <Badge
+                  tone={player.is_online ? 'success' : 'neutral'}
+                  size="sm"
+                  className={player.is_online ? 'animate-pulse' : undefined}
+                >
+                  {player.is_online ? t('profile:online') : t('profile:offline')}
+                </Badge>
+                {player.rank_badge_theme ? (
+                  <Badge size="xs">{player.rank_badge_theme}</Badge>
+                ) : null}
+              </div>
             </div>
+            <p className="mt-1 text-xs text-slate-500">
+              {t('profile:accountId', { id: player.account_id })}
+            </p>
+            {isOwnProfile && !isEditing ? (
+              <Button intent="secondary" size="sm" className="mt-3" onClick={handleStartEdit}>
+                <Edit2 className="h-3.5 w-3.5" aria-hidden="true" />
+                {t('profile:editProfile')}
+              </Button>
+            ) : null}
           </div>
-
-          <p className="text-slate-400 text-xs">
-            {t('profile:accountId', { id: player.account_id })}
-          </p>
-
-          {isOwnProfile && !isEditing && (
-            <button
-              onClick={handleStartEdit}
-              className="inline-flex h-9 items-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/60 px-4 text-xs font-semibold transition-colors cursor-pointer mt-2"
-            >
-              <Edit2 className="h-3.5 w-3.5" />
-              {t('profile:editProfile')}
-            </button>
-          )}
         </div>
-      </section>
+      </Panel>
 
       {/* Editing Form Sheet */}
       {isEditing && (
-        <section className="bg-slate-900 border border-purple-500/20 rounded-2xl p-6 space-y-4 animate-slide-down">
+        <Panel tone="accent" as="section" className="space-y-4 animate-slide-down">
           <h3 className="font-bold text-sm uppercase tracking-wider text-purple-400">
             {t('profile:edit.title')}
           </h3>
@@ -358,11 +352,11 @@ export function PlayerProfile() {
               </div>
             </div>
           </form>
-        </section>
+        </Panel>
       )}
 
       {isOwnProfile && (
-        <section className="border-y border-slate-800/80 py-6">
+        <section className="border-y border-border-subtle py-5">
           <div className="mb-4 flex items-center gap-2">
             <Languages className="h-4 w-4 text-purple-400" />
             <h3 className="text-sm font-bold uppercase text-purple-400">
@@ -378,7 +372,7 @@ export function PlayerProfile() {
       )}
 
       {isOwnProfile && (
-        <section className="border-b border-slate-800/80 pb-6">
+        <section className="border-b border-border-subtle pb-5">
           <div className="mb-4 flex items-center gap-2">
             <KeyRound className="h-4 w-4 text-purple-400" />
             <h3 className="text-sm font-bold uppercase text-purple-400">
@@ -472,183 +466,151 @@ export function PlayerProfile() {
 
           {activeTab === 'stats' ? (
             isStatsLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {[1, 2, 3].map((n) => (
-                  <div
-                    key={n}
-                    className="h-28 bg-slate-900/30 border border-slate-800/80 rounded-xl animate-pulse"
-                  />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <Skeleton key={n} className="h-28" />
                 ))}
               </div>
             ) : !stats ? (
-              <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-8 text-center text-slate-500 text-sm">
+              <Panel tone="sunken" className="p-8 text-center text-sm text-slate-500">
                 {t('profile:stats.empty')}
-              </div>
+              </Panel>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 animate-fade-in">
-                <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    {t('profile:stats.matchesPlayed')}
-                  </span>
-                  <span className="text-2xl font-bold mt-2 text-slate-200">
-                    {stats.matches_played}
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-1">
-                    {t('profile:stats.profitable', {
-                      value:
-                        stats.matches_played > 0
-                          ? `${((stats.profitable_matches / stats.matches_played) * 100).toFixed(0)}%`
-                          : '0%',
-                    })}
-                  </span>
-                </div>
-
-                <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    {t('profile:stats.handsDealt')}
-                  </span>
-                  <span className="text-2xl font-bold mt-2 text-slate-200">
-                    {stats.dealt_hands}
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-1">
-                    {t('profile:stats.handsWon', {
-                      won: stats.won_hands,
-                      rate:
-                        stats.dealt_hands > 0
-                          ? `${((stats.won_hands / stats.dealt_hands) * 100).toFixed(1)}%`
-                          : '0%',
-                    })}
-                  </span>
-                </div>
-
-                <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    {t('profile:stats.vpip')}
-                  </span>
-                  <span className="text-2xl font-bold mt-2 text-slate-200">
-                    {formatPercent(stats.vpip_rate)}
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-1">
-                    {t('profile:stats.vpipHint')}
-                  </span>
-                </div>
-
-                <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    {t('profile:stats.pfr')}
-                  </span>
-                  <span className="text-2xl font-bold mt-2 text-slate-200">
-                    {formatPercent(stats.pfr_rate)}
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-1">
-                    {t('profile:stats.pfrHint')}
-                  </span>
-                </div>
-
-                <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    {t('profile:stats.threeBet')}
-                  </span>
-                  <span className="text-2xl font-bold mt-2 text-slate-200">
-                    {formatPercent(stats.three_bet_rate)}
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-1">
-                    {t('profile:stats.threeBetHint')}
-                  </span>
-                </div>
-
-                <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    {t('profile:stats.showdownWin')}
-                  </span>
-                  <span className="text-2xl font-bold mt-2 text-slate-200">
-                    {formatPercent(stats.showdown_win_rate)}
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-1">
-                    {t('profile:stats.showdownRate', {
-                      value: stats.showdown_rate
-                        ? `${(stats.showdown_rate * 100).toFixed(0)}%`
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 animate-fade-in">
+                <StatTile
+                  label={t('profile:stats.matchesPlayed')}
+                  detail={t('profile:stats.profitable', {
+                    value:
+                      stats.matches_played > 0
+                        ? `${((stats.profitable_matches / stats.matches_played) * 100).toFixed(0)}%`
                         : '0%',
-                    })}
-                  </span>
-                </div>
-
-                <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    {t('profile:stats.averagePot')}
-                  </span>
-                  <span className="text-2xl font-bold mt-2 text-slate-200">
-                    {stats.average_pot !== null && stats.average_pot !== undefined
-                      ? `${stats.average_pot.toFixed(0)}`
-                      : t('profile:stats.insufficient')}
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-1">
-                    {t('profile:stats.averagePotHint')}
-                  </span>
-                </div>
-
-                <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    {t('profile:stats.foldRate')}
-                  </span>
-                  <span className="text-2xl font-bold mt-2 text-slate-200">
-                    {formatPercent(stats.fold_rate)}
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-1">
-                    {t('profile:stats.foldRateHint')}
-                  </span>
-                </div>
-
-                <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    {t('profile:stats.allIns')}
-                  </span>
-                  <span className="text-2xl font-bold mt-2 text-slate-200">{stats.all_ins}</span>
-                  <span className="text-[10px] text-slate-500 mt-1">
-                    {t('profile:stats.allInsHint')}
-                  </span>
-                </div>
+                  })}
+                  size="lg"
+                >
+                  {stats.matches_played}
+                </StatTile>
+                <StatTile
+                  label={t('profile:stats.handsDealt')}
+                  detail={t('profile:stats.handsWon', {
+                    won: stats.won_hands,
+                    rate:
+                      stats.dealt_hands > 0
+                        ? `${((stats.won_hands / stats.dealt_hands) * 100).toFixed(1)}%`
+                        : '0%',
+                  })}
+                  size="lg"
+                >
+                  {stats.dealt_hands}
+                </StatTile>
+                <StatTile
+                  label={t('profile:stats.vpip')}
+                  detail={t('profile:stats.vpipHint')}
+                  size="lg"
+                >
+                  {formatPercent(stats.vpip_rate)}
+                </StatTile>
+                <StatTile
+                  label={t('profile:stats.pfr')}
+                  detail={t('profile:stats.pfrHint')}
+                  size="lg"
+                >
+                  {formatPercent(stats.pfr_rate)}
+                </StatTile>
+                <StatTile
+                  label={t('profile:stats.threeBet')}
+                  detail={t('profile:stats.threeBetHint')}
+                  size="lg"
+                >
+                  {formatPercent(stats.three_bet_rate)}
+                </StatTile>
+                <StatTile
+                  label={t('profile:stats.showdownWin')}
+                  detail={t('profile:stats.showdownRate', {
+                    value: stats.showdown_rate
+                      ? `${(stats.showdown_rate * 100).toFixed(0)}%`
+                      : '0%',
+                  })}
+                  size="lg"
+                >
+                  {formatPercent(stats.showdown_win_rate)}
+                </StatTile>
+                <StatTile
+                  label={t('profile:stats.averagePot')}
+                  detail={t('profile:stats.averagePotHint')}
+                  size="lg"
+                >
+                  {stats.average_pot !== null && stats.average_pot !== undefined
+                    ? stats.average_pot.toFixed(0)
+                    : t('profile:stats.insufficient')}
+                </StatTile>
+                <StatTile
+                  label={t('profile:stats.foldRate')}
+                  detail={t('profile:stats.foldRateHint')}
+                  size="lg"
+                >
+                  {formatPercent(stats.fold_rate)}
+                </StatTile>
+                <StatTile
+                  label={t('profile:stats.allIns')}
+                  detail={t('profile:stats.allInsHint')}
+                  size="lg"
+                >
+                  {stats.all_ins}
+                </StatTile>
               </div>
             )
           ) : isMatchesLoading ? (
-            <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-8 h-48 animate-pulse" />
-          ) : !matches || !matches.items || matches.items.length === 0 ? (
-            <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-8 text-center text-slate-500 text-sm">
-              {t('profile:history.empty')}
+            <div className="space-y-3">
+              {[1, 2, 3].map((n) => (
+                <Skeleton key={n} className="h-20" />
+              ))}
             </div>
+          ) : !matches || !matches.items || matches.items.length === 0 ? (
+            <Panel tone="sunken" className="p-8 text-center text-sm text-slate-500">
+              {t('profile:history.empty')}
+            </Panel>
           ) : (
             <div className="space-y-3 animate-fade-in">
               {matches.items.map((m) => (
                 <div
                   key={m.match_id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedMatchId(m.match_id)}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-900/30 border border-slate-800/80 hover:border-purple-500/30 rounded-xl cursor-pointer transition-colors"
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') setSelectedMatchId(m.match_id);
+                  }}
+                  className="cursor-pointer rounded-panel transition-colors hover:border-accent-border"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <History className="h-4 w-4 text-purple-400" />
-                      <span className="font-bold text-sm text-slate-200">
-                        {t('profile:history.matchId', { id: `${m.match_id.slice(0, 8)}...` })}
-                      </span>
-                      {m.void_reason && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
-                          {t('profile:history.void')}
+                  <Panel padding="default" className="hover:bg-surface-raised">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <History
+                            className="h-4 w-4 shrink-0 text-accent-text"
+                            aria-hidden="true"
+                          />
+                          <span className="truncate text-sm font-bold text-slate-200">
+                            {t('profile:history.matchId', { id: `${m.match_id.slice(0, 8)}...` })}
+                          </span>
+                          {m.void_reason ? (
+                            <Badge tone="danger" size="xs">
+                              {t('profile:history.void')}
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <p className="text-[10px] text-slate-500">
+                          {t('profile:history.started', { value: formatDateTime(m.started_at) })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs sm:shrink-0">
+                        <Badge size="xs">{enumLabel('endMode', m.end_mode)}</Badge>
+                        <span className="text-slate-500 tabular-nums">
+                          {t('profile:history.players', { value: m.players?.length || 0 })}
                         </span>
-                      )}
+                      </div>
                     </div>
-                    <p className="text-[10px] text-slate-500">
-                      {t('profile:history.started', { value: formatDateTime(m.started_at) })}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3 mt-2 sm:mt-0 text-xs">
-                    <span className="text-slate-400 uppercase tracking-wide text-[10px] font-semibold bg-slate-950/40 border border-slate-800 px-2 py-0.5 rounded">
-                      {enumLabel('endMode', m.end_mode)}
-                    </span>
-                    <span className="text-slate-500">
-                      {t('profile:history.players', { value: m.players?.length || 0 })}
-                    </span>
-                  </div>
+                  </Panel>
                 </div>
               ))}
             </div>
@@ -663,52 +625,53 @@ export function PlayerProfile() {
           </div>
 
           {isRatingsLoading ? (
-            <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-6 h-64 animate-pulse"></div>
+            <Skeleton className="h-64" />
           ) : !ratings || !ratings.items || ratings.items.length === 0 ? (
-            <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl p-8 text-center text-slate-500 text-sm">
+            <Panel tone="sunken" className="p-8 text-center text-sm text-slate-500">
               {t('profile:elo.empty')}
-            </div>
+            </Panel>
           ) : (
-            <div className="bg-slate-900/30 border border-slate-800/80 rounded-xl divide-y divide-slate-800 overflow-hidden">
+            <Panel padding="none" className="divide-y divide-border-subtle overflow-hidden">
               {ratings.items.map((record: PlayerRatingHistoryEntry, index: number) => (
                 <div
                   key={`${record.match_id}-${index}`}
-                  className="flex items-center justify-between p-4 hover:bg-slate-900/20 transition-colors"
+                  className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-surface-hover"
                 >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-semibold text-slate-300">
+                  <div className="min-w-0">
+                    <span className="block truncate text-xs font-semibold text-slate-300">
                       {t('profile:history.matchId', {
                         id: record.match_id
                           ? record.match_id.slice(0, 8)
                           : t('profile:elo.bootstrap'),
                       })}
                     </span>
-                    <span className="text-[10px] text-slate-500 flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
+                    <span className="mt-1 flex items-center gap-1 text-[10px] text-slate-500">
+                      <Calendar className="h-3 w-3" aria-hidden="true" />
                       {record.created_at
                         ? formatDate(record.created_at)
                         : t('profile:elo.unknownDate')}
                     </span>
                   </div>
-
-                  <div className="flex items-center gap-3">
+                  <div className="flex shrink-0 items-center gap-3 tabular-nums">
                     <span className="text-sm font-bold text-slate-200">
                       {record.after_rating.toFixed(0)}
                     </span>
-                    {record.delta !== 0 && (
+                    {record.delta !== 0 ? (
                       <span
-                        className={`text-xs font-bold ${
-                          record.delta >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                        }`}
+                        className={
+                          record.delta >= 0
+                            ? 'text-xs font-bold text-success'
+                            : 'text-xs font-bold text-danger'
+                        }
                       >
                         {record.delta >= 0 ? '+' : ''}
                         {record.delta.toFixed(0)}
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               ))}
-            </div>
+            </Panel>
           )}
         </section>
       </div>
@@ -818,32 +781,8 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
   const enumLabel = useEnumLabel();
   const { formatChips } = useFormatters();
 
-  // Render cards helper
-  const renderMiniCard = (cardStr: string) => {
-    if (!cardStr || cardStr.length < 2) return null;
-    const rankCode = cardStr.slice(0, -1).toUpperCase();
-    const rank = RANK_LABELS[rankCode] ?? rankCode;
-    const suitSymbol = cardStr.slice(-1);
-    const suitsMap: Record<string, { char: string; color: string }> = {
-      s: { char: '♠', color: 'text-slate-800' },
-      h: { char: '♥', color: 'text-rose-500' },
-      d: { char: '♦', color: 'text-rose-500' },
-      c: { char: '♣', color: 'text-slate-800' },
-    };
-    const suit = suitsMap[suitSymbol] || { char: suitSymbol, color: 'text-slate-400' };
-
-    return (
-      <div className="w-8 h-12 bg-white text-slate-900 border border-slate-300 rounded flex flex-col justify-between p-1 shadow-sm font-sans select-none text-left text-[10px] font-bold">
-        <span className="leading-none">{rank}</span>
-        <span className={`text-center text-sm font-bold leading-none ${suit.color}`}>
-          {suit.char}
-        </span>
-      </div>
-    );
-  };
-
   return (
-    <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl overflow-hidden">
+    <Panel tone="sunken" padding="none" className="overflow-hidden">
       {/* Header bar */}
       <div
         onClick={() => setExpanded(!expanded)}
@@ -863,15 +802,13 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
 
         <div className="flex items-center gap-3">
           {/* Small community cards list */}
-          {hand.public_board && hand.public_board.length > 0 && (
+          {hand.public_board && hand.public_board.length > 0 ? (
             <div className="flex gap-1">
               {hand.public_board.map((card: string, idx: number) => (
-                <div key={idx} className="scale-75 origin-center">
-                  {renderMiniCard(card)}
-                </div>
+                <PlayingCard key={`${card}-${idx}`} card={card} size="mini" />
               ))}
             </div>
-          )}
+          ) : null}
 
           {expanded ? (
             <ChevronUp className="h-4 w-4 text-slate-500" />
@@ -944,7 +881,7 @@ function HandRow({ hand }: { hand: HandHistoryResponse }) {
           )}
         </div>
       )}
-    </div>
+    </Panel>
   );
 }
 

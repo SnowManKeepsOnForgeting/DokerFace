@@ -1,5 +1,12 @@
 {
   "panelTitle": "Control Panel",
+  "actions": {
+    "retry": "Retry",
+    "close": "Close"
+  },
+  "states": {
+    "loadFailed": "Unable to load this view"
+  },
   "tabs": {
     "accounts": "Accounts Console",
     "rooms": "Active Rooms",
@@ -8,6 +15,18 @@
     "audits": "Audit Logs"
   },
   "accounts": {
+    "summary": "Manage access, roles, and account status.",
+    "stats": {
+      "total": "Total accounts",
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "searchLabel": "Search",
+    "roleFilter": "Role",
+    "statusFilter": "Status",
+    "filterAll": "All",
+    "roleFor": "Role for {{name}}",
+    "statusFor": "Status for {{name}}",
     "searchPlaceholder": "Search accounts...",
     "create": "Create Account",
     "empty": "No accounts found.",

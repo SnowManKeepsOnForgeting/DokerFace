@@ -3,7 +3,10 @@
   "subtitle": "创建或加入一张牌桌，房间列表会实时同步。",
   "createTable": "创建牌桌",
   "defaultRoomName": "{{name}} 的房间",
+  "searchLabel": "搜索房间",
   "searchPlaceholder": "按名称搜索房间…",
+  "loadingLabel": "正在加载房间",
+  "close": "关闭",
   "filters": {
     "all": "全部",
     "waiting": "等待中",
@@ -27,6 +30,8 @@
     "matchMode": "结束方式：",
     "capacity": "人数：",
     "capacityValue": "{{current}} / {{max}} 人",
+    "public": "公开房间",
+    "private": "私密房间",
     "spectate": "观战",
     "join": "加入牌桌"
   },

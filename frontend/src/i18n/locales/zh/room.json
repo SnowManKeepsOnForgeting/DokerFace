@@ -9,6 +9,7 @@
     "startMatch": "开始对局",
     "players": "玩家（{{value}}）",
     "sendEmote": "发送表情",
+    "sendSpecificEmote": "发送 {{emote}} 表情",
     "chatTitle": "房间聊天",
     "chatEmpty": "暂无聊天消息。",
     "chatPlaceholder": "输入消息…",
@@ -21,6 +22,8 @@
     "ready": "已准备",
     "notReady": "未准备",
     "kick": "移出该玩家",
+    "host": "房主",
+    "activeEmote": "当前表情",
     "avatarLabel": "{{name}} 的头像"
   },
   "leaveError": {

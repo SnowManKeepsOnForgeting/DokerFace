@@ -3,7 +3,10 @@
   "subtitle": "Create or join a poker table. Realtime rooms updates are synced automatically.",
   "createTable": "Create Table",
   "defaultRoomName": "{{name}}'s Room",
+  "searchLabel": "Search rooms",
   "searchPlaceholder": "Search rooms by name...",
+  "loadingLabel": "Loading rooms",
+  "close": "Close",
   "filters": {
     "all": "All",
     "waiting": "Waiting",
@@ -27,6 +30,8 @@
     "matchMode": "Match Mode:",
     "capacity": "Capacity:",
     "capacityValue": "{{current}} / {{max}} players",
+    "public": "Public room",
+    "private": "Private room",
     "spectate": "Spectate",
     "join": "Join Table"
   },

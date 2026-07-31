@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
-import { leaderboardApiV1LeaderboardGet } from '../contracts/rest';
 import { Search, Trophy, Medal, Award, Flame, Filter } from 'lucide-react';
+import { leaderboardApiV1LeaderboardGet } from '../contracts/rest';
 import { useTranslation } from 'react-i18next';
 import { useFormatters } from '../i18n/useFormatters';
+import { ProfileAvatarBadge } from '../components/ProfileAvatarBadge';
+import { Panel } from '../components/ui/Panel';
+import { Badge } from '../components/ui/Badge';
+import { StatTile } from '../components/ui/StatTile';
+import { Skeleton } from '../components/ui/Skeleton';
 
 export function Leaderboard() {
   const { t } = useTranslation('leaderboard');
@@ -28,112 +33,108 @@ export function Leaderboard() {
 
   const currentStats = data?.current_player_stats;
   const items = data?.items || [];
-
-  // Group top 3 and others
   const topThree = items.slice(0, 3);
   const rest = items.slice(3);
 
-  // Helper for ranking colors
   const getRankBadge = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Trophy className="h-5 w-5 text-amber-400" />;
+        return <Trophy className="h-4 w-4 text-warning" aria-hidden="true" />;
       case 2:
-        return <Medal className="h-5 w-5 text-slate-300" />;
+        return <Medal className="h-4 w-4 text-slate-300" aria-hidden="true" />;
       case 3:
-        return <Medal className="h-5 w-5 text-amber-700" />;
+        return <Medal className="h-4 w-4 text-warning" aria-hidden="true" />;
       default:
-        return <span className="font-mono text-xs text-slate-500 font-bold">#{rank}</span>;
+        return (
+          <span className="font-mono text-xs font-bold tabular-nums text-slate-500">#{rank}</span>
+        );
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col gap-6 md:gap-8 font-sans text-slate-100 max-w-6xl mx-auto w-full pb-12">
-      {/* Title & Description */}
-      <section className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent">
-            {t('title')}
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">{t('subtitle')}</p>
-        </div>
-      </section>
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 pb-10 font-sans text-slate-100 md:gap-6">
+      <header className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-100">{t('title')}</h1>
+        <p className="text-xs text-slate-500">{t('subtitle')}</p>
+      </header>
 
-      {/* Current Player Personal Stats Card */}
-      {currentStats && (
-        <section className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 border border-purple-500/20 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 animate-slide-down shadow-lg shadow-purple-950/10">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-              <Award className="h-6 w-6" />
+      {currentStats ? (
+        <Panel tone="accent" padding="default" as="section" className="animate-slide-down">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control border border-accent-border bg-accent-muted text-accent-text">
+                <Award className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold tracking-wider text-accent-text uppercase">
+                  {t('standing.label')}
+                </span>
+                <h2 className="mt-0.5 truncate text-base font-bold text-slate-100">
+                  {currentStats.rank
+                    ? t('standing.ranked', { rank: currentStats.rank })
+                    : t('standing.unranked')}
+                </h2>
+              </div>
             </div>
-            <div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400">
-                {t('standing.label')}
-              </span>
-              <h3 className="text-lg font-bold text-slate-100 mt-0.5">
-                {currentStats.rank
-                  ? t('standing.ranked', { rank: currentStats.rank })
-                  : t('standing.unranked')}
-              </h3>
-            </div>
-          </div>
-
-          <div className="flex gap-6 sm:gap-10 text-center sm:text-left">
-            <div>
-              <span className="text-[10px] text-slate-400 font-medium">{t('standing.rating')}</span>
-              <p className="text-lg font-bold text-slate-200 mt-0.5">{currentStats.rating}</p>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 font-medium">
-                {t('standing.peakRating')}
-              </span>
-              <p className="text-lg font-bold text-slate-200 mt-0.5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[32rem]">
+              <StatTile label={t('standing.rating')} size="sm">
+                {currentStats.rating}
+              </StatTile>
+              <StatTile label={t('standing.peakRating')} size="sm">
                 {currentStats.highest_rating}
-              </p>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 font-medium">
-                {t('standing.matches')}
-              </span>
-              <p className="text-lg font-bold text-slate-200 mt-0.5">
+              </StatTile>
+              <StatTile label={t('standing.matches')} size="sm">
                 {currentStats.completed_matches}
-              </p>
-            </div>
-            {currentStats.diff_to_previous_player !== null &&
-              currentStats.diff_to_previous_player > 0 && (
-                <div>
-                  <span className="text-[10px] text-purple-400 font-semibold flex items-center gap-1">
-                    <Flame className="h-3 w-3" /> {t('standing.nextTier')}
-                  </span>
-                  <p className="text-lg font-bold text-purple-300 mt-0.5">
-                    {t('standing.pointsToNext', { points: currentStats.diff_to_previous_player })}
-                  </p>
-                </div>
+              </StatTile>
+              {currentStats.diff_to_previous_player !== null &&
+              currentStats.diff_to_previous_player > 0 ? (
+                <StatTile
+                  label={
+                    <span className="inline-flex items-center gap-1">
+                      <Flame className="h-3 w-3" aria-hidden="true" /> {t('standing.nextTier')}
+                    </span>
+                  }
+                  tone="accent"
+                  size="sm"
+                >
+                  {t('standing.pointsToNext', { points: currentStats.diff_to_previous_player })}
+                </StatTile>
+              ) : (
+                <StatTile label={t('standing.nextTier')} tone="muted" size="sm">
+                  {t('standing.unranked')}
+                </StatTile>
               )}
+            </div>
           </div>
-        </section>
-      )}
+        </Panel>
+      ) : null}
 
-      {/* Filter and Search controls */}
-      <section className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+      <Panel
+        padding="tight"
+        as="section"
+        className="flex flex-col gap-3 md:flex-row md:items-center"
+      >
+        <div className="relative min-w-0 flex-1">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+            aria-hidden="true"
+          />
           <input
             type="text"
+            aria-label={t('filters.searchPlaceholder')}
             placeholder={t('filters.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-11 pl-10 pr-4 bg-slate-950/60 border border-slate-800 focus:border-purple-500/50 rounded-xl text-sm outline-none transition-all placeholder-slate-600"
+            className="h-10 w-full rounded-control border border-border-subtle bg-surface-sunken pl-10 pr-4 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-600 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15"
           />
         </div>
-
-        <div className="flex w-full md:w-auto gap-4 items-center justify-end">
-          {/* Badge Rank Filter */}
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
           <div className="relative">
             <select
+              aria-label={t('filters.allBadges')}
               value={rankFilter}
               onChange={(e) => setRankFilter(e.target.value)}
-              className="h-11 px-4 pr-8 bg-slate-950/60 border border-slate-800 focus:border-purple-500/50 rounded-xl text-sm outline-none appearance-none transition-all text-slate-300 cursor-pointer"
+              className="h-10 w-full appearance-none rounded-control border border-border-subtle bg-surface-sunken px-3 pr-8 text-xs text-slate-300 outline-none transition-colors focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15 sm:w-auto"
             >
               <option value="">{t('filters.allBadges')}</option>
               <option value="Bronze">Bronze</option>
@@ -144,202 +145,217 @@ export function Leaderboard() {
               <option value="blue">Blue</option>
               <option value="default">Default</option>
             </select>
-            <Filter className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+            <Filter
+              className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500"
+              aria-hidden="true"
+            />
           </div>
-
-          {/* Toggle with matches */}
-          <label className="flex items-center gap-2.5 cursor-pointer select-none py-2 text-xs font-semibold text-slate-400">
+          <label className="flex h-10 items-center justify-center gap-2 rounded-control border border-border-subtle bg-surface-sunken px-3 text-xs font-semibold text-slate-400">
             <input
               type="checkbox"
               checked={onlyWithMatches}
               onChange={(e) => setOnlyWithMatches(e.target.checked)}
-              className="rounded border-slate-800 bg-slate-950 text-purple-600 focus:ring-purple-500 focus:ring-offset-slate-950 h-4 w-4"
+              className="h-4 w-4 rounded border-border-subtle bg-slate-950 text-purple-600 focus:ring-purple-500 focus:ring-offset-slate-950"
             />
-            <span>{t('filters.activeOnly')}</span>
+            <span className="whitespace-nowrap">{t('filters.activeOnly')}</span>
           </label>
         </div>
-      </section>
+      </Panel>
 
       {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+        <div
+          className="grid grid-cols-1 gap-4 md:grid-cols-3"
+          aria-label={t('loadingLabel', 'Loading leaderboard')}
+        >
+          {[1, 2, 3].map((n) => (
+            <Skeleton key={n} className="h-56" />
+          ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl p-12 text-center text-slate-500 text-sm">
+        <Panel tone="sunken" className="p-12 text-center text-sm text-slate-500">
           {t('empty')}
-        </div>
+        </Panel>
       ) : (
-        <div className="space-y-8 animate-fade-in">
-          {/* Top 3 Podium Visual Layout */}
-          {topThree.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end pt-6 max-w-4xl mx-auto w-full">
-              {/* 2nd Place */}
-              {topThree[1] && (
-                <Link
-                  to={`/players/${topThree[1].account_id}`}
-                  className="bg-slate-900/30 border border-slate-800/80 hover:border-slate-700 rounded-2xl p-6 flex flex-col items-center text-center relative order-2 md:order-1 h-[240px] justify-between transition-all hover:scale-[1.02]"
-                >
-                  <div className="absolute top-4 left-4 bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded text-[10px] border border-slate-700">
-                    {t('podium.second')}
-                  </div>
-                  <div
-                    className="h-16 w-16 min-w-0 rounded-full flex items-center justify-center overflow-hidden px-1 text-center break-all whitespace-pre-wrap leading-tight text-white font-black text-2xl border-2 border-slate-400 shadow-md"
-                    style={{ backgroundColor: topThree[1].avatar_background_color || '#4f46e5' }}
-                  >
-                    {topThree[1].avatar_text || topThree[1].display_name.slice(0, 2)}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-slate-200 mt-2 truncate max-w-[150px]">
-                      {topThree[1].display_name}
-                    </h4>
-                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider bg-slate-950/40 border border-slate-800 px-1.5 py-0.5 rounded">
-                      {topThree[1].rank_badge_theme}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xl font-black text-slate-100">{topThree[1].rating}</p>
-                    <p className="text-[10px] text-slate-500 font-medium">
-                      {t('podium.winRate', {
-                        value: formatPercent(topThree[1].win_rate, 0),
-                      })}
-                    </p>
-                  </div>
-                </Link>
-              )}
+        <div className="space-y-5 animate-fade-in">
+          <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-3 md:gap-4">
+            {topThree[1] ? (
+              <PodiumCard
+                entry={topThree[1]}
+                place="second"
+                label={t('podium.second')}
+                winRate={formatPercent(topThree[1].win_rate, 0)}
+              />
+            ) : (
+              <div className="hidden md:block" />
+            )}
+            {topThree[0] ? (
+              <PodiumCard
+                entry={topThree[0]}
+                place="first"
+                label={t('podium.champion')}
+                winRate={formatPercent(topThree[0].win_rate, 0)}
+              />
+            ) : null}
+            {topThree[2] ? (
+              <PodiumCard
+                entry={topThree[2]}
+                place="third"
+                label={t('podium.third')}
+                winRate={formatPercent(topThree[2].win_rate, 0)}
+              />
+            ) : (
+              <div className="hidden md:block" />
+            )}
+          </div>
 
-              {/* 1st Place */}
-              {topThree[0] && (
-                <Link
-                  to={`/players/${topThree[0].account_id}`}
-                  className="bg-purple-900/10 border-2 border-purple-500/30 hover:border-purple-500/50 rounded-2xl p-6 flex flex-col items-center text-center relative order-1 md:order-2 h-[270px] justify-between shadow-xl shadow-purple-950/10 transition-all hover:scale-[1.02]"
-                >
-                  <div className="absolute top-4 left-4 bg-amber-500/10 text-amber-400 font-black px-2.5 py-0.5 rounded text-[10px] border border-amber-500/20 flex items-center gap-1">
-                    <Trophy className="h-3 w-3" /> {t('podium.champion')}
-                  </div>
-                  <div
-                    className="h-20 w-20 min-w-0 rounded-full flex items-center justify-center overflow-hidden px-1 text-center break-all whitespace-pre-wrap leading-tight text-white font-black text-2xl border-2 border-amber-400 shadow-lg shadow-purple-500/20"
-                    style={{ backgroundColor: topThree[0].avatar_background_color || '#4f46e5' }}
-                  >
-                    {topThree[0].avatar_text || topThree[0].display_name.slice(0, 2)}
-                  </div>
-                  <div>
-                    <h4 className="font-black text-base text-slate-100 mt-2 truncate max-w-[170px]">
-                      {topThree[0].display_name}
-                    </h4>
-                    <span className="text-[9px] font-semibold text-purple-400 uppercase tracking-wider bg-purple-950/50 border border-purple-800/40 px-1.5 py-0.5 rounded">
-                      {topThree[0].rank_badge_theme}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-black text-amber-400">{topThree[0].rating}</p>
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      {t('podium.winRate', {
-                        value: formatPercent(topThree[0].win_rate, 0),
-                      })}
-                    </p>
-                  </div>
-                </Link>
-              )}
-
-              {/* 3rd Place */}
-              {topThree[2] && (
-                <Link
-                  to={`/players/${topThree[2].account_id}`}
-                  className="bg-slate-900/30 border border-slate-800/80 hover:border-slate-700 rounded-2xl p-6 flex flex-col items-center text-center relative order-3 md:order-3 h-[220px] justify-between transition-all hover:scale-[1.02]"
-                >
-                  <div className="absolute top-4 left-4 bg-slate-800 text-amber-700 font-bold px-2 py-0.5 rounded text-[10px] border border-slate-700">
-                    {t('podium.third')}
-                  </div>
-                  <div
-                    className="h-14 w-14 min-w-0 rounded-full flex items-center justify-center overflow-hidden px-1 text-center break-all whitespace-pre-wrap leading-tight text-white font-black text-xl border-2 border-amber-700 shadow-sm"
-                    style={{ backgroundColor: topThree[2].avatar_background_color || '#4f46e5' }}
-                  >
-                    {topThree[2].avatar_text || topThree[2].display_name.slice(0, 2)}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-slate-200 mt-2 truncate max-w-[150px]">
-                      {topThree[2].display_name}
-                    </h4>
-                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider bg-slate-950/40 border border-slate-800 px-1.5 py-0.5 rounded">
-                      {topThree[2].rank_badge_theme}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-lg font-black text-slate-200">{topThree[2].rating}</p>
-                    <p className="text-[10px] text-slate-500 font-medium">
-                      {t('podium.winRate', {
-                        value: formatPercent(topThree[2].win_rate, 0),
-                      })}
-                    </p>
-                  </div>
-                </Link>
-              )}
-            </div>
-          )}
-
-          {/* Leaderboard Table (Ranks 4+) */}
-          {rest.length > 0 && (
-            <div className="bg-slate-900/20 border border-slate-800/80 rounded-2xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-800/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-950/20">
-                      <th className="py-4 px-6 text-center w-16">{t('table.rank')}</th>
-                      <th className="py-4 px-6">{t('table.player')}</th>
-                      <th className="py-4 px-6 text-center">{t('table.badge')}</th>
-                      <th className="py-4 px-6 text-right">{t('table.rating')}</th>
-                      <th className="py-4 px-6 text-right">{t('table.highestRating')}</th>
-                      <th className="py-4 px-6 text-right">{t('table.matches')}</th>
-                      <th className="py-4 px-6 text-right">{t('table.winRate')}</th>
+          {rest.length > 0 ? (
+            <Panel padding="none" as="section" className="overflow-hidden">
+              <div className="overflow-x-auto scrollbar-thin">
+                <table className="w-full border-collapse text-left">
+                  <thead className="hidden border-b border-border-subtle bg-surface-sunken text-[10px] font-bold tracking-wider text-slate-500 uppercase md:table-header-group">
+                    <tr>
+                      <th className="w-16 px-5 py-3 text-center">{t('table.rank')}</th>
+                      <th className="px-5 py-3">{t('table.player')}</th>
+                      <th className="px-5 py-3 text-center">{t('table.badge')}</th>
+                      <th className="px-5 py-3 text-right">{t('table.rating')}</th>
+                      <th className="px-5 py-3 text-right">{t('table.highestRating')}</th>
+                      <th className="px-5 py-3 text-right">{t('table.matches')}</th>
+                      <th className="px-5 py-3 text-right">{t('table.winRate')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/40 text-xs">
-                    {rest.map((p) => (
-                      <tr key={p.account_id} className="hover:bg-slate-900/10 transition-colors">
-                        <td className="py-4 px-6 text-center">{getRankBadge(p.rank)}</td>
-                        <td className="py-4 px-6">
-                          <Link
-                            to={`/players/${p.account_id}`}
-                            className="flex items-center gap-3 group"
-                          >
-                            <div
-                              className="h-8 w-8 min-w-0 rounded-full flex items-center justify-center overflow-hidden px-0.5 text-center break-all whitespace-pre-wrap leading-tight text-white font-bold text-xs shrink-0 shadow-sm"
-                              style={{ backgroundColor: p.avatar_background_color || '#4f46e5' }}
-                            >
-                              {p.avatar_text || p.display_name.slice(0, 2)}
-                            </div>
-                            <span className="font-bold text-slate-200 group-hover:text-purple-400 transition-colors truncate max-w-[150px]">
-                              {p.display_name}
-                            </span>
-                          </Link>
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <span className="inline-flex px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded bg-slate-900 text-slate-400 border border-slate-800/80">
-                            {p.rank_badge_theme}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 text-right font-bold text-slate-200">
-                          {p.rating}
-                        </td>
-                        <td className="py-4 px-6 text-right font-medium text-slate-400">
-                          {p.highest_rating}
-                        </td>
-                        <td className="py-4 px-6 text-right font-medium text-slate-400">
-                          {p.completed_matches}
-                        </td>
-                        <td className="py-4 px-6 text-right font-bold text-emerald-400">
-                          {formatPercent(p.win_rate, 0)}
-                        </td>
-                      </tr>
+                  <tbody className="divide-y divide-border-subtle text-xs">
+                    {rest.map((entry) => (
+                      <LeaderboardTableRow
+                        key={entry.account_id}
+                        entry={entry}
+                        getRankBadge={getRankBadge}
+                      />
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
-          )}
+            </Panel>
+          ) : null}
         </div>
       )}
     </div>
   );
 }
+
+type LeaderboardEntry = NonNullable<
+  Awaited<ReturnType<typeof leaderboardApiV1LeaderboardGet>>
+>['items'][number];
+
+type PodiumPlace = 'first' | 'second' | 'third';
+
+function PodiumCard({
+  entry,
+  place,
+  label,
+  winRate,
+}: {
+  entry: LeaderboardEntry;
+  place: PodiumPlace;
+  label: string;
+  winRate: string;
+}) {
+  const { t } = useTranslation('leaderboard');
+  const isFirst = place === 'first';
+  return (
+    <Link
+      to={`/players/${entry.account_id}`}
+      className={`group relative flex min-h-52 flex-col items-center justify-between overflow-hidden rounded-panel border p-5 text-center transition-all hover:-translate-y-1 hover:border-accent-border ${
+        isFirst
+          ? 'order-first border-accent-border bg-accent-muted shadow-lg shadow-purple-950/20 md:order-none md:min-h-60'
+          : 'border-border-subtle bg-surface'
+      }`}
+    >
+      <div className="flex w-full items-center justify-between">
+        <Badge size="xs" tone={isFirst ? 'warning' : 'neutral'}>
+          {isFirst ? <Trophy className="h-3 w-3" aria-hidden="true" /> : null}
+          {label}
+        </Badge>
+        <span className="font-mono text-xs tabular-nums text-slate-500">#{entry.rank}</span>
+      </div>
+      <ProfileAvatarBadge
+        avatarText={entry.avatar_text}
+        backgroundColor={entry.avatar_background_color}
+        displayName={entry.display_name}
+        label={entry.display_name}
+        className={
+          isFirst
+            ? 'h-20 w-20 border-2 border-warning text-2xl shadow-lg'
+            : 'h-16 w-16 border border-border-strong text-xl'
+        }
+      />
+      <div className="min-w-0 max-w-full">
+        <h3 className="truncate text-sm font-bold text-slate-100 group-hover:text-accent-text">
+          {entry.display_name}
+        </h3>
+        <Badge size="xs" tone={isFirst ? 'accent' : 'neutral'} className="mt-1 max-w-full truncate">
+          {entry.rank_badge_theme}
+        </Badge>
+      </div>
+      <div>
+        <p
+          className={`font-black tabular-nums ${isFirst ? 'text-2xl text-warning' : 'text-xl text-slate-100'}`}
+        >
+          {entry.rating}
+        </p>
+        <p className="text-[10px] font-medium text-slate-500">
+          {t('podium.winRate', { value: winRate })}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+function LeaderboardTableRow({
+  entry,
+  getRankBadge,
+}: {
+  entry: LeaderboardEntry;
+  getRankBadge: (rank: number) => React.ReactNode;
+}) {
+  const { formatPercent } = useFormatters();
+  return (
+    <tr className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-2 p-4 transition-colors hover:bg-surface-hover md:table-row md:p-0">
+      <td className="row-span-2 px-0 py-0 text-center md:table-cell md:px-5 md:py-3">
+        {getRankBadge(entry.rank)}
+      </td>
+      <td className="min-w-0 px-0 py-0 md:table-cell md:px-5 md:py-3">
+        <Link to={`/players/${entry.account_id}`} className="group flex min-w-0 items-center gap-3">
+          <ProfileAvatarBadge
+            avatarText={entry.avatar_text}
+            backgroundColor={entry.avatar_background_color}
+            displayName={entry.display_name}
+            label={entry.display_name}
+            className="h-8 w-8 text-xs"
+          />
+          <span className="truncate font-bold text-slate-200 group-hover:text-accent-text">
+            {entry.display_name}
+          </span>
+        </Link>
+      </td>
+      <td className="hidden px-5 py-3 text-center md:table-cell">
+        <Badge size="xs" tone="neutral">
+          {entry.rank_badge_theme}
+        </Badge>
+      </td>
+      <td className="px-0 py-0 text-right font-bold tabular-nums text-slate-200 md:table-cell md:px-5 md:py-3">
+        {entry.rating}
+      </td>
+      <td className="hidden px-5 py-3 text-right font-medium tabular-nums text-slate-400 md:table-cell">
+        {entry.highest_rating}
+      </td>
+      <td className="hidden px-5 py-3 text-right font-medium tabular-nums text-slate-400 md:table-cell">
+        {entry.completed_matches}
+      </td>
+      <td className="col-start-2 px-0 py-0 text-[10px] font-bold tabular-nums text-success md:table-cell md:px-5 md:py-3 md:text-right md:text-xs">
+        {formatPercent(entry.win_rate, 0)}
+      </td>
+    </tr>
+  );
+}
+
 export default Leaderboard;

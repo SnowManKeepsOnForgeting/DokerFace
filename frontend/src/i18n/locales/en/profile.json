@@ -1,5 +1,6 @@
 {
   "notFound": "Player profile not found.",
+  "loading": "Loading player profile…",
   "online": "Online",
   "offline": "Offline",
   "accountId": "Account ID: {{id}}",
