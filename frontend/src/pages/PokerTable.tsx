@@ -7,6 +7,7 @@ import { PlayingCard, CardBack } from '../components/PlayingCard';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { useReducedMotion } from '../lib/useReducedMotion';
+import { orderPlayersForViewer } from '../lib/tableSeats';
 import type { ActionType } from '../contracts/realtime';
 import {
   Clock,
@@ -128,6 +129,19 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
     quitMatch,
   } = useGameStore();
 
+  const activeSnapshot = publicSnapshot ?? privateSnapshot;
+  const sameHandPrivateSnapshot =
+    activeSnapshot &&
+    privateSnapshot?.match_id === activeSnapshot.match_id &&
+    privateSnapshot.hand_id === activeSnapshot.hand_id
+      ? privateSnapshot
+      : null;
+  const currentPrivateSnapshot =
+    sameHandPrivateSnapshot?.state_version === activeSnapshot?.state_version
+      ? sameHandPrivateSnapshot
+      : null;
+  const visibleHoleCards = sameHandPrivateSnapshot?.hole_cards ?? [];
+
   const [betAmount, setBetAmount] = useState<number>(0);
   const [showEmotesMenu, setShowEmotesMenu] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -169,16 +183,15 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   // snapshot and reconnect jumps become a new baseline, so reconnecting never
   // replays every missed action or deals the whole board audibly.
   useEffect(() => {
-    const nextSnapshot = privateSnapshot ?? publicSnapshot;
     const heroAccountId = user?.account_id;
-    if (!nextSnapshot || heroAccountId === undefined) return;
+    if (!activeSnapshot || heroAccountId === undefined) return;
 
     const previousSnapshot = previousSnapshotRef.current;
-    for (const soundCue of deriveSoundCues(previousSnapshot, nextSnapshot, heroAccountId)) {
+    for (const soundCue of deriveSoundCues(previousSnapshot, activeSnapshot, heroAccountId)) {
       play(soundCue.cue);
     }
-    previousSnapshotRef.current = nextSnapshot;
-  }, [privateSnapshot, play, publicSnapshot, user?.account_id]);
+    previousSnapshotRef.current = activeSnapshot;
+  }, [activeSnapshot, play, user?.account_id]);
 
   useEffect(() => {
     const heroAccountId = user?.account_id;
@@ -214,15 +227,15 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   };
 
   const handleQuit = async () => {
-    if (isQuitting || !privateSnapshot) return;
+    if (isQuitting || !activeSnapshot) return;
     setIsQuitting(true);
     setLeaveError(null);
     const response = await quitMatch({
       schema_version: 1,
       command_id: createCommandId(),
-      match_id: privateSnapshot.match_id,
-      hand_id: privateSnapshot.hand_id,
-      state_version: privateSnapshot.state_version,
+      match_id: activeSnapshot.match_id,
+      hand_id: activeSnapshot.hand_id,
+      state_version: activeSnapshot.state_version,
     });
     if (response.ok) {
       setIsQuitting(false);
@@ -241,12 +254,8 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
     setChatInput('');
   };
 
-  // Active snapshot choice (Hero private state takes precedence)
-  const activeSnapshot = privateSnapshot || publicSnapshot;
-
-  // Active player info
+  // Public state advances immediately; same-hand private data only augments it.
   const myPlayer = activeSnapshot?.players.find((p) => p.account_id === user?.account_id);
-  const mySeat = myPlayer?.seat ?? 0;
 
   if (!activeSnapshot) {
     return (
@@ -273,14 +282,10 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const totalPot = pot_amounts.reduce((sum, amt) => sum + amt, 0);
   const isMyTurn = actor_account_id === user?.account_id;
   // The mobile action bar is pinned to the viewport bottom, so it overlays the table stage.
-  const showActionBar = isMyTurn && Boolean(privateSnapshot);
-  const orderedPlayers = [...players].sort((left, right) => {
-    const leftPosition = (left.seat - mySeat + 8) % 8;
-    const rightPosition = (right.seat - mySeat + 8) % 8;
-    return leftPosition - rightPosition;
-  });
+  const showActionBar = isMyTurn && Boolean(currentPrivateSnapshot);
+  const orderedPlayers = orderPlayersForViewer(players, user?.account_id);
 
-  const betAction = privateSnapshot?.legal_actions.find(
+  const betAction = currentPrivateSnapshot?.legal_actions.find(
     (action) => action.action === 'bet_or_raise',
   );
   const minBetAmount = betAction?.min_amount ?? 10;
@@ -303,7 +308,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
   const handleAction = (
     actionName: 'fold' | 'check_or_call' | 'bet_or_raise' | 'show' | 'muck',
   ) => {
-    if (!privateSnapshot) return;
+    if (!currentPrivateSnapshot) return;
 
     let amount: number | undefined = undefined;
     if (actionName === 'bet_or_raise') {
@@ -311,9 +316,9 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
     }
 
     submitAction({
-      match_id: privateSnapshot.match_id,
-      hand_id: privateSnapshot.hand_id,
-      state_version: privateSnapshot.state_version,
+      match_id: currentPrivateSnapshot.match_id,
+      hand_id: currentPrivateSnapshot.hand_id,
+      state_version: currentPrivateSnapshot.state_version,
       action: actionName,
       amount,
       command_id: createCommandId(),
@@ -322,7 +327,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
   return (
     <div
-      className="relative flex min-h-full w-full flex-col bg-canvas font-sans lg:h-full lg:min-h-0"
+      className="relative flex min-h-full w-full flex-col overflow-x-clip bg-canvas font-sans lg:h-full lg:min-h-0"
       onPointerDown={prime}
     >
       {/* Hand status / stats bar */}
@@ -384,7 +389,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
           </button>
           <button
             onClick={() => void handleQuit()}
-            disabled={isLeaving || isQuitting || !privateSnapshot}
+            disabled={isLeaving || isQuitting || !activeSnapshot}
             className="focus-ring flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-control border border-danger-border bg-danger-surface px-3 text-xs font-bold text-danger uppercase transition-all hover:border-danger hover:bg-rose-900 hover:text-white disabled:cursor-wait disabled:opacity-60 sm:flex-none sm:px-4"
           >
             <LogOut className="h-3.5 w-3.5" />
@@ -588,21 +593,21 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
             </div>
           </div>
 
-          {orderedPlayers.map((player) => {
-            const rotatedIndex = (player.seat - mySeat + 8) % 8;
-            const positionClass = seatPositionClass(players.length, rotatedIndex);
+          {orderedPlayers.map((player, visualIndex) => {
+            const positionClass = seatPositionClass(players.length, visualIndex);
             const isActive = player.account_id === actor_account_id;
             const latestAction = latestActionByAccount.get(player.account_id);
             const isButton = player.account_id === button_account_id;
             const isHero = player.account_id === user?.account_id;
             const memberEmotes = activeEmotes.filter((e) => e.account_id === player.account_id);
             const activeEmote = memberEmotes[memberEmotes.length - 1];
-            const hasVisibleHoleCards = isHero && Boolean(privateSnapshot?.hole_cards?.length);
+            const hasVisibleHoleCards = isHero && visibleHoleCards.length > 0;
 
             return (
               <article
                 key={player.account_id}
                 data-testid={`player-card-${player.account_id}`}
+                data-visual-seat-index={visualIndex}
                 className={`absolute z-10 flex w-14 flex-col items-center gap-0.5 rounded-panel border bg-slate-950/90 p-1 text-center shadow-xl backdrop-blur-sm sm:w-16 sm:gap-1 sm:p-1.5 md:w-28 md:gap-2 md:p-2 ${positionClass} ${
                   isActive
                     ? 'border-warning shadow-[0_0_0_3px_rgba(251,191,36,0.12),0_12px_30px_rgba(245,158,11,0.16)]'
@@ -654,13 +659,13 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
                   }
                 >
                   {hasVisibleHoleCards
-                    ? privateSnapshot?.hole_cards?.map((card, idx) => (
+                    ? visibleHoleCards.map((card, index) => (
                         <PlayingCard
-                          key={idx}
+                          key={`${activeSnapshot.hand_id}-${card}`}
                           card={card}
                           size="seat"
                           animated={!prefersReducedMotion}
-                          delayMs={idx * 70}
+                          delayMs={index * 70}
                         />
                       ))
                     : [0, 1].map((index) => <CardBack key={index} size="seat" />)}
@@ -693,7 +698,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
       </div>
 
       {/* Action Decision Control Bar */}
-      {showActionBar && privateSnapshot && (
+      {showActionBar && currentPrivateSnapshot && (
         <section
           data-testid="action-bar"
           className="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-border-subtle bg-surface-raised/95 p-3 shadow-[0_-12px_30px_rgba(2,6,23,0.22)] backdrop-blur-md animate-slide-up sm:gap-4 sm:p-4 lg:static lg:shadow-none"
@@ -755,7 +760,7 @@ export function PokerTable({ roomId, onLeave }: PokerTableProps) {
 
           {/* Action buttons */}
           <div className="flex w-full flex-wrap justify-center gap-2 sm:gap-3">
-            {privateSnapshot.legal_actions.map((act) => {
+            {currentPrivateSnapshot.legal_actions.map((act) => {
               const themeMap: Record<string, string> = {
                 fold: 'bg-danger-surface hover:bg-rose-900 border-danger-border hover:border-danger text-danger',
                 check_or_call: 'bg-accent-strong hover:bg-accent border-accent text-white',

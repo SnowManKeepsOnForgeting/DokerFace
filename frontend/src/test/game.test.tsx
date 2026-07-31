@@ -38,16 +38,16 @@ const aliceUser = {
 };
 
 /** PokerTable reads public profiles, so it always needs a query client. */
-const renderPokerTable = (onLeave: () => void = vi.fn()) =>
+const renderPokerTable = (onLeave: () => void = vi.fn(), user: typeof aliceUser = aliceUser) =>
   render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <AuthContext.Provider
         value={{
-          user: aliceUser,
+          user,
           isLoading: false,
-          login: async () => aliceUser,
+          login: async () => user,
           logout: async () => {},
           refetch: async () => {},
         }}
@@ -416,6 +416,8 @@ describe('WaitingRoom and PokerTable Flow', () => {
     expect(screen.getByRole('button', { name: 'Quit' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Leave' })).toBeInTheDocument();
     expect(screen.getByTestId('player-rail')).toContainElement(screen.getByTestId('player-card-1'));
+    expect(screen.getByTestId('player-card-1')).toHaveAttribute('data-visual-seat-index', '0');
+    expect(screen.getByTestId('player-card-2')).toHaveAttribute('data-visual-seat-index', '1');
     expect(screen.getByTestId('player-rail')).toContainElement(
       screen.getByTestId('hero-hole-cards'),
     );
@@ -436,6 +438,192 @@ describe('WaitingRoom and PokerTable Flow', () => {
     expect(screen.getByTestId('player-rail')).toHaveClass('min-h-[30rem]');
     // The stage reserves room so the pinned bar never covers the hero seat.
     expect(screen.getByTestId('table-stage')).toHaveClass('pb-28');
+  });
+
+  it('keeps heads-up seats distinct when the viewer owns seat one', () => {
+    restoreSocket = mockConnectedSocket();
+    useGameStore.setState({
+      connected: true,
+      publicSnapshot: {
+        schema_version: 1,
+        match_id: '00000000-0000-4000-8000-000000000002',
+        hand_id: '00000000-0000-4000-8000-000000000003',
+        hand_number: 1,
+        state_version: 1,
+        street: 'preflop',
+        button_account_id: 1,
+        actor_account_id: 1,
+        board: [],
+        pot_amounts: [30],
+        complete: false,
+        players: [
+          {
+            account_id: 1,
+            seat: 0,
+            display_name: 'Alice',
+            stack: 980,
+            bet: 20,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+          {
+            account_id: 2,
+            seat: 1,
+            display_name: 'Bob',
+            stack: 990,
+            bet: 10,
+            folded: false,
+            all_in: false,
+            connected: true,
+          },
+        ],
+        server_time: '2026-07-17T00:00:00Z',
+        actions: [],
+        action_deadline_at: null,
+      },
+    });
+
+    renderPokerTable(vi.fn(), {
+      account_id: 2,
+      login_name: 'bob',
+      role: 'player',
+      status: 'active',
+      display_name: 'Bob',
+    });
+
+    const hero = screen.getByTestId('player-card-2');
+    const opponent = screen.getByTestId('player-card-1');
+    expect(hero).toHaveAttribute('data-visual-seat-index', '0');
+    expect(hero).toHaveClass('bottom-0');
+    expect(opponent).toHaveAttribute('data-visual-seat-index', '1');
+    expect(opponent).toHaveClass('top-0');
+  });
+
+  it('keeps same-hand hole cards stable while public state advances', async () => {
+    restoreSocket = mockConnectedSocket();
+    const matchId = '00000000-0000-4000-8000-000000000020';
+    const handId = '00000000-0000-4000-8000-000000000021';
+    const nextHandId = '00000000-0000-4000-8000-000000000022';
+    const players = [
+      {
+        account_id: 1,
+        seat: 0,
+        display_name: 'Alice',
+        stack: 990,
+        bet: 10,
+        folded: false,
+        all_in: false,
+        connected: true,
+      },
+      {
+        account_id: 2,
+        seat: 1,
+        display_name: 'Bob',
+        stack: 980,
+        bet: 20,
+        folded: false,
+        all_in: false,
+        connected: true,
+      },
+    ];
+    const privateV1 = {
+      schema_version: 1 as const,
+      match_id: matchId,
+      hand_id: handId,
+      hand_number: 1,
+      state_version: 1,
+      street: 'preflop' as const,
+      button_account_id: 2,
+      actor_account_id: 1,
+      board: [],
+      pot_amounts: [30],
+      complete: false,
+      players,
+      server_time: '2026-07-17T00:00:00Z',
+      actions: [],
+      action_deadline_at: null,
+      account_id: 1,
+      hole_cards: ['As', 'Kd'],
+      legal_actions: [{ action: 'fold' as const }],
+    };
+    useGameStore.setState({
+      connected: true,
+      publicSnapshot: privateV1,
+      privateSnapshot: privateV1,
+    });
+
+    renderPokerTable();
+
+    const heroCards = screen.getByTestId('hero-hole-cards');
+    const originalAce = heroCards.querySelector('[data-card="As"]');
+    expect(originalAce).not.toBeNull();
+    expect(screen.getByRole('button', { name: /fold/i })).toBeInTheDocument();
+
+    const socketForTest = socket as unknown as {
+      listeners: (event: string) => Array<(payload: unknown) => void>;
+    };
+    act(() => {
+      socketForTest.listeners('game:public-snapshot').forEach((listener) =>
+        listener({
+          ...privateV1,
+          state_version: 2,
+          players: [
+            { ...players[0], stack: 975, bet: 25 },
+            { ...players[1], stack: 975, bet: 25 },
+          ],
+          legal_actions: undefined,
+          hole_cards: undefined,
+          account_id: undefined,
+        }),
+      );
+    });
+
+    expect(useGameStore.getState().privateSnapshot?.state_version).toBe(1);
+    expect(within(screen.getByTestId('player-card-1')).getByText('975')).toBeInTheDocument();
+    expect(heroCards.querySelector('[data-card="As"]')).toBe(originalAce);
+    expect(screen.queryByRole('button', { name: /fold/i })).not.toBeInTheDocument();
+
+    act(() => {
+      socketForTest.listeners('game:private-snapshot').forEach((listener) => listener(privateV1));
+    });
+    expect(useGameStore.getState().publicSnapshot?.state_version).toBe(2);
+    expect(within(screen.getByTestId('player-card-1')).getByText('975')).toBeInTheDocument();
+
+    act(() => {
+      socketForTest.listeners('game:private-snapshot').forEach((listener) =>
+        listener({
+          ...privateV1,
+          state_version: 2,
+          players: [
+            { ...players[0], stack: 975, bet: 25 },
+            { ...players[1], stack: 975, bet: 25 },
+          ],
+          legal_actions: [{ action: 'check_or_call', min_amount: 0, max_amount: 0 }],
+        }),
+      );
+    });
+
+    expect(await screen.findByRole('button', { name: /^check$/i })).toBeInTheDocument();
+    expect(heroCards.querySelector('[data-card="As"]')).toBe(originalAce);
+
+    act(() => {
+      socketForTest.listeners('game:public-snapshot').forEach((listener) =>
+        listener({
+          ...privateV1,
+          hand_id: nextHandId,
+          hand_number: 2,
+          state_version: 3,
+          board: [],
+          legal_actions: undefined,
+          hole_cards: undefined,
+          account_id: undefined,
+        }),
+      );
+    });
+
+    expect(useGameStore.getState().privateSnapshot).toBeNull();
+    expect(heroCards.querySelector('[data-card="As"]')).toBeNull();
   });
 
   it('renders the ten as 10 instead of the shorthand T', async () => {

@@ -190,20 +190,15 @@ export const useGameStore = create<GameState>((set, get) => {
         actionVersion(state.publicSnapshot),
         actionVersion(currentPrivate),
       );
-      if (
-        state.publicSnapshot?.match_id === snapshot.match_id &&
-        snapshot.state_version < currentVersion
-      ) {
+      const currentMatchId = state.publicSnapshot?.match_id ?? currentPrivate?.match_id;
+      if (currentMatchId === snapshot.match_id && snapshot.state_version < currentVersion) {
         return state;
       }
 
       const samePrivateHand =
         currentPrivate?.match_id === snapshot.match_id &&
         currentPrivate.hand_id === snapshot.hand_id;
-      const nextPrivate =
-        samePrivateHand && currentPrivate.state_version === snapshot.state_version
-          ? currentPrivate
-          : null;
+      const nextPrivate = samePrivateHand ? currentPrivate : null;
       const pendingAction =
         state.pendingAction &&
         state.pendingAction.match_id === snapshot.match_id &&
@@ -229,17 +224,8 @@ export const useGameStore = create<GameState>((set, get) => {
         actionVersion(state.publicSnapshot),
         actionVersion(state.privateSnapshot),
       );
-      if (
-        state.privateSnapshot?.match_id === snapshot.match_id &&
-        snapshot.state_version < currentVersion
-      ) {
-        return state;
-      }
-      if (
-        state.privateSnapshot?.match_id === snapshot.match_id &&
-        state.privateSnapshot.hand_id === snapshot.hand_id &&
-        snapshot.state_version < state.privateSnapshot.state_version
-      ) {
+      const currentMatchId = state.publicSnapshot?.match_id ?? state.privateSnapshot?.match_id;
+      if (currentMatchId === snapshot.match_id && snapshot.state_version < currentVersion) {
         return state;
       }
 

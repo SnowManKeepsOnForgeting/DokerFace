@@ -75,6 +75,7 @@ export function PlayingCard({
 
   return (
     <div
+      data-card={card}
       className={cn(face({ size }), animated && 'animate-deal-in', className)}
       style={delayMs ? { animationDelay: `${delayMs}ms` } : undefined}
     >
