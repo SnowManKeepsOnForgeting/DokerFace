@@ -5,7 +5,8 @@ import { useAuth } from '../api/auth-context';
 import { useEnumLabel } from '../i18n/useEnumLabel';
 import { PlayerAvatar } from './PlayerAvatar';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { LayoutDashboard, Trophy, User, LogOut, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Trophy, User, LogOut, ShieldAlert, ChevronRight } from 'lucide-react';
+import { cn } from '../lib/cn';
 
 export function Layout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -17,13 +18,13 @@ export function Layout({ children }: { children: ReactNode }) {
     try {
       await logout();
       navigate('/login');
-    } catch (e) {
-      console.error('Logout failed:', e);
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
   };
 
   const navItems = [
-    { to: '/', label: t('nav.lobby'), icon: LayoutDashboard },
+    { to: '/', label: t('nav.lobby'), icon: LayoutDashboard, end: true },
     { to: '/leaderboard', label: t('nav.leaderboard'), icon: Trophy },
   ];
 
@@ -35,113 +36,155 @@ export function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-dvh w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
-      {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4">
-        <div className="flex items-center gap-3 px-2 py-4 mb-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-600 text-white font-bold text-lg tracking-wider shadow-lg shadow-purple-900/30">
+    <div className="flex h-dvh w-full overflow-hidden bg-canvas font-sans text-slate-100">
+      <a
+        href="#main-content"
+        className="focus-ring fixed top-3 left-3 z-50 -translate-y-20 rounded-control bg-accent-strong px-4 py-2 text-sm font-bold text-white transition-transform focus:translate-y-0"
+      >
+        {t('a11y.skipToContent')}
+      </a>
+
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-border-subtle bg-surface-raised/80 p-3 md:flex lg:w-64 lg:p-4">
+        <div className="mb-8 flex items-center gap-3 px-2 py-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-control bg-accent-strong text-lg font-black text-white shadow-lg shadow-purple-950/30">
             D
           </div>
-          <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent">
-            {t('appName')}
-          </span>
+          <div className="min-w-0">
+            <p className="truncate text-lg font-black tracking-tight text-slate-100">
+              {t('appName')}
+            </p>
+            <p className="text-[9px] font-semibold tracking-[0.18em] text-slate-400 uppercase">
+              Texas Hold&apos;em
+            </p>
+          </div>
         </div>
 
-        <nav className="flex-1 space-y-1">
+        <nav aria-label={t('nav.label')} className="flex-1 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
+                end={item.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  cn(
+                    'focus-ring group relative flex items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-purple-600/15 text-purple-400 border border-purple-500/20'
-                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
-                  }`
+                      ? 'bg-accent-muted text-accent-text'
+                      : 'text-slate-400 hover:bg-surface-hover hover:text-slate-100',
+                  )
                 }
               >
-                <Icon className="h-4.5 w-4.5" />
-                {item.label}
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={cn(
+                        'absolute top-1/2 -left-3 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent transition-opacity lg:-left-4',
+                        isActive ? 'opacity-100' : 'opacity-0',
+                      )}
+                    />
+                    <Icon className="h-4.5 w-4.5 shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    {isActive ? <ChevronRight className="h-3.5 w-3.5 opacity-70" /> : null}
+                  </>
+                )}
               </NavLink>
             );
           })}
         </nav>
 
-        <div className="mt-auto border-t border-slate-800 pt-4 flex flex-col gap-3">
+        <div className="mt-auto flex flex-col gap-3 border-t border-border-subtle pt-4">
           <LanguageSwitcher />
-
-          {user && (
+          {user ? (
             <>
-              <div className="flex items-center gap-3 px-2">
+              <div className="flex min-w-0 items-center gap-3 px-2">
                 <PlayerAvatar
                   accountId={user.account_id}
                   fallbackName={user.display_name}
                   label={t('sidebar.avatarLabel')}
-                  className="h-10 w-10 text-sm"
+                  className="h-9 w-9 text-xs"
                 />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">{user.display_name}</p>
-                  <p className="text-xs text-slate-400 truncate">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-slate-200">
+                    {user.display_name}
+                  </p>
+                  <p className="truncate text-[10px] text-slate-400">
                     {enumLabel('accountRole', user.role)}
                   </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={handleLogout}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700/80 hover:text-red-400 text-slate-300 px-3 py-2 text-sm font-medium transition-colors border border-slate-700/50"
+                className="focus-ring flex h-9 w-full items-center justify-center gap-2 rounded-control border border-border-subtle bg-surface-hover px-3 text-xs font-semibold text-slate-300 transition-colors hover:border-danger-border hover:bg-danger-surface hover:text-danger"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-3.5 w-3.5" />
                 {t('actions.logout')}
               </button>
             </>
-          )}
+          ) : null}
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex min-h-0 flex-col min-w-0 overflow-hidden">
-        <header className="flex md:hidden shrink-0 items-center justify-between h-16 bg-slate-900 border-b border-slate-800 px-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-purple-600 text-white font-bold text-sm">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-subtle bg-surface-raised/90 px-4 backdrop-blur-md md:hidden">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-control bg-accent-strong text-sm font-black text-white">
               D
             </div>
-            <span className="font-bold tracking-tight text-lg">{t('appName')}</span>
+            <span className="text-base font-black tracking-tight text-slate-100">
+              {t('appName')}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <LanguageSwitcher compact />
-            {user && (
+            {user ? (
               <button
+                type="button"
                 onClick={handleLogout}
                 aria-label={t('actions.logout')}
-                className="text-slate-400 hover:text-red-400 p-1"
+                className="focus-ring flex h-9 w-9 items-center justify-center rounded-control text-slate-400 hover:text-danger"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-4.5 w-4.5" />
               </button>
-            )}
+            ) : null}
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6 bg-slate-950">
-          <div className="max-w-7xl mx-auto min-h-full lg:h-full flex flex-col">{children}</div>
+        <main id="main-content" className="min-h-0 flex-1 overflow-y-auto bg-canvas p-4 md:p-6">
+          <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col">{children}</div>
         </main>
 
-        <nav className="flex md:hidden shrink-0 bg-slate-900 border-t border-slate-800 h-16 items-center justify-around px-2">
+        <nav
+          aria-label={t('nav.label')}
+          className="flex h-[calc(4rem+env(safe-area-inset-bottom))] shrink-0 items-start justify-around border-t border-border-subtle bg-surface-raised/95 px-2 pt-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
+                end={item.end}
                 className={({ isActive }) =>
-                  `flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors ${
-                    isActive ? 'text-purple-400' : 'text-slate-500 hover:text-slate-300'
-                  }`
+                  cn(
+                    'focus-ring flex min-w-16 flex-col items-center justify-center gap-1 rounded-control px-2 py-1 text-[10px] font-semibold transition-colors',
+                    isActive ? 'text-accent-text' : 'text-slate-500 hover:text-slate-300',
+                  )
                 }
               >
-                <Icon className="h-5 w-5" />
-                {item.label}
+                {({ isActive }) => (
+                  <>
+                    <Icon
+                      className={cn(
+                        'h-5 w-5',
+                        isActive && 'drop-shadow-[0_0_8px_rgba(167,139,250,0.55)]',
+                      )}
+                    />
+                    <span className="max-w-20 truncate">{item.label}</span>
+                  </>
+                )}
               </NavLink>
             );
           })}

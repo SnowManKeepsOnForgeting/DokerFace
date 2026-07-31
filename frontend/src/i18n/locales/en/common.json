@@ -10,6 +10,7 @@
     }
   },
   "nav": {
+    "label": "Primary navigation",
     "lobby": "Lobby",
     "leaderboard": "Leaderboard",
     "profile": "My Profile",
@@ -17,6 +18,9 @@
   },
   "sidebar": {
     "avatarLabel": "Your avatar"
+  },
+  "a11y": {
+    "skipToContent": "Skip to content"
   },
   "actions": {
     "logout": "Logout",

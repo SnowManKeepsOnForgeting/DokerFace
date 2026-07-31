@@ -10,6 +10,7 @@
     }
   },
   "nav": {
+    "label": "主导航",
     "lobby": "大厅",
     "leaderboard": "排行榜",
     "profile": "我的资料",
@@ -17,6 +18,9 @@
   },
   "sidebar": {
     "avatarLabel": "你的头像"
+  },
+  "a11y": {
+    "skipToContent": "跳到主要内容"
   },
   "actions": {
     "logout": "退出登录",
